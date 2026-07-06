@@ -1,21 +1,21 @@
 ---
 deployment:
   tasks:
-    - echo "===== Iniciando deploy de Laravel + Vue ====="
+    - echo "===== Iniciando deploy FastFact R23 ====="
 
-    - export COMPOSER_HOME="$HOME/.composer"
+    - export REPOPATH=/home/proyect2/repositories/fastfact-r23
+    - export DEPLOYPATH=/home/proyect2/facturacion-r23.proyectosr23w7.com
 
-    - echo "No hay shell disponible, se asume que vendor y public/build ya están en el repo"
+    - echo "Repositorio base:"
+    - echo $REPOPATH
+    - echo "Destino del subdominio facturacion-r23.proyectosr23w7.com:"
+    - echo $DEPLOYPATH
 
-    - echo "===== Deploy multiempresa ====="
-    
-    - cp -r /home/proyect2/repositories/sistema-ventas/* /home/proyect2/sistemas/demosistemaventas/sistema-ventas/
+    - mkdir -p $DEPLOYPATH
 
-    - export DEPLOYPATH=/home/proyect2/sistemas/demosistemaventas/sistema-ventas
+    - /usr/bin/rsync -av --delete --exclude='.git' --exclude='.env' --exclude='storage/app/private/siat/certificados/*' --exclude='storage/backups/*' --exclude='storage/logs/*' $REPOPATH/ $DEPLOYPATH/
+
     - cd $DEPLOYPATH
     - php artisan migrate --force || true
 
-
-    - echo "===== Deploy finalizado para demo sistema ====="
-
-
+    - echo "===== Deploy finalizado FastFact R23 ====="
