@@ -1,0 +1,21 @@
+---
+deployment:
+  tasks:
+    - echo "===== Iniciando deploy de Laravel + Vue ====="
+
+    - export COMPOSER_HOME="$HOME/.composer"
+
+    - echo "No hay shell disponible, se asume que vendor y public/build ya están en el repo"
+
+    - echo "===== Deploy multiempresa ====="
+    
+    - cp -r /home/proyect2/repositories/sistema-ventas/* /home/proyect2/sistemas/demosistemaventas/sistema-ventas/
+
+    - export DEPLOYPATH=/home/proyect2/sistemas/demosistemaventas/sistema-ventas
+    - cd $DEPLOYPATH
+    - php artisan migrate --force || true
+
+
+    - echo "===== Deploy finalizado para demo sistema ====="
+
+

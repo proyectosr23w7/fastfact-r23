@@ -1,0 +1,297 @@
+@import 'tailwindcss';
+
+@import 'tw-animate-css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-sans:
+        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar-background);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
+
+@layer utilities {
+    body,
+    html {
+        --font-sans:
+            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+            'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+            'Noto Color Emoji';
+    }
+}
+
+:root {
+    --background: hsl(144 28% 97%);
+    --foreground: hsl(155 28% 11%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(155 28% 11%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(155 28% 11%);
+    --primary: hsl(150 54% 19%);
+    --primary-foreground: hsl(150 20% 96%);
+    --secondary: hsl(147 25% 91%);
+    --secondary-foreground: hsl(153 35% 16%);
+    --muted: hsl(144 22% 93%);
+    --muted-foreground: hsl(154 10% 35%);
+    --accent: hsl(143 45% 94%);
+    --accent-foreground: hsl(148 72% 27%);
+    --destructive: hsl(0 84.2% 60.2%);
+    --destructive-foreground: hsl(0 0% 98%);
+    --border: hsl(151 18% 84%);
+    --input: hsl(151 18% 84%);
+    --ring: hsl(148 72% 30%);
+    --chart-1: hsl(150 54% 34%);
+    --chart-2: hsl(142 66% 42%);
+    --chart-3: hsl(169 38% 26%);
+    --chart-4: hsl(144 44% 56%);
+    --chart-5: hsl(132 42% 62%);
+    --radius: 0.5rem;
+    --sidebar-background: hsl(153 22% 11%);
+    --sidebar-foreground: hsl(146 19% 92%);
+    --sidebar-primary: hsl(149 52% 32%);
+    --sidebar-primary-foreground: hsl(150 25% 97%);
+    --sidebar-accent: hsl(145 70% 23%);
+    --sidebar-accent-foreground: hsl(145 38% 96%);
+    --sidebar-border: hsl(153 19% 19%);
+    --sidebar-ring: hsl(145 70% 48%);
+    --sidebar: hsl(153 22% 11%);
+}
+
+.dark {
+    --background: hsl(154 28% 7%);
+    --foreground: hsl(150 20% 95%);
+    --card: hsl(155 23% 10%);
+    --card-foreground: hsl(150 20% 95%);
+    --popover: hsl(155 23% 10%);
+    --popover-foreground: hsl(150 20% 95%);
+    --primary: hsl(146 54% 54%);
+    --primary-foreground: hsl(155 26% 10%);
+    --secondary: hsl(153 19% 16%);
+    --secondary-foreground: hsl(150 20% 95%);
+    --muted: hsl(153 19% 15%);
+    --muted-foreground: hsl(151 12% 69%);
+    --accent: hsl(148 34% 17%);
+    --accent-foreground: hsl(145 58% 88%);
+    --destructive: hsl(0 84% 60%);
+    --destructive-foreground: hsl(0 0% 98%);
+    --border: hsl(153 18% 18%);
+    --input: hsl(153 18% 18%);
+    --ring: hsl(145 68% 54%);
+    --chart-1: hsl(146 54% 54%);
+    --chart-2: hsl(139 62% 54%);
+    --chart-3: hsl(168 48% 42%);
+    --chart-4: hsl(149 41% 64%);
+    --chart-5: hsl(132 39% 67%);
+    --sidebar-background: hsl(154 30% 6%);
+    --sidebar-foreground: hsl(150 18% 95%);
+    --sidebar-primary: hsl(146 54% 54%);
+    --sidebar-primary-foreground: hsl(155 26% 10%);
+    --sidebar-accent: hsl(145 55% 22%);
+    --sidebar-accent-foreground: hsl(145 58% 92%);
+    --sidebar-border: hsl(153 18% 18%);
+    --sidebar-ring: hsl(145 68% 54%);
+    --sidebar: hsl(154 30% 6%);
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    html {
+        @apply min-h-full overflow-x-hidden;
+    }
+    body {
+        @apply min-h-full overflow-x-hidden bg-background text-foreground;
+    }
+    #app {
+        @apply min-h-svh min-w-0;
+    }
+    :focus-visible {
+        outline-color: #168447;
+    }
+}
+
+@layer components {
+    .company-panel {
+        @apply rounded-2xl border border-border/80 bg-card/95 shadow-[0_16px_45px_-28px_rgba(3,20,13,0.55)];
+    }
+
+    .company-mesh {
+        background-image:
+            radial-gradient(
+                circle at top left,
+                hsl(146 54% 54% / 0.16),
+                transparent 30%
+            ),
+            radial-gradient(
+                circle at top right,
+                hsl(133 68% 54% / 0.12),
+                transparent 28%
+            ),
+            linear-gradient(135deg, hsl(150 23% 10% / 0.03), transparent 42%);
+    }
+
+    .company-hero {
+        background: linear-gradient(
+            135deg,
+            hsl(153 30% 9%) 0%,
+            hsl(148 47% 18%) 56%,
+            hsl(143 56% 24%) 100%
+        );
+    }
+
+    .company-form-grid {
+        @apply grid gap-5 md:grid-cols-2;
+    }
+
+    .company-field {
+        @apply space-y-2;
+    }
+
+    .company-label {
+        @apply text-sm font-semibold tracking-[0.01em] text-foreground;
+    }
+
+    .company-input {
+        @apply border-border/90 bg-background/90 shadow-sm transition-all focus:border-primary focus:ring-4 focus:ring-primary/15;
+    }
+
+    .company-textarea {
+        @apply min-h-28 w-full rounded-md border border-border/90 bg-background/90 px-3 py-2 text-sm shadow-sm transition-all outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/15;
+    }
+
+    .company-select {
+        @apply h-10 w-full rounded-md border border-border/90 bg-background/90 px-3 py-2 text-sm shadow-sm transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/15;
+    }
+
+    .company-action-primary {
+        @apply bg-primary text-primary-foreground shadow-[0_12px_24px_-16px_hsl(150_54%_19%)] hover:bg-primary/90;
+    }
+
+    .company-action-secondary {
+        @apply border-border/80 bg-accent/45 text-accent-foreground hover:bg-accent/70;
+    }
+
+    .company-switch {
+        @apply flex items-center gap-3 rounded-xl border border-border/70 bg-muted/60 px-4 py-3;
+    }
+
+    .dashboard-card {
+        @apply rounded-xl border border-[#dfe7e2] bg-white shadow-[0_8px_28px_-24px_rgba(16,23,19,0.7)] dark:border-white/10 dark:bg-[#141d18];
+    }
+
+    .dashboard-kpi-icon {
+        @apply flex size-14 shrink-0 items-center justify-center rounded-full bg-[#168447] text-white shadow-sm;
+    }
+
+    .dashboard-link {
+        @apply inline-flex items-center gap-2 text-sm font-semibold text-[#168447] transition hover:text-[#0f6d38] focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-[#168447] focus-visible:ring-offset-2 focus-visible:outline-none;
+    }
+
+    .dashboard-action {
+        @apply inline-flex min-h-12 items-center justify-center gap-3 rounded-lg px-5 text-sm font-bold shadow-sm transition focus-visible:ring-2 focus-visible:ring-[#168447] focus-visible:ring-offset-2 focus-visible:outline-none;
+    }
+
+    .dashboard-action-primary {
+        @apply bg-[#168447] text-white hover:bg-[#116f3b];
+    }
+}
+
+@layer utilities {
+    .app-responsive-surface {
+        @apply min-w-0 overflow-hidden;
+    }
+
+    .app-scroll-x {
+        @apply max-w-full overflow-x-auto overscroll-x-contain;
+    }
+
+    @media (max-width: 640px) {
+        [data-slot='sidebar-inset'] {
+            width: 100%;
+            min-width: 0;
+        }
+
+        [data-slot='table-container'],
+        .overflow-x-auto {
+            max-width: 100%;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        input,
+        select,
+        textarea,
+        button {
+            max-width: 100%;
+        }
+    }
+}
