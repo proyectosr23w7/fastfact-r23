@@ -96,7 +96,12 @@ class FacturaService
                 abort(422, 'Debe existir un CUIS vigente para emitir la factura.');
             }
 
-            $numeroFactura = $this->repository->getNextInvoiceNumber();
+            $numeroFactura = $this->repository->getNextInvoiceNumber(
+                (int) $venta->sucursal_id,
+                (int) $venta->punto_venta_id,
+                $ambiente,
+                (int) $configuracion->tipo_facturacion,
+            );
             $fechaEmision = now(config('app.timezone'));
             $payloadOverrides = [
                 'codigo_metodo_pago' => $data['codigo_metodo_pago'] ?? null,
@@ -330,7 +335,12 @@ class FacturaService
                     ? $data['monto_gift_card']
                     : $factura->monto_gift_card,
                 'codigo_documento_identidad' => $data['codigo_documento_identidad'] ?? $factura->codigo_documento_identidad,
-                'numero_factura' => (int) ($factura->numero_factura ?: $this->repository->getNextInvoiceNumber()),
+                'numero_factura' => (int) ($factura->numero_factura ?: $this->repository->getNextInvoiceNumber(
+                    (int) $venta->sucursal_id,
+                    (int) $venta->punto_venta_id,
+                    $ambiente,
+                    (int) $configuracion->tipo_facturacion,
+                )),
                 'fecha_emision' => $fechaEmision,
             ];
 

@@ -6,6 +6,7 @@ use App\Models\Factura;
 use App\Models\VentaCabecera;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class FacturaRepository
 {
@@ -146,11 +147,45 @@ class FacturaRepository
             ->get();
     }
 
-    public function getNextInvoiceNumber(): int
+    public function getNextInvoiceNumber(int $sucursalId, int $puntoVentaId, string $ambienteFacturacion = 'piloto', int $tipoFacturacion = 0): int
     {
-        return (int) Factura::query()
+        $ambienteFacturacion = $ambienteFacturacion ?: 'piloto';
+        $ultimoNumeroExistente = (int) Factura::query()
             ->whereNull('cafc_id')
-            ->max('numero_factura') + 1;
+            ->where('sucursal_id', $sucursalId)
+            ->where('punto_venta_id', $puntoVentaId)
+            ->where('ambiente_facturacion', $ambienteFacturacion)
+            ->where('tipo_facturacion', $tipoFacturacion)
+            ->max('numero_factura');
+
+        DB::table('factura_correlativos')->insertOrIgnore([
+            'sucursal_id' => $sucursalId,
+            'punto_venta_id' => $puntoVentaId,
+            'ambiente_facturacion' => $ambienteFacturacion,
+            'tipo_facturacion' => $tipoFacturacion,
+            'ultimo_numero' => $ultimoNumeroExistente,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $correlativo = DB::table('factura_correlativos')
+            ->where('sucursal_id', $sucursalId)
+            ->where('punto_venta_id', $puntoVentaId)
+            ->where('ambiente_facturacion', $ambienteFacturacion)
+            ->where('tipo_facturacion', $tipoFacturacion)
+            ->lockForUpdate()
+            ->first();
+
+        $nextNumber = max((int) ($correlativo?->ultimo_numero ?? 0), $ultimoNumeroExistente) + 1;
+
+        DB::table('factura_correlativos')
+            ->where('id', $correlativo->id)
+            ->update([
+                'ultimo_numero' => $nextNumber,
+                'updated_at' => now(),
+            ]);
+
+        return $nextNumber;
     }
 
     public function existsManualNumberForCafc(int $cafcId, int $numeroFactura, ?int $exceptFacturaId = null): bool

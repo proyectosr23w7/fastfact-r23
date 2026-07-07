@@ -64,7 +64,12 @@ class FacturaDirectaService
                 abort(422, 'Debe existir un CUFD vigente para emitir la factura.');
             }
 
-            $numeroFactura = $this->repository->getNextInvoiceNumber();
+            $numeroFactura = $this->repository->getNextInvoiceNumber(
+                $sucursal->id,
+                $puntoVenta->id,
+                $ambiente,
+                (int) $configuracion->tipo_facturacion,
+            );
             $fechaEmision = now(config('app.timezone'));
             $payload = ($this->generarDatosFacturaDirecta)(
                 $cliente,
