@@ -53,9 +53,9 @@ class ImportLegacyProductionData extends Command
 
         DB::transaction(function (): void {
             $this->importSecurity();
-            $this->importLegacyUsers();
             $this->importCompanyAndConfiguration();
             $this->importBranchesAndPoints();
+            $this->importLegacyUsers();
             $this->importCatalogs();
             $this->importClients();
             $this->importProducts();
@@ -310,6 +310,8 @@ class ImportLegacyProductionData extends Command
                 [
                     'name' => (string) ($legacyUser->nombre ?: $nick ?: $email),
                     'password' => Hash::make($password),
+                    'sucursal_id' => $this->sucursalIdForLegacyUser($legacyUser),
+                    'punto_venta_id' => $this->puntoVentaIdForLegacyUser($legacyUser),
                     'estado' => (int) $legacyUser->usuario_estado === 1,
                     'email_verified_at' => now(),
                     'created_at' => now(),
@@ -714,5 +716,23 @@ class ImportLegacyProductionData extends Command
         }
 
         return $local.'@'.$domain;
+    }
+
+    private function puntoVentaIdForLegacyUser(object $legacyUser): ?int
+    {
+        $legacyPuntoVentaId = (int) ($legacyUser->id_puntoventa ?? 0);
+
+        return $legacyPuntoVentaId > 0 && isset($this->puntoVentaMap[$legacyPuntoVentaId])
+            ? (int) $this->puntoVentaMap[$legacyPuntoVentaId]
+            : null;
+    }
+
+    private function sucursalIdForLegacyUser(object $legacyUser): ?int
+    {
+        $puntoVentaId = $this->puntoVentaIdForLegacyUser($legacyUser);
+
+        return $puntoVentaId
+            ? (int) DB::table('puntos_venta')->where('id', $puntoVentaId)->value('sucursal_id')
+            : null;
     }
 }

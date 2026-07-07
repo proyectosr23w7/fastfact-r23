@@ -11,6 +11,7 @@ use App\Http\Resources\FacturaResource;
 use App\Models\Articulo;
 use App\Models\Cliente;
 use App\Models\Configuracion\Configuracion;
+use App\Models\Configuracion\PuntoVenta;
 use App\Models\Factura;
 use App\Services\Facturacion\CufdService;
 use App\Services\Facturacion\CuisService;
@@ -247,16 +248,64 @@ class IntegrationController extends Controller
         $sucursalId = (int) $request->input('sucursal_id');
         $puntoVentaId = (int) $request->input('punto_venta_id');
 
-        abort_if($sucursalId <= 0 || $puntoVentaId <= 0, 422, 'La solicitud de integracion debe enviar sucursal_id y punto_venta_id.');
+        if ($sucursalId <= 0 || $puntoVentaId <= 0) {
+            [$sucursalId, $puntoVentaId] = $this->resolverContextoDesdeUsuario($request, $sucursalId, $puntoVentaId);
+        }
 
-        $exists = \App\Models\Configuracion\PuntoVenta::query()
+        $exists = PuntoVenta::query()
             ->whereKey($puntoVentaId)
             ->where('sucursal_id', $sucursalId)
+            ->where('estado', true)
             ->exists();
 
         abort_unless($exists, 422, 'El punto de venta no pertenece a la sucursal indicada.');
 
         return [$sucursalId, $puntoVentaId];
+    }
+
+    private function resolverContextoDesdeUsuario(Request $request, int $sucursalId, int $puntoVentaId): array
+    {
+        $user = $request->user();
+
+        if ($puntoVentaId > 0) {
+            $puntoVenta = PuntoVenta::query()
+                ->whereKey($puntoVentaId)
+                ->where('estado', true)
+                ->first();
+
+            abort_unless($puntoVenta, 422, 'El punto de venta indicado no existe o no esta activo.');
+
+            return [(int) $puntoVenta->sucursal_id, (int) $puntoVenta->id];
+        }
+
+        $userPuntoVentaId = (int) ($user?->punto_venta_id ?? 0);
+        if ($userPuntoVentaId > 0) {
+            $puntoVenta = PuntoVenta::query()
+                ->whereKey($userPuntoVentaId)
+                ->where('estado', true)
+                ->when($sucursalId > 0, fn ($query) => $query->where('sucursal_id', $sucursalId))
+                ->first();
+
+            if ($puntoVenta) {
+                return [(int) $puntoVenta->sucursal_id, (int) $puntoVenta->id];
+            }
+        }
+
+        $resolvedSucursalId = $sucursalId > 0 ? $sucursalId : (int) ($user?->sucursal_id ?? 0);
+        $puntoVenta = PuntoVenta::query()
+            ->where('estado', true)
+            ->when($resolvedSucursalId > 0, fn ($query) => $query->where('sucursal_id', $resolvedSucursalId))
+            ->orderBy('sucursal_id')
+            ->orderBy('codigo')
+            ->first();
+
+        abort_unless(
+            $puntoVenta,
+            422,
+            'No se pudo resolver el contexto operativo del usuario. Asigna sucursal/punto de venta al usuario o envia sucursal_id y punto_venta_id.',
+        );
+
+        return [(int) $puntoVenta->sucursal_id, (int) $puntoVenta->id];
     }
 
     private function validateProducto(Request $request, ?Articulo $articulo = null): array

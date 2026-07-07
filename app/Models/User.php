@@ -5,6 +5,9 @@ namespace App\Models;
 use App\Traits\HasSecurityPermissions;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\RolSistemaEnum;
+use App\Models\Configuracion\PuntoVenta;
+use App\Models\Configuracion\Sucursal;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +29,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'sucursal_id',
+        'punto_venta_id',
         'estado',
     ];
 
@@ -50,10 +55,22 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'sucursal_id' => 'integer',
+            'punto_venta_id' => 'integer',
             'estado' => 'boolean',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    public function sucursal(): BelongsTo
+    {
+        return $this->belongsTo(Sucursal::class);
+    }
+
+    public function puntoVenta(): BelongsTo
+    {
+        return $this->belongsTo(PuntoVenta::class);
     }
 
     public function roles(): BelongsToMany
