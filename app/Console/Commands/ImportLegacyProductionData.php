@@ -17,7 +17,13 @@ class ImportLegacyProductionData extends Command
     protected $signature = 'fastfact:import-legacy-production
         {--database=fastfact_r23_legacy_import : Base temporal con el dump del sistema anterior}
         {--admin-email=proyectosr23w7@gmail.com}
-        {--admin-password=12345678}';
+        {--admin-password=12345678}
+        {--ambiente=produccion : Ambiente de facturacion: produccion o piloto}
+        {--tipo-facturacion=electronica : Tipo de facturacion: electronica o computarizada}
+        {--legacy-user-domain=parqueo.local : Dominio usado para crear correos de usuarios legacy}
+        {--legacy-user-password=12345678 : Password temporal para usuarios legacy}
+        {--include-techdev-user : Importa tambien el usuario legacy TechDevAdmin}
+        {--import-legacy-siat-codes : Importa CUIS/CUFD legacy aun cuando el ambiente sea piloto}';
 
     protected $description = 'Importa datos productivos del sistema anterior al esquema actual de FastFact.';
 
@@ -29,9 +35,15 @@ class ImportLegacyProductionData extends Command
 
     private int $adminId;
 
+    private string $targetAmbiente;
+
+    private int $targetTipoFacturacion;
+
     public function handle(): int
     {
         $this->configureLegacyConnection((string) $this->option('database'));
+        $this->targetAmbiente = $this->resolveAmbiente();
+        $this->targetTipoFacturacion = $this->resolveTipoFacturacion();
 
         if (! $this->legacyTableExists('datosempresa')) {
             $this->error('No se encontro la base temporal del sistema anterior.');
@@ -41,6 +53,7 @@ class ImportLegacyProductionData extends Command
 
         DB::transaction(function (): void {
             $this->importSecurity();
+            $this->importLegacyUsers();
             $this->importCompanyAndConfiguration();
             $this->importBranchesAndPoints();
             $this->importCatalogs();
@@ -139,10 +152,10 @@ class ImportLegacyProductionData extends Command
             ['id' => 1],
             [
                 'facturacion_habilitada' => true,
-                'tipo_facturacion' => TipoFacturacionEnum::ELECTRONICA->value,
-                'ambiente_facturacion' => ((int) ($sistema->ambiente ?? 1)) === 1 ? 'produccion' : 'piloto',
-                'token_siat' => (string) ($empresa->token ?? ''),
-                'token_siat_produccion' => (string) ($empresa->token ?? ''),
+                'tipo_facturacion' => $this->targetTipoFacturacion,
+                'ambiente_facturacion' => $this->targetAmbiente,
+                'token_siat' => $this->targetAmbiente === 'produccion' ? (string) ($empresa->token ?? '') : '',
+                'token_siat_produccion' => $this->targetAmbiente === 'produccion' ? (string) ($empresa->token ?? '') : null,
                 'token_siat_piloto' => null,
                 'codigo_sistema' => (string) ($sistema->codigo ?? ''),
                 'tipo_impresion' => 'media_carta',
@@ -267,6 +280,73 @@ class ImportLegacyProductionData extends Command
         }
     }
 
+    private function importLegacyUsers(): void
+    {
+        if (! $this->legacyTableExists('usuarios')) {
+            return;
+        }
+
+        $this->ensureOperationalRoles();
+
+        $domain = trim((string) $this->option('legacy-user-domain')) ?: 'parqueo.local';
+        $password = (string) $this->option('legacy-user-password');
+        $includeTechDev = (bool) $this->option('include-techdev-user');
+
+        foreach (DB::connection('legacy_import')->table('usuarios')->orderBy('id_usuario')->get() as $legacyUser) {
+            $nick = trim((string) $legacyUser->nick);
+
+            if (! $includeTechDev && Str::lower($nick) === 'techdevadmin') {
+                continue;
+            }
+
+            $roleSlug = str_contains(Str::lower($nick), 'admin')
+                ? RolSistemaEnum::ADMINISTRADOR->value
+                : RolSistemaEnum::CAJERO->value;
+
+            $email = $this->emailForLegacyUser($nick, $domain);
+
+            DB::table('users')->updateOrInsert(
+                ['email' => $email],
+                [
+                    'name' => (string) ($legacyUser->nombre ?: $nick ?: $email),
+                    'password' => Hash::make($password),
+                    'estado' => (int) $legacyUser->usuario_estado === 1,
+                    'email_verified_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            );
+
+            $userId = (int) DB::table('users')->where('email', $email)->value('id');
+            $roleId = (int) DB::table('roles')->where('slug', $roleSlug)->value('id');
+
+            if ($userId && $roleId) {
+                DB::table('role_user')->updateOrInsert(
+                    ['user_id' => $userId, 'role_id' => $roleId],
+                    ['created_at' => now(), 'updated_at' => now()],
+                );
+            }
+        }
+    }
+
+    private function ensureOperationalRoles(): void
+    {
+        foreach ([RolSistemaEnum::ADMINISTRADOR, RolSistemaEnum::CAJERO] as $role) {
+            DB::table('roles')->updateOrInsert(
+                ['slug' => $role->value],
+                [
+                    'nombre' => $role->label(),
+                    'descripcion' => $role === RolSistemaEnum::ADMINISTRADOR
+                        ? 'Administra la operacion comercial.'
+                        : 'Emite facturas y gestiona datos operativos basicos.',
+                    'estado' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            );
+        }
+    }
+
     private function importClients(): void
     {
         foreach (DB::connection('legacy_import')->table('clientes')->orderBy('id_cliente')->get() as $cliente) {
@@ -337,12 +417,16 @@ class ImportLegacyProductionData extends Command
 
     private function importCuisAndCufd(): void
     {
+        if ($this->targetAmbiente !== 'produccion' && ! (bool) $this->option('import-legacy-siat-codes')) {
+            return;
+        }
+
         foreach (DB::connection('legacy_import')->table('puntoventa')->get() as $punto) {
             $puntoVentaId = $this->puntoVentaMap[(int) $punto->id_puntoVenta];
             $sucursalId = (int) DB::table('puntos_venta')->where('id', $puntoVentaId)->value('sucursal_id');
 
             DB::table('cuis')->updateOrInsert(
-                ['codigo' => (string) $punto->cuis, 'punto_venta_id' => $puntoVentaId, 'ambiente_facturacion' => 'produccion'],
+                ['codigo' => (string) $punto->cuis, 'punto_venta_id' => $puntoVentaId, 'ambiente_facturacion' => $this->targetAmbiente],
                 [
                     'sucursal_id' => $sucursalId,
                     'fecha_vigencia' => $this->dateOrNull($punto->vigenciaCuis),
@@ -369,7 +453,7 @@ class ImportLegacyProductionData extends Command
                 'direccion' => $this->legacyValue('sucursal', 'direccion'),
                 'sucursal_id' => $sucursalId,
                 'punto_venta_id' => $puntoVentaId,
-                'ambiente_facturacion' => 'produccion',
+                'ambiente_facturacion' => $this->targetAmbiente,
                 'fecha_vigencia' => $this->dateOrNull($cufd->fechaVigencia),
                 'estado' => Carbon::parse($cufd->fechaVigencia)->isFuture(),
                 'codigo_respuesta' => 'MIGRADO',
@@ -392,7 +476,7 @@ class ImportLegacyProductionData extends Command
             $detalles = $this->extractInvoiceDetails((string) $factura->productos);
 
             $ventaId = DB::table('venta_cabeceras')->insertGetId([
-                'numero_venta' => 'LEG-FAC-'.str_pad((string) $factura->numeroFactura, 10, '0', STR_PAD_LEFT),
+                'numero_venta' => 'LEG-FAC-'.str_pad((string) $factura->id_factura, 10, '0', STR_PAD_LEFT),
                 'cliente_id' => $clienteId,
                 'sucursal_id' => $sucursalId,
                 'punto_venta_id' => $puntoVentaId,
@@ -436,8 +520,8 @@ class ImportLegacyProductionData extends Command
                 'codigo_recepcion' => (string) $factura->codigoRecepcion,
                 'codigo_metodo_pago' => (string) $factura->codigoMetodoPago,
                 'codigo_documento_identidad' => $this->xmlValue((string) $factura->productos, 'codigoTipoDocumentoIdentidad'),
-                'tipo_facturacion' => TipoFacturacionEnum::ELECTRONICA->value,
-                'ambiente_facturacion' => 'produccion',
+                'tipo_facturacion' => $this->targetTipoFacturacion,
+                'ambiente_facturacion' => $this->targetAmbiente,
                 'codigo_emision' => (int) $factura->tipoEmision,
                 'xml_fiscal' => (string) $factura->productos,
                 'pdf_path' => (string) $factura->raiz,
@@ -599,5 +683,36 @@ class ImportLegacyProductionData extends Command
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    private function resolveAmbiente(): string
+    {
+        $ambiente = Str::lower(trim((string) $this->option('ambiente')));
+
+        return in_array($ambiente, ['piloto', 'produccion'], true) ? $ambiente : 'produccion';
+    }
+
+    private function resolveTipoFacturacion(): int
+    {
+        $tipo = Str::lower(trim((string) $this->option('tipo-facturacion')));
+
+        return $tipo === 'computarizada'
+            ? TipoFacturacionEnum::COMPUTARIZADA->value
+            : TipoFacturacionEnum::ELECTRONICA->value;
+    }
+
+    private function emailForLegacyUser(string $nick, string $domain): string
+    {
+        $local = Str::of($nick)
+            ->ascii()
+            ->lower()
+            ->replaceMatches('/[^a-z0-9]+/', '.')
+            ->trim('.');
+
+        if ($local->isEmpty()) {
+            $local = Str::of('usuario');
+        }
+
+        return $local.'@'.$domain;
     }
 }
