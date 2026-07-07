@@ -69,7 +69,7 @@ class GenerarCufFacturaAction
             }
         }
 
-        $digito = $suma % 11;
+        $digito = 11 - ($suma % 11);
 
         return match ($digito) {
             10 => '1',
