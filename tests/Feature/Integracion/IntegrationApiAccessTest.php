@@ -48,7 +48,7 @@ test('integration endpoints reject superadmin without administrator role', funct
     $this->withToken($plainTextToken)
         ->getJson("/api/integracion/cufd/actual?sucursal_id={$sucursal->id}&punto_venta_id={$puntoVenta->id}")
         ->assertForbidden()
-        ->assertJsonPath('message', 'La API de integracion solo acepta usuarios administradores.');
+        ->assertJsonPath('message', 'La API de integracion solo acepta usuarios administradores o cajeros.');
 });
 
 test('integration endpoints allow administrator with explicit integration permission', function () {
@@ -94,6 +94,29 @@ test('integration API exposes current CUIS with explicit permission', function (
         ->getJson('/api/integracion/cuis/actual?sucursal_id='.$sucursal->id.'&punto_venta_id='.$puntoVenta->id)
         ->assertOk()
         ->assertJsonPath('data.codigo', 'CUIS-TEST');
+});
+
+test('integration endpoints allow cashier with explicit integration permission', function () {
+    $user = User::factory()->create();
+    $role = Role::query()->where('slug', RolSistemaEnum::CAJERO->value)->firstOrFail();
+    $user->roles()->attach($role);
+    [$sucursal, $puntoVenta] = createIntegrationContext($user);
+    Cufd::query()->create([
+        'codigo' => 'CUFD-CAJERO',
+        'codigo_control' => 'CTRL-CAJERO',
+        'sucursal_id' => $sucursal->id,
+        'punto_venta_id' => $puntoVenta->id,
+        'ambiente_facturacion' => 'piloto',
+        'fecha_vigencia' => now()->addDay(),
+        'estado' => true,
+        'user_id' => $user->id,
+    ]);
+    $plainTextToken = issueIntegrationToken($user, ['integracion.cufd.manage']);
+
+    $this->withToken($plainTextToken)
+        ->getJson("/api/integracion/cufd/actual?sucursal_id={$sucursal->id}&punto_venta_id={$puntoVenta->id}")
+        ->assertOk()
+        ->assertJsonPath('data.codigo', 'CUFD-CAJERO');
 });
 
 test('integration endpoints require token ability too', function () {
