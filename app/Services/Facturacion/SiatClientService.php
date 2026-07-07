@@ -151,6 +151,8 @@ class SiatClientService
             ? $xmlContent
             : (string) file_get_contents($xmlAbsolutePath);
 
+        $archivo = $this->buildEncodedInvoicePayload($resolvedXmlContent);
+
         $request = [
             'codigoAmbiente' => $this->environmentCode($configuracion),
             'codigoPuntoVenta' => (int) ($factura->puntoVenta?->codigo ?? 0),
@@ -163,9 +165,9 @@ class SiatClientService
             'cufd' => (string) ($factura->cufd?->codigo ?? ''),
             'cuis' => (string) ($factura->cuis?->codigo ?? ''),
             'tipoFacturaDocumento' => 1,
-            'archivo' => $this->buildEncodedInvoicePayload($resolvedXmlContent),
+            'archivo' => $archivo,
             'fechaEnvio' => now(config('app.timezone'))->format('Y-m-d\TH:i:s.v'),
-            'hashArchivo' => $this->hashEncodedInvoicePayload($resolvedXmlContent),
+            'hashArchivo' => $this->hashEncodedInvoicePayload($archivo),
         ];
 
         return $this->normalizeSiatResponse(
@@ -724,10 +726,10 @@ class SiatClientService
         return gzencode($xmlContent, 9, FORCE_GZIP);
     }
 
-    private function hashEncodedInvoicePayload(string $xmlContent): string
+    private function hashEncodedInvoicePayload(string $encodedPayload): string
     {
-        // El hash se calcula sobre el XML firmado/original, no sobre el archivo comprimido.
-        return hash('sha256', $xmlContent);
+        // SIAT solicita el SHA-256 del archivo Gzip enviado en la etiqueta archivo.
+        return hash('sha256', $encodedPayload);
     }
 
     private function error(string $code, string $message, array $extra = []): array
