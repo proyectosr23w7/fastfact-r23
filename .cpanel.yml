@@ -4,11 +4,11 @@ deployment:
     - echo "===== Iniciando deploy FastFact R23 ====="
 
     - export REPOPATH=/home/proyect2/repositories/fastfact-r23
-    - export DEPLOYPATH=/home/proyect2/facturacion-r23.proyectosr23w7.com
+    - export DEPLOYPATH=/home/proyect2/facturacionr23.proyectosr23w7.com
 
     - echo "Repositorio base:"
     - echo $REPOPATH
-    - echo "Destino del subdominio facturacion-r23.proyectosr23w7.com:"
+    - echo "Destino del subdominio facturacionr23.proyectosr23w7.com:"
     - echo $DEPLOYPATH
 
     - mkdir -p $DEPLOYPATH
