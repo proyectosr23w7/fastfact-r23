@@ -1,21 +1,13 @@
 ---
 deployment:
   tasks:
-    - echo "===== Iniciando deploy FastFact R23 ====="
-
-    - export REPOPATH=/home/proyect2/repositories/fastfact-r23
-    - export DEPLOYPATH=/home/proyect2/facturacionr23.proyectosr23w7.com
-
-    - echo "Repositorio base:"
-    - echo $REPOPATH
-    - echo "Destino del subdominio facturacionr23.proyectosr23w7.com:"
-    - echo $DEPLOYPATH
-
-    - mkdir -p $DEPLOYPATH
-
-    - /usr/bin/rsync -av --delete --exclude='.git' --exclude='.env' --exclude='storage/app/private/siat/certificados/*' --exclude='storage/backups/*' --exclude='storage/logs/*' $REPOPATH/ $DEPLOYPATH/
-
-    - cd $DEPLOYPATH
-    - php artisan migrate --force || true
-
-    - echo "===== Deploy finalizado FastFact R23 ====="
+    - /bin/echo "Iniciando deploy FastFact R23"
+    - /bin/mkdir -p /home/proyect2/facturacionr23.proyectosr23w7.com
+    - /usr/bin/rsync -a --delete --exclude='/.git/' --exclude='/.env' --exclude='/.env.*' --exclude='/storage/' --exclude='/bootstrap/cache/' --exclude='/public/storage' /home/proyect2/repositories/fastfact-r23/ /home/proyect2/facturacionr23.proyectosr23w7.com/
+    - /bin/mkdir -p /home/proyect2/facturacionr23.proyectosr23w7.com/bootstrap/cache /home/proyect2/facturacionr23.proyectosr23w7.com/storage/app/public /home/proyect2/facturacionr23.proyectosr23w7.com/storage/app/private /home/proyect2/facturacionr23.proyectosr23w7.com/storage/framework/cache/data /home/proyect2/facturacionr23.proyectosr23w7.com/storage/framework/sessions /home/proyect2/facturacionr23.proyectosr23w7.com/storage/framework/views /home/proyect2/facturacionr23.proyectosr23w7.com/storage/logs
+    - /bin/echo "Subdominio facturacionr23 actualizado"
+    - /bin/mkdir -p /home/proyect2/parqueo.proyectosr23w7.com
+    - /usr/bin/rsync -a --delete --exclude='/.git/' --exclude='/.env' --exclude='/.env.*' --exclude='/storage/' --exclude='/bootstrap/cache/' --exclude='/public/storage' /home/proyect2/repositories/fastfact-r23/ /home/proyect2/parqueo.proyectosr23w7.com/
+    - /bin/mkdir -p /home/proyect2/parqueo.proyectosr23w7.com/bootstrap/cache /home/proyect2/parqueo.proyectosr23w7.com/storage/app/public /home/proyect2/parqueo.proyectosr23w7.com/storage/app/private /home/proyect2/parqueo.proyectosr23w7.com/storage/framework/cache/data /home/proyect2/parqueo.proyectosr23w7.com/storage/framework/sessions /home/proyect2/parqueo.proyectosr23w7.com/storage/framework/views /home/proyect2/parqueo.proyectosr23w7.com/storage/logs
+    - /bin/echo "Subdominio parqueo actualizado"
+    - /bin/echo "Deploy FastFact R23 finalizado en ambos subdominios"
