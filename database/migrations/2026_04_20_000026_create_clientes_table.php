@@ -25,16 +25,39 @@ return new class extends Migration
             });
         }
 
-        if (! DB::table('clientes')->where('codigo', 'CLI-0001')->exists()) {
-            DB::table('clientes')->insert([
-                'codigo' => 'CLI-0001',
-                'nombre' => 'Cliente Varios',
-                'razon_social' => 'Consumidor Final',
-                'nit_ci' => '0',
-                'estado' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        $now = now();
+
+        $clientesEspeciales = [
+            [
+                'codigo' => 'SIAT-99001',
+                'nombre' => 'Cliente especial SIAT 99001',
+                'razon_social' => 'CLIENTE ESPECIAL SIAT 99001',
+                'nit_ci' => '99001',
+            ],
+            [
+                'codigo' => 'SIAT-99002',
+                'nombre' => 'Control Tributario',
+                'razon_social' => 'Control Tributario',
+                'nit_ci' => '99002',
+            ],
+            [
+                'codigo' => 'SIAT-99003',
+                'nombre' => 'VENTAS MENORES DEL DÍA',
+                'razon_social' => 'VENTAS MENORES DEL DÍA',
+                'nit_ci' => '99003',
+            ],
+        ];
+
+        foreach ($clientesEspeciales as $cliente) {
+            DB::table('clientes')->updateOrInsert(
+                ['codigo' => $cliente['codigo']],
+                [
+                    ...$cliente,
+                    'estado' => true,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ],
+            );
         }
     }
 
