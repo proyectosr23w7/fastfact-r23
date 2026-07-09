@@ -124,7 +124,9 @@ const normalize = (value: unknown) =>
         .toLowerCase();
 
 const puntosBySucursal = (sucursalId: number) =>
-    puntosVenta.value.filter((punto) => punto.sucursal_id === sucursalId);
+    puntosVenta.value.filter(
+        (punto) => Number(punto.sucursal_id) === Number(sucursalId),
+    );
 
 const formatImpresion = (tipo: PuntoVenta['tipo_impresion']) =>
     ({ ticket: 'Rollo', media_carta: 'Media carta', carta: 'Carta' })[tipo] ??
@@ -144,7 +146,8 @@ const formatDate = (value: unknown) => {
 const selectedSucursal = computed(
     () =>
         sucursales.value.find(
-            (sucursal) => sucursal.id === selectedSucursalId.value,
+            (sucursal) =>
+                Number(sucursal.id) === Number(selectedSucursalId.value),
         ) ?? null,
 );
 
@@ -266,7 +269,7 @@ const load = async (preferredSucursalId?: number) => {
             sucursales.value[0]?.id ??
             null;
         selectedSucursalId.value = sucursales.value.some(
-            (item) => item.id === nextId,
+            (item) => Number(item.id) === Number(nextId),
         )
             ? nextId
             : (sucursales.value[0]?.id ?? null);

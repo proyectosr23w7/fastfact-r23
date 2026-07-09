@@ -37,6 +37,9 @@ Route::middleware(['auth', 'permission:sistema.access', 'empresa.configurada'])-
     Route::get('seguridad/permisos', fn () => Inertia::render('seguridad/PermisoView'))
         ->middleware('permission:seguridad.permisos.manage')
         ->name('seguridad.permisos.page');
+    Route::get('seguridad/tokens-integracion', fn () => Inertia::render('seguridad/IntegrationTokenView'))
+        ->middleware('permission:integracion.tokens.manage,seguridad.usuarios.manage')
+        ->name('seguridad.tokens-integracion.page');
 
     Route::get('facturacion/facturas', fn () => Inertia::render('facturacion/FacturaView'))
         ->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir')

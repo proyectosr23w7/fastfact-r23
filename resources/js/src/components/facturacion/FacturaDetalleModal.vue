@@ -14,7 +14,11 @@ import {
     ServerCog,
 } from 'lucide-vue-next';
 
-defineProps<{ open: boolean; factura: Record<string, any> | null }>();
+defineProps<{
+    open: boolean;
+    factura: Record<string, any> | null;
+    showTechnicalDetails?: boolean;
+}>();
 const emit = defineEmits<{ 'update:open': [value: boolean] }>();
 
 const formatDate = (value?: unknown) => {
@@ -56,8 +60,8 @@ const statusLabel = (status?: unknown) =>
                     ><DialogTitle class="text-left text-xl"
                         >Detalle de factura</DialogTitle
                     ><DialogDescription class="text-left text-[#c8d8ce]"
-                        >Informacion fiscal, respuesta SIAT y operacion de
-                        origen.</DialogDescription
+                        >Consulta la informacion principal de la
+                        factura.</DialogDescription
                     ></DialogHeader
                 >
             </div>
@@ -123,8 +127,11 @@ const statusLabel = (status?: unknown) =>
                             {{ statusLabel(factura.estado_factura) }}
                         </p>
                         <p class="mt-1 text-xs text-[#66736a]">
-                            Codigo
-                            {{ factura.codigo_estado || 'no disponible' }}
+                            {{
+                                showTechnicalDetails
+                                    ? `Codigo ${factura.codigo_estado || 'no disponible'}`
+                                    : 'Resultado de la emision'
+                            }}
                         </p>
                     </div>
                     <div
@@ -143,7 +150,7 @@ const statusLabel = (status?: unknown) =>
                 </section>
 
                 <section
-                    v-if="factura.descripcion_estado"
+                    v-if="showTechnicalDetails && factura.descripcion_estado"
                     :class="[
                         'rounded-xl border p-4',
                         ['observada', 'rechazada'].includes(
@@ -162,7 +169,10 @@ const statusLabel = (status?: unknown) =>
                 </section>
 
                 <div class="grid gap-4 lg:grid-cols-2">
-                    <section class="rounded-xl border border-[#dce5df] p-4">
+                    <section
+                        v-if="showTechnicalDetails"
+                        class="rounded-xl border border-[#dce5df] p-4"
+                    >
                         <h3 class="font-bold">Datos fiscales</h3>
                         <dl class="mt-4 space-y-3 text-sm">
                             <div>
@@ -282,6 +292,7 @@ const statusLabel = (status?: unknown) =>
 
                 <details
                     v-if="
+                        showTechnicalDetails &&
                         factura.datos_respuesta_siat &&
                         Object.keys(factura.datos_respuesta_siat).length
                     "

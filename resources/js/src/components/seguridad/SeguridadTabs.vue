@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { KeyRound, ShieldCheck, Users } from 'lucide-vue-next';
+import { Cable, KeyRound, ShieldCheck, Users } from 'lucide-vue-next';
 
 defineProps<{
-    active: 'usuarios' | 'roles' | 'permisos';
+    active: 'usuarios' | 'roles' | 'permisos' | 'tokens';
 }>();
 
 const tabs = [
@@ -24,6 +24,12 @@ const tabs = [
         label: 'Permisos',
         href: '/seguridad/permisos',
         icon: KeyRound,
+    },
+    {
+        id: 'tokens',
+        label: 'Tokens API',
+        href: '/seguridad/tokens-integracion',
+        icon: Cable,
     },
 ] as const;
 </script>

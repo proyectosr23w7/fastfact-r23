@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -16,14 +15,17 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import ModulePageLayout from '@/layouts/modules/ModulePageLayout.vue';
 import FacturaAnulacionModal from '@/src/components/facturacion/FacturaAnulacionModal.vue';
 import FacturaDetalleModal from '@/src/components/facturacion/FacturaDetalleModal.vue';
+import { useAuthStore } from '@/src/stores/authStore';
 import { useFacturaStore } from '@/src/stores/facturacion/facturaStore';
 import { Link } from '@inertiajs/vue3';
 import {
     AlertCircle,
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
     Ban,
     Check,
     CheckCircle2,
@@ -50,7 +52,62 @@ import { computed, onMounted, ref, watch } from 'vue';
 type Factura = Record<string, any>;
 
 const store = useFacturaStore();
+const auth = useAuthStore();
 const facturas = computed<Factura[]>(() => store.state.items as Factura[]);
+const isSuperadmin = computed(() =>
+    auth.roles.value.some((role) => role.slug === 'superadmin'),
+);
+type SortKey =
+    | 'numero_factura'
+    | 'fecha_emision'
+    | 'cliente'
+    | 'monto_total'
+    | 'estado_factura';
+const sortKey = ref<SortKey>('fecha_emision');
+const sortDirection = ref<'asc' | 'desc'>('desc');
+const sortValue = (item: Factura, key: SortKey) => {
+    if (key === 'cliente') {
+        return String(
+            item.cliente?.razon_social ?? item.cliente?.nombre ?? '',
+        ).toLocaleLowerCase('es');
+    }
+    if (key === 'fecha_emision') {
+        return new Date(String(item.fecha_emision ?? '')).getTime() || 0;
+    }
+    if (key === 'numero_factura' || key === 'monto_total') {
+        return Number(item[key] ?? 0);
+    }
+    return String(item[key] ?? '').toLocaleLowerCase('es');
+};
+const sortedFacturas = computed(() =>
+    [...facturas.value].sort((left, right) => {
+        const leftValue = sortValue(left, sortKey.value);
+        const rightValue = sortValue(right, sortKey.value);
+        const result =
+            typeof leftValue === 'number' && typeof rightValue === 'number'
+                ? leftValue - rightValue
+                : String(leftValue).localeCompare(String(rightValue), 'es', {
+                      numeric: true,
+                      sensitivity: 'base',
+                  });
+
+        return sortDirection.value === 'asc' ? result : -result;
+    }),
+);
+const changeSort = (key: SortKey) => {
+    if (sortKey.value === key) {
+        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+        return;
+    }
+    sortKey.value = key;
+    sortDirection.value = key === 'fecha_emision' ? 'desc' : 'asc';
+};
+const sortIcon = (key: SortKey) =>
+    sortKey.value !== key
+        ? ArrowUpDown
+        : sortDirection.value === 'asc'
+          ? ArrowUp
+          : ArrowDown;
 const emitDialogOpen = ref(false);
 const detailDialogOpen = ref(false);
 const anularDialogOpen = ref(false);
@@ -229,7 +286,9 @@ const metodoPagoRequiresGiftCardAmount = (codigo?: unknown) =>
 const applyProductoServicio = (index: number) => {
     const detalle = store.state.emitForm.detalles[index];
     const producto = productosServicios.value.find(
-        (item) => String(item.id ?? '') === String(detalle.producto_servicio_id ?? ''),
+        (item) =>
+            String(item.id ?? '') ===
+            String(detalle.producto_servicio_id ?? ''),
     );
 
     if (!detalle || !producto) return;
@@ -242,7 +301,9 @@ const applyProductoServicio = (index: number) => {
 };
 const applySucursalFactura = () => {
     const firstPunto = puntosVentaDisponibles.value[0];
-    store.state.emitForm.punto_venta_id = firstPunto ? String(firstPunto.id ?? '') : '';
+    store.state.emitForm.punto_venta_id = firstPunto
+        ? String(firstPunto.id ?? '')
+        : '';
 };
 const selectFactura = (item: Factura) => {
     selectedFacturaId.value = Number(item.id);
@@ -412,6 +473,7 @@ onMounted(store.load);
             </div>
 
             <section
+                v-if="isSuperadmin"
                 class="rounded-xl border border-[#cfdad3] bg-white p-4 shadow-sm"
                 aria-labelledby="siat-health-title"
             >
@@ -526,6 +588,7 @@ onMounted(store.load);
             </section>
 
             <section
+                v-if="isSuperadmin"
                 class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
                 aria-label="Resumen de facturacion"
             >
@@ -589,7 +652,14 @@ onMounted(store.load);
                 </article>
             </section>
 
-            <div class="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_280px]">
+            <div
+                :class="[
+                    'grid gap-4',
+                    isSuperadmin
+                        ? '2xl:grid-cols-[minmax(0,1fr)_280px]'
+                        : 'grid-cols-1',
+                ]"
+            >
                 <section
                     class="overflow-hidden rounded-xl border border-[#d5dfd8] bg-white shadow-sm"
                 >
@@ -728,11 +798,64 @@ onMounted(store.load);
                                 class="bg-[#f5f8f6] text-left text-xs font-bold text-[#3f4b43]"
                             >
                                 <tr>
-                                    <th class="px-4 py-3">Factura</th>
-                                    <th class="px-4 py-3">Fecha</th>
-                                    <th class="px-4 py-3">Cliente</th>
-                                    <th class="px-4 py-3 text-right">Total</th>
-                                    <th class="px-4 py-3">Estado SIAT</th>
+                                    <th
+                                        v-for="column in [
+                                            {
+                                                key: 'numero_factura',
+                                                label: 'Factura',
+                                            },
+                                            {
+                                                key: 'fecha_emision',
+                                                label: 'Fecha',
+                                            },
+                                            {
+                                                key: 'cliente',
+                                                label: 'Cliente',
+                                            },
+                                            {
+                                                key: 'monto_total',
+                                                label: 'Total',
+                                                align: 'right',
+                                            },
+                                            {
+                                                key: 'estado_factura',
+                                                label: 'Estado',
+                                            },
+                                        ]"
+                                        :key="column.key"
+                                        :class="[
+                                            'px-4 py-3',
+                                            column.align === 'right'
+                                                ? 'text-right'
+                                                : '',
+                                        ]"
+                                    >
+                                        <button
+                                            type="button"
+                                            :class="[
+                                                'inline-flex items-center gap-1.5 hover:text-[#168447]',
+                                                column.align === 'right'
+                                                    ? 'ml-auto'
+                                                    : '',
+                                            ]"
+                                            :aria-label="`Ordenar por ${column.label}`"
+                                            @click="
+                                                changeSort(
+                                                    column.key as SortKey,
+                                                )
+                                            "
+                                        >
+                                            {{ column.label }}
+                                            <component
+                                                :is="
+                                                    sortIcon(
+                                                        column.key as SortKey,
+                                                    )
+                                                "
+                                                class="size-3.5"
+                                            />
+                                        </button>
+                                    </th>
                                     <th class="px-4 py-3 text-right">
                                         Acciones
                                     </th>
@@ -740,7 +863,7 @@ onMounted(store.load);
                             </thead>
                             <tbody>
                                 <tr
-                                    v-for="item in facturas"
+                                    v-for="item in sortedFacturas"
                                     :key="item.id"
                                     :class="[
                                         'cursor-pointer border-t border-[#e3e9e5] transition hover:bg-[#f5f8f6]',
@@ -769,6 +892,7 @@ onMounted(store.load);
                                             }}
                                         </p>
                                         <p
+                                            v-if="isSuperadmin"
                                             class="max-w-36 truncate text-xs text-[#6c786f]"
                                             :title="item.cuf"
                                         >
@@ -841,7 +965,9 @@ onMounted(store.load);
                                                             capabilities.consultar
                                                         "
                                                         @select="
-                                                            openSiatConsult(item)
+                                                            openSiatConsult(
+                                                                item,
+                                                            )
                                                         "
                                                         ><ExternalLink
                                                             class="size-4"
@@ -948,6 +1074,7 @@ onMounted(store.load);
                 </section>
 
                 <aside
+                    v-if="isSuperadmin"
                     class="rounded-xl border border-[#d5dfd8] bg-white p-4 shadow-sm"
                     aria-live="polite"
                 >
@@ -1064,6 +1191,7 @@ onMounted(store.load);
 
             <section class="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_290px]">
                 <div
+                    v-if="isSuperadmin"
                     class="rounded-xl border border-[#d5dfd8] bg-white p-4 shadow-sm"
                 >
                     <h2 class="font-bold">
@@ -1165,6 +1293,7 @@ onMounted(store.load);
                     </p>
                 </div>
                 <div
+                    v-if="isSuperadmin"
                     :class="[
                         'rounded-xl border p-4 shadow-sm',
                         health.contingencia
@@ -1251,6 +1380,7 @@ onMounted(store.load);
         <FacturaDetalleModal
             v-model:open="detailDialogOpen"
             :factura="store.state.currentItem"
+            :show-technical-details="isSuperadmin"
         />
         <FacturaAnulacionModal
             v-model:open="anularDialogOpen"

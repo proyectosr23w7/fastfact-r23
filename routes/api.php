@@ -16,6 +16,7 @@ use App\Http\Controllers\Inventario\ArticuloPrecioController;
 use App\Http\Controllers\Inventario\CategoriaController;
 use App\Http\Controllers\Inventario\MarcaController;
 use App\Http\Controllers\Inventario\UnidadMedidaController;
+use App\Http\Controllers\Seguridad\IntegrationApiTokenController;
 use App\Http\Controllers\Seguridad\PermisoController as SeguridadPermisoController;
 use App\Http\Controllers\Seguridad\RolController as SeguridadRolController;
 use App\Http\Controllers\Seguridad\UsuarioController as SeguridadUsuarioController;
@@ -77,6 +78,13 @@ Route::middleware(['web', 'auth'])->prefix('configuracion')->group(function () {
 
 Route::middleware(['web', 'auth'])->prefix('seguridad')->group(function () {
     Route::get('contexto', [SeguridadUsuarioController::class, 'contexto']);
+
+    Route::get('tokens-integracion', [IntegrationApiTokenController::class, 'index'])
+        ->middleware('permission:integracion.tokens.manage,seguridad.usuarios.manage');
+    Route::post('tokens-integracion', [IntegrationApiTokenController::class, 'store'])
+        ->middleware('permission:integracion.tokens.manage,seguridad.usuarios.manage');
+    Route::patch('tokens-integracion/{token}/revocar', [IntegrationApiTokenController::class, 'revoke'])
+        ->middleware('permission:integracion.tokens.manage,seguridad.usuarios.manage');
 
     Route::apiResource('usuarios', SeguridadUsuarioController::class)
         ->middleware('permission:seguridad.usuarios.manage')

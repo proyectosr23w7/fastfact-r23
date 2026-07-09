@@ -11,9 +11,9 @@ class PuntoVentaResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'sucursal_id' => $this->sucursal_id,
-            'codigo' => $this->codigo,
+            'id' => (int) $this->id,
+            'sucursal_id' => (int) $this->sucursal_id,
+            'codigo' => (int) $this->codigo,
             'nombre' => $this->nombre,
             'descripcion' => $this->descripcion,
             'tipo_impresion' => $this->tipo_impresion,
@@ -22,8 +22,8 @@ class PuntoVentaResource extends JsonResource
                 ? CuisResource::make($this->cuisVigente)->resolve()
                 : null),
             'sucursal' => $this->whenLoaded('sucursal', fn () => [
-                'id' => $this->sucursal?->id,
-                'codigo' => $this->sucursal?->codigo,
+                'id' => $this->sucursal?->id !== null ? (int) $this->sucursal->id : null,
+                'codigo' => $this->sucursal?->codigo !== null ? (int) $this->sucursal->codigo : null,
                 'nombre' => $this->sucursal?->nombre,
             ]),
             'created_at' => $this->created_at,
