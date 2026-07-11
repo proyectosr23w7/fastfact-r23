@@ -25,6 +25,14 @@
 !/storage/app/private/siat/certificados/.gitignore
 .tmp-chrome-*/
 *.sql
+*.bat
+*.cmd
+*.ps1
+*.tmp
+*.docx
+*.xlsx
+~$*.docx
+tmp_*.xlsx
 *.p12
 *.pfx
 .DS_Store
@@ -54,3 +62,4 @@ node_modules/
 
 # Local design/reference artifacts
 /docs/mockups/
+/marketing/
