@@ -33,7 +33,11 @@ class CufdController extends Controller
 
     public function store(StoreCufdRequest $request): JsonResponse
     {
-        $cufd = $this->service->registrar($request->validated(), $request->user()->id);
+        $cufd = $this->service->registrar(
+            $request->validated(),
+            $request->user()->id,
+            $request->user(),
+        );
 
         return response()->json([
             'success' => true,

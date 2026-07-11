@@ -3,14 +3,16 @@
 namespace App\Repositories\Facturacion;
 
 use App\Models\Factura;
+use App\Models\User;
 use App\Models\VentaCabecera;
+use App\Support\OperationalContextScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class FacturaRepository
 {
-    public function allForIndex(array $filters = []): Collection
+    public function allForIndex(array $filters = [], ?User $user = null): Collection
     {
         $query = Factura::query()
             ->with([
@@ -27,7 +29,8 @@ class FacturaRepository
                 'anulaciones.user:id,name,email',
             ]);
 
-        $this->applyFilters($query, $filters);
+        OperationalContextScope::apply($query, $user);
+        $this->applyFilters($query, OperationalContextScope::mergeFilters($filters, $user));
 
         return $query
             ->when(
@@ -47,10 +50,11 @@ class FacturaRepository
             ->get();
     }
 
-    public function operationalSummary(array $filters = []): array
+    public function operationalSummary(array $filters = [], ?User $user = null): array
     {
         $base = Factura::query();
-        $this->applyFilters($base, $filters);
+        OperationalContextScope::apply($base, $user);
+        $this->applyFilters($base, OperationalContextScope::mergeFilters($filters, $user));
 
         $summary = function (callable $constraint) use ($base): array {
             $query = clone $base;
@@ -135,13 +139,17 @@ class FacturaRepository
             ->findOrFail($factura->id);
     }
 
-    public function ventasFacturables(): Collection
+    public function ventasFacturables(?User $user = null): Collection
     {
-        return VentaCabecera::query()
+        $query = VentaCabecera::query()
             ->with(['cliente:id,nombre,razon_social,nit_ci', 'sucursal:id,codigo,nombre', 'puntoVenta:id,sucursal_id,codigo,nombre'])
             ->where('estado', 'confirmada')
             ->where('requiere_factura', true)
-            ->whereDoesntHave('factura')
+            ->whereDoesntHave('factura');
+
+        OperationalContextScope::apply($query, $user);
+
+        return $query
             ->orderByDesc('fecha_venta')
             ->orderByDesc('id')
             ->get();

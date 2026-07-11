@@ -127,6 +127,14 @@ const metodosPago = computed(() => metaList('metodos_pago'));
 const clientes = computed(() => metaList('clientes'));
 const sucursales = computed(() => metaList('sucursales'));
 const puntosVenta = computed(() => metaList('puntos_venta'));
+const puntosVentaFiltro = computed(() =>
+    puntosVenta.value.filter(
+        (punto) =>
+            !store.state.filters.sucursal_id ||
+            String(punto.sucursal_id ?? '') ===
+                String(store.state.filters.sucursal_id),
+    ),
+);
 const puntosVentaDisponibles = computed(() =>
     puntosVenta.value.filter(
         (punto) =>
@@ -356,6 +364,21 @@ const clearFilters = async () => {
     store.resetFilters();
     await store.load();
 };
+watch(
+    () => store.state.filters.sucursal_id,
+    () => {
+        if (
+            store.state.filters.punto_venta_id &&
+            !puntosVentaFiltro.value.some(
+                (punto) =>
+                    String(punto.id ?? '') ===
+                    String(store.state.filters.punto_venta_id),
+            )
+        ) {
+            store.state.filters.punto_venta_id = '';
+        }
+    },
+);
 const changeScope = async (scope: string) => {
     store.state.filters.scope = scope;
     await store.load();
@@ -693,7 +716,7 @@ onMounted(store.load);
                         </button>
                     </div>
                     <form
-                        class="grid gap-3 border-b border-[#dce5df] bg-[#fbfcfb] p-3 md:grid-cols-2 xl:grid-cols-[1.45fr_repeat(4,minmax(120px,0.8fr))_auto]"
+                        class="grid gap-3 border-b border-[#dce5df] bg-[#fbfcfb] p-3 md:grid-cols-2 xl:grid-cols-[1.45fr_repeat(5,minmax(120px,0.8fr))_auto]"
                         @submit.prevent="applyFilters"
                     >
                         <div class="relative">
@@ -744,6 +767,20 @@ onMounted(store.load);
                                 :value="String(sucursal.id)"
                             >
                                 {{ sucursal.nombre }}
+                            </option>
+                        </select>
+                        <select
+                            v-model="store.state.filters.punto_venta_id"
+                            class="company-select"
+                            aria-label="Punto de venta"
+                        >
+                            <option value="">Todos los puntos</option>
+                            <option
+                                v-for="punto in puntosVentaFiltro"
+                                :key="punto.id"
+                                :value="String(punto.id)"
+                            >
+                                {{ punto.nombre }}
                             </option>
                         </select>
                         <div class="flex gap-2">

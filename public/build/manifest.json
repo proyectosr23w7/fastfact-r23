@@ -27,8 +27,8 @@
       "_icons-CURJT1Dd.js"
     ]
   },
-  "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-Bgh6nPCp.js": {
-    "file": "assets/CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-Bgh6nPCp.js",
+  "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-BDI4UzUZ.js": {
+    "file": "assets/CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-BDI4UzUZ.js",
     "name": "CufdCafcWorkspace.vue_vue_type_script_setup_true_lang",
     "imports": [
       "_framework-CYv8xcdK.js",
@@ -198,7 +198,7 @@
     ]
   },
   "resources/js/app.ts": {
-    "file": "assets/app-rd10NFRc.js",
+    "file": "assets/app-BN-XZ3-H.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -259,7 +259,7 @@
       "resources/js/pages/settings/TwoFactor.vue"
     ],
     "css": [
-      "assets/app-Ce4CeK3u.css"
+      "assets/app-nbo-sko0.css"
     ]
   },
   "resources/js/pages/Dashboard.vue": {
@@ -444,7 +444,7 @@
     ]
   },
   "resources/js/pages/settings/Appearance.vue": {
-    "file": "assets/Appearance-DCWbDHy8.js",
+    "file": "assets/Appearance-CRRfWY_m.js",
     "name": "Appearance",
     "src": "resources/js/pages/settings/Appearance.vue",
     "isDynamicEntry": true,
@@ -591,12 +591,12 @@
     ]
   },
   "resources/js/src/views/facturacion/CafcView.vue": {
-    "file": "assets/CafcView-16EtktYG.js",
+    "file": "assets/CafcView-DcrZ9Ddv.js",
     "name": "CafcView",
     "src": "resources/js/src/views/facturacion/CafcView.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-Bgh6nPCp.js",
+      "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-BDI4UzUZ.js",
       "_framework-CYv8xcdK.js",
       "_InputError.vue_vue_type_script_setup_true_lang-V6_ibqMH.js",
       "_ui-kit-DjnXfBMb.js",
@@ -630,12 +630,12 @@
     ]
   },
   "resources/js/src/views/facturacion/CufdView.vue": {
-    "file": "assets/CufdView-CrERpgVz.js",
+    "file": "assets/CufdView-ZkFA3Dcw.js",
     "name": "CufdView",
     "src": "resources/js/src/views/facturacion/CufdView.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-Bgh6nPCp.js",
+      "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-BDI4UzUZ.js",
       "_framework-CYv8xcdK.js",
       "_InputError.vue_vue_type_script_setup_true_lang-V6_ibqMH.js",
       "_ui-kit-DjnXfBMb.js",
@@ -707,7 +707,7 @@
     ]
   },
   "resources/js/src/views/facturacion/FacturaView.vue": {
-    "file": "assets/FacturaView-D1USI4C2.js",
+    "file": "assets/FacturaView-nyVoxFyc.js",
     "name": "FacturaView",
     "src": "resources/js/src/views/facturacion/FacturaView.vue",
     "isDynamicEntry": true,

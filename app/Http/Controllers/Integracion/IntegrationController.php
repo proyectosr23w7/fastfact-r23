@@ -19,6 +19,7 @@ use App\Services\Facturacion\FacturaDirectaService;
 use App\Services\Facturacion\FacturaService;
 use App\Services\Inventario\ArticuloService;
 use App\Services\Ventas\ClienteService;
+use App\Support\OperationalContextScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -218,6 +219,8 @@ class IntegrationController extends Controller
 
     public function anularFactura(Request $request, Factura $factura): JsonResponse
     {
+        $this->facturaService->autorizarAcceso($factura, $request->user());
+
         $data = Validator::make($request->all(), [
             'codigo_motivo_anulacion' => ['required', 'string', Rule::exists('sin_motivos_anulacion', 'codigo_clasificador')->where('estado', true)],
             'descripcion_motivo' => ['nullable', 'string', 'max:255'],
@@ -234,6 +237,8 @@ class IntegrationController extends Controller
 
     public function revertirFactura(Request $request, Factura $factura): JsonResponse
     {
+        $this->facturaService->autorizarAcceso($factura, $request->user());
+
         $factura = $this->facturaService->revertirAnulacion($factura, $request->user());
 
         return response()->json([
@@ -259,6 +264,7 @@ class IntegrationController extends Controller
             ->exists();
 
         abort_unless($exists, 422, 'El punto de venta no pertenece a la sucursal indicada.');
+        OperationalContextScope::authorize($request->user(), $sucursalId, $puntoVentaId);
 
         return [$sucursalId, $puntoVentaId];
     }
