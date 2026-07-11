@@ -38,6 +38,7 @@ import {
     LoaderCircle,
     MoreVertical,
     Plus,
+    Printer,
     RotateCcw,
     Search,
     Send,
@@ -324,6 +325,9 @@ const changeScope = async (scope: string) => {
 };
 const downloadFile = (url?: string | null) => {
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
+};
+const printFactura = (item: Factura) => {
+    downloadFile(String(item.pdf_download_url ?? ''));
 };
 const openSiatConsult = (item: Factura) => {
     const url = String(item.consulta_siat_url ?? '');
@@ -860,6 +864,18 @@ onMounted(store.load);
                                                 ><Eye
                                                     class="size-4"
                                                 />Detalle</Button
+                                            ><Button
+                                                v-if="
+                                                    capabilities.descargar &&
+                                                    item.pdf_download_url
+                                                "
+                                                variant="outline"
+                                                size="sm"
+                                                class="border-[#cbd8cf] text-[#126c3a]"
+                                                @click="printFactura(item)"
+                                                ><Printer
+                                                    class="size-4"
+                                                />Imprimir</Button
                                             ><DropdownMenu
                                                 ><DropdownMenuTrigger as-child
                                                     ><Button
