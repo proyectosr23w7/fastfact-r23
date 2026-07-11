@@ -18,7 +18,6 @@ import {
     Building2,
     CalendarClock,
     Check,
-    CheckCircle2,
     ClipboardCheck,
     Eye,
     FileKey2,
@@ -63,25 +62,32 @@ const filters = ref({
 const canManageCafc = computed(() =>
     Boolean(cafcStore.state.meta.puede_gestionar ?? false),
 );
-const cufdItems = computed<DataItem[]>(() => cufdStore.state.items as DataItem[]);
-const cafcItems = computed<DataItem[]>(() => cafcStore.state.items as DataItem[]);
+const cufdItems = computed<DataItem[]>(
+    () => cufdStore.state.items as DataItem[],
+);
+const cafcItems = computed<DataItem[]>(
+    () => cafcStore.state.items as DataItem[],
+);
 const sucursales = computed<DataItem[]>(
     () =>
-        ((cufdStore.state.meta.sucursales as DataItem[] | undefined) ??
-            (cafcStore.state.meta.sucursales as DataItem[] | undefined) ??
-            []),
+        (cufdStore.state.meta.sucursales as DataItem[] | undefined) ??
+        (cafcStore.state.meta.sucursales as DataItem[] | undefined) ??
+        [],
 );
 const puntosVenta = computed<DataItem[]>(
     () =>
-        ((cufdStore.state.meta.puntos_venta as DataItem[] | undefined) ??
-            (cafcStore.state.meta.puntos_venta as DataItem[] | undefined) ??
-            []),
+        (cufdStore.state.meta.puntos_venta as DataItem[] | undefined) ??
+        (cafcStore.state.meta.puntos_venta as DataItem[] | undefined) ??
+        [],
+);
+const isGlobalManager = computed(
+    () => sucursales.value.length > 1 || puntosVenta.value.length > 1,
 );
 const ambientes = computed<DataItem[]>(() => {
     const values =
-        ((cufdStore.state.meta.ambientes as DataItem[] | undefined) ??
-            (cafcStore.state.meta.ambientes as DataItem[] | undefined) ??
-            []);
+        (cufdStore.state.meta.ambientes as DataItem[] | undefined) ??
+        (cafcStore.state.meta.ambientes as DataItem[] | undefined) ??
+        [];
 
     return values.map((ambiente) => ({
         ...ambiente,
@@ -93,9 +99,9 @@ const ambientes = computed<DataItem[]>(() => {
 });
 const siatProfile = computed<DataItem>(
     () =>
-        ((cufdStore.state.meta.siat as DataItem | undefined) ??
-            (cafcStore.state.meta.siat as DataItem | undefined) ??
-            {}),
+        (cufdStore.state.meta.siat as DataItem | undefined) ??
+        (cafcStore.state.meta.siat as DataItem | undefined) ??
+        {},
 );
 const puntosVentaFiltro = computed(() =>
     puntosVenta.value.filter(
@@ -161,8 +167,10 @@ const truncarCodigo = (value: unknown, start = 10, end = 4) => {
     return `${code.slice(0, start)}...${code.slice(-end)}`;
 };
 const ambienteLabel = (value?: string | null) =>
-    ambientes.value.find((ambiente) => String(ambiente.value ?? '') === String(value ?? ''))
-        ?.label ??     value ??
+    ambientes.value.find(
+        (ambiente) => String(ambiente.value ?? '') === String(value ?? ''),
+    )?.label ??
+    value ??
     '-';
 
 const cufdEstado = (item: DataItem) => {
@@ -209,14 +217,16 @@ const cafcEstadoClass = (item: DataItem) =>
 const cufdVigente = computed(
     () =>
         cufdItems.value.find((item) => cufdEstado(item) === 'vigente') ??
-        cufdItems.value.find((item) => cufdEstado(item) === 'por_vencer') ?? null,
+        cufdItems.value.find((item) => cufdEstado(item) === 'por_vencer') ??
+        null,
 );
-const ultimaSolicitud = computed(() =>
-    [...cufdItems.value].sort(
-        (a, b) =>
-            (parseDate(b.created_at)?.getTime() ?? 0) -
-            (parseDate(a.created_at)?.getTime() ?? 0),
-    )[0] ?? null,
+const ultimaSolicitud = computed(
+    () =>
+        [...cufdItems.value].sort(
+            (a, b) =>
+                (parseDate(b.created_at)?.getTime() ?? 0) -
+                (parseDate(a.created_at)?.getTime() ?? 0),
+        )[0] ?? null,
 );
 const cufdVigentes = computed(
     () =>
@@ -225,7 +235,9 @@ const cufdVigentes = computed(
         ).length,
 );
 const cufdPorVencer = computed(
-    () => cufdItems.value.filter((item) => cufdEstado(item) === 'por_vencer').length,
+    () =>
+        cufdItems.value.filter((item) => cufdEstado(item) === 'por_vencer')
+            .length,
 );
 const cafcActivos = computed(
     () => cafcItems.value.filter((item) => item.resumen?.vigente_hoy).length,
@@ -233,7 +245,8 @@ const cafcActivos = computed(
 const cafcPorAgotarse = computed(
     () =>
         cafcItems.value.filter(
-            (item) => String(item.resumen?.estado_operativo ?? '') === 'por_agotarse',
+            (item) =>
+                String(item.resumen?.estado_operativo ?? '') === 'por_agotarse',
         ).length,
 );
 const selectedCufdStatus = computed(() =>
@@ -286,10 +299,14 @@ const healthRemaining = computed(() => {
     return `${days} ${days === 1 ? 'día' : 'días'}`;
 });
 const uniquePuntosConCufd = computed(
-    () => new Set(cufdItems.value.map((item) => String(item.punto_venta_id))).size,
+    () =>
+        new Set(cufdItems.value.map((item) => String(item.punto_venta_id)))
+            .size,
 );
 const totalPuntosVenta = computed(() => puntosVenta.value.length);
-const loading = computed(() => cufdStore.state.loading || cafcStore.state.loading);
+const loading = computed(
+    () => cufdStore.state.loading || cafcStore.state.loading,
+);
 const generalError = computed(
     () => cufdStore.state.generalError || cafcStore.state.generalError,
 );
@@ -413,7 +430,10 @@ watch(
     },
 );
 watch(cufdItems, (items) => {
-    if (!selectedCufd.value || !items.some((item) => item.id === selectedCufd.value?.id)) {
+    if (
+        !selectedCufd.value ||
+        !items.some((item) => item.id === selectedCufd.value?.id)
+    ) {
         selectedCufd.value = cufdVigente.value ?? items[0] ?? null;
     }
 });
@@ -442,7 +462,10 @@ onMounted(async () => {
     >
         <template #actions>
             <div class="flex flex-wrap gap-3">
-                <Button class="company-action-primary gap-2" @click="openCufdDialog">
+                <Button
+                    class="company-action-primary gap-2"
+                    @click="openCufdDialog"
+                >
                     <FileKey2 class="size-4" />
                     Solicitar nuevo CUFD
                 </Button>
@@ -476,7 +499,9 @@ onMounted(async () => {
 
             <section class="rounded-lg border border-[#dfe7e2] bg-white">
                 <div class="grid gap-0 lg:grid-cols-5">
-                    <div class="flex items-center gap-4 border-[#dfe7e2] p-4 lg:border-r">
+                    <div
+                        class="flex items-center gap-4 border-[#dfe7e2] p-4 lg:border-r"
+                    >
                         <div
                             class="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#168447] text-white"
                         >
@@ -484,53 +509,89 @@ onMounted(async () => {
                         </div>
                         <div>
                             <p class="font-semibold text-[#101713]">
-                                {{ cufdVigente ? 'CUFD vigente' : 'Sin CUFD vigente' }}
+                                {{
+                                    cufdVigente
+                                        ? 'CUFD vigente'
+                                        : 'Sin CUFD vigente'
+                                }}
                             </p>
                             <p class="text-sm text-[#536158]">
-                                {{ cufdVigente ? 'Todo en orden' : 'Requiere atención' }}
+                                {{
+                                    cufdVigente
+                                        ? 'Todo en orden'
+                                        : 'Requiere atención'
+                                }}
                             </p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4 border-[#dfe7e2] p-4 lg:border-r">
+                    <div
+                        class="flex items-center gap-4 border-[#dfe7e2] p-4 lg:border-r"
+                    >
                         <Building2 class="size-8 text-[#168447]" />
                         <div>
                             <p class="text-xs text-[#536158]">Sucursal</p>
                             <p class="font-medium text-[#101713]">
-                                {{ cufdVigente?.sucursal?.nombre || 'No definida' }}
+                                {{
+                                    cufdVigente?.sucursal?.nombre ||
+                                    'No definida'
+                                }}
                             </p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4 border-[#dfe7e2] p-4 lg:border-r">
+                    <div
+                        class="flex items-center gap-4 border-[#dfe7e2] p-4 lg:border-r"
+                    >
                         <Store class="size-8 text-[#168447]" />
                         <div>
                             <p class="text-xs text-[#536158]">Punto de venta</p>
                             <p class="font-medium text-[#101713]">
-                                {{ cufdVigente?.punto_venta?.nombre || 'No definido' }}
+                                {{
+                                    cufdVigente?.punto_venta?.nombre ||
+                                    'No definido'
+                                }}
                             </p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4 border-[#dfe7e2] p-4 lg:border-r">
+                    <div
+                        class="flex items-center gap-4 border-[#dfe7e2] p-4 lg:border-r"
+                    >
                         <CalendarClock
                             class="size-8"
-                            :class="cufdPorVencer > 0 ? 'text-amber-600' : 'text-[#168447]'"
+                            :class="
+                                cufdPorVencer > 0
+                                    ? 'text-amber-600'
+                                    : 'text-[#168447]'
+                            "
                         />
                         <div>
                             <p class="text-xs text-[#536158]">Vence en</p>
-                            <p class="font-semibold text-[#101713]">{{ healthRemaining }}</p>
+                            <p class="font-semibold text-[#101713]">
+                                {{ healthRemaining }}
+                            </p>
                             <p class="text-xs text-[#536158]">
-                                {{ formatDateTime(cufdVigente?.fecha_vigencia) }}
+                                {{
+                                    formatDateTime(cufdVigente?.fecha_vigencia)
+                                }}
                             </p>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 p-4">
                         <ClipboardCheck class="size-8 text-[#168447]" />
                         <div>
-                            <p class="text-xs text-[#536158]">Última solicitud</p>
+                            <p class="text-xs text-[#536158]">
+                                Última solicitud
+                            </p>
                             <p class="font-semibold text-[#101713]">
-                                {{ formatDateTime(ultimaSolicitud?.created_at) }}
+                                {{
+                                    formatDateTime(ultimaSolicitud?.created_at)
+                                }}
                             </p>
                             <p class="text-xs text-[#536158]">
-                                Por {{ ultimaSolicitud?.usuario?.name || 'No registrado' }}
+                                Por
+                                {{
+                                    ultimaSolicitud?.usuario?.name ||
+                                    'No registrado'
+                                }}
                             </p>
                         </div>
                     </div>
@@ -545,9 +606,15 @@ onMounted(async () => {
                         </div>
                         <div>
                             <p class="text-sm text-[#536158]">CUFD vigentes</p>
-                            <p class="text-2xl font-bold text-[#101713]">{{ cufdVigentes }}</p>
+                            <p class="text-2xl font-bold text-[#101713]">
+                                {{ cufdVigentes }}
+                            </p>
                             <p class="text-xs text-[#536158]">
-                                De {{ totalPuntosVenta || uniquePuntosConCufd }} puntos de venta
+                                De
+                                {{
+                                    totalPuntosVenta || uniquePuntosConCufd
+                                }}
+                                puntos de venta
                             </p>
                         </div>
                     </div>
@@ -559,8 +626,12 @@ onMounted(async () => {
                         </div>
                         <div>
                             <p class="text-sm text-[#536158]">Por vencer</p>
-                            <p class="text-2xl font-bold text-[#101713]">{{ cufdPorVencer }}</p>
-                            <p class="text-xs text-[#536158]">En próximas 24 horas</p>
+                            <p class="text-2xl font-bold text-[#101713]">
+                                {{ cufdPorVencer }}
+                            </p>
+                            <p class="text-xs text-[#536158]">
+                                En próximas 24 horas
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -571,8 +642,12 @@ onMounted(async () => {
                         </div>
                         <div>
                             <p class="text-sm text-[#536158]">CAFC activos</p>
-                            <p class="text-2xl font-bold text-[#101713]">{{ cafcActivos }}</p>
-                            <p class="text-xs text-[#536158]">Disponibles para contingencia</p>
+                            <p class="text-2xl font-bold text-[#101713]">
+                                {{ cafcActivos }}
+                            </p>
+                            <p class="text-xs text-[#536158]">
+                                Disponibles para contingencia
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -582,9 +657,15 @@ onMounted(async () => {
                             <AlertTriangle class="size-6" />
                         </div>
                         <div>
-                            <p class="text-sm text-[#536158]">Rangos por agotarse</p>
-                            <p class="text-2xl font-bold text-[#101713]">{{ cafcPorAgotarse }}</p>
-                            <p class="text-xs text-[#536158]">Menos del umbral disponible</p>
+                            <p class="text-sm text-[#536158]">
+                                Rangos por agotarse
+                            </p>
+                            <p class="text-2xl font-bold text-[#101713]">
+                                {{ cafcPorAgotarse }}
+                            </p>
+                            <p class="text-xs text-[#536158]">
+                                Menos del umbral disponible
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -592,7 +673,9 @@ onMounted(async () => {
 
             <div class="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <main class="space-y-4">
-                    <section class="rounded-lg border border-[#dfe7e2] bg-white">
+                    <section
+                        class="rounded-lg border border-[#dfe7e2] bg-white"
+                    >
                         <div class="border-b border-[#dfe7e2] px-4">
                             <div class="flex gap-5">
                                 <button
@@ -622,10 +705,15 @@ onMounted(async () => {
                             </div>
                         </div>
 
-                        <div class="grid gap-3 p-4 md:grid-cols-2 2xl:grid-cols-5">
+                        <div
+                            class="grid gap-3 p-4 md:grid-cols-2 2xl:grid-cols-5"
+                        >
                             <div class="company-field">
                                 <Label class="company-label">Sucursal</Label>
-                                <select v-model="filters.sucursal_id" class="company-select">
+                                <select
+                                    v-model="filters.sucursal_id"
+                                    class="company-select"
+                                >
                                     <option value="">Todas</option>
                                     <option
                                         v-for="sucursal in sucursales"
@@ -637,8 +725,13 @@ onMounted(async () => {
                                 </select>
                             </div>
                             <div class="company-field">
-                                <Label class="company-label">Punto de venta</Label>
-                                <select v-model="filters.punto_venta_id" class="company-select">
+                                <Label class="company-label"
+                                    >Punto de venta</Label
+                                >
+                                <select
+                                    v-model="filters.punto_venta_id"
+                                    class="company-select"
+                                >
                                     <option value="">Todos</option>
                                     <option
                                         v-for="punto in puntosVentaFiltro"
@@ -651,7 +744,10 @@ onMounted(async () => {
                             </div>
                             <div class="company-field">
                                 <Label class="company-label">Ambiente</Label>
-                                <select v-model="filters.ambiente_facturacion" class="company-select">
+                                <select
+                                    v-model="filters.ambiente_facturacion"
+                                    class="company-select"
+                                >
                                     <option value="">Todos</option>
                                     <option
                                         v-for="ambiente in ambientes"
@@ -664,14 +760,20 @@ onMounted(async () => {
                             </div>
                             <div class="company-field">
                                 <Label class="company-label">Estado</Label>
-                                <select v-model="filters.estado" class="company-select">
+                                <select
+                                    v-model="filters.estado"
+                                    class="company-select"
+                                >
                                     <option value="">Todos</option>
                                     <option value="true">Activos</option>
                                     <option value="false">Inactivos</option>
                                 </select>
                             </div>
                             <div class="flex items-end gap-2">
-                                <Button class="company-action-primary flex-1 gap-2" @click="applyFilters">
+                                <Button
+                                    class="company-action-primary flex-1 gap-2"
+                                    @click="applyFilters"
+                                >
                                     <Filter class="size-4" />
                                     Filtrar
                                 </Button>
@@ -700,16 +802,24 @@ onMounted(async () => {
                         </div>
                         <div v-else class="overflow-x-auto">
                             <table class="w-full min-w-[860px] text-sm">
-                                <thead class="bg-[#F5F8F6] text-left text-xs text-[#536158]">
+                                <thead
+                                    class="bg-[#F5F8F6] text-left text-xs text-[#536158]"
+                                >
                                     <tr>
                                         <th class="px-4 py-3">Código CUFD</th>
                                         <th class="px-4 py-3">Sucursal</th>
-                                        <th class="px-4 py-3">Punto de venta</th>
-                                        <th class="px-4 py-3">Código control</th>
+                                        <th class="px-4 py-3">
+                                            Punto de venta
+                                        </th>
+                                        <th class="px-4 py-3">
+                                            Código control
+                                        </th>
                                         <th class="px-4 py-3">Vigencia</th>
                                         <th class="px-4 py-3">Ambiente</th>
                                         <th class="px-4 py-3">Estado</th>
-                                        <th class="px-4 py-3 text-right">Acciones</th>
+                                        <th class="px-4 py-3 text-right">
+                                            Acciones
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -718,17 +828,41 @@ onMounted(async () => {
                                         :key="String(item.id)"
                                         class="border-t border-[#dfe7e2]"
                                     >
-                                        <td class="px-4 py-3 font-medium text-[#101713]">
+                                        <td
+                                            class="px-4 py-3 font-medium text-[#101713]"
+                                        >
                                             {{ truncarCodigo(item.codigo) }}
                                         </td>
-                                        <td class="px-4 py-3">{{ item.sucursal?.nombre || '-' }}</td>
-                                        <td class="px-4 py-3">{{ item.punto_venta?.nombre || '-' }}</td>
                                         <td class="px-4 py-3">
-                                            {{ truncarCodigo(item.codigo_control, 8, 4) }}
+                                            {{ item.sucursal?.nombre || '-' }}
                                         </td>
-                                        <td class="px-4 py-3">{{ formatDateTime(item.fecha_vigencia) }}</td>
                                         <td class="px-4 py-3">
-                                            {{ ambienteLabel(item.ambiente_facturacion) }}
+                                            {{
+                                                item.punto_venta?.nombre || '-'
+                                            }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {{
+                                                truncarCodigo(
+                                                    item.codigo_control,
+                                                    8,
+                                                    4,
+                                                )
+                                            }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {{
+                                                formatDateTime(
+                                                    item.fecha_vigencia,
+                                                )
+                                            }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {{
+                                                ambienteLabel(
+                                                    item.ambiente_facturacion,
+                                                )
+                                            }}
                                         </td>
                                         <td class="px-4 py-3">
                                             <span
@@ -754,7 +888,9 @@ onMounted(async () => {
                                                     aria-label="Más acciones CUFD"
                                                     @click="selectCufd(item)"
                                                 >
-                                                    <MoreVertical class="size-4" />
+                                                    <MoreVertical
+                                                        class="size-4"
+                                                    />
                                                 </Button>
                                             </div>
                                         </td>
@@ -764,13 +900,16 @@ onMounted(async () => {
                                             colspan="8"
                                             class="px-4 py-10 text-center text-[#536158]"
                                         >
-                                            No hay CUFD registrados para los filtros seleccionados.
+                                            No hay CUFD registrados para los
+                                            filtros seleccionados.
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <div class="border-t border-[#dfe7e2] px-4 py-3 text-sm text-[#536158]">
+                        <div
+                            class="border-t border-[#dfe7e2] px-4 py-3 text-sm text-[#536158]"
+                        >
                             Mostrando {{ cufdItems.length }} códigos CUFD
                         </div>
                     </section>
@@ -779,8 +918,12 @@ onMounted(async () => {
                         v-if="activeTab === 'cufd'"
                         class="overflow-hidden rounded-lg border border-[#dfe7e2] bg-white"
                     >
-                        <div class="flex items-center justify-between border-b border-[#dfe7e2] px-4 py-3">
-                            <h2 class="font-semibold text-[#101713]">CAFC disponibles</h2>
+                        <div
+                            class="flex items-center justify-between border-b border-[#dfe7e2] px-4 py-3"
+                        >
+                            <h2 class="font-semibold text-[#101713]">
+                                CAFC disponibles
+                            </h2>
                             <button
                                 type="button"
                                 class="text-sm font-semibold text-[#168447] hover:text-[#0f6d38]"
@@ -791,14 +934,22 @@ onMounted(async () => {
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full min-w-[720px] text-sm">
-                                <thead class="bg-[#F5F8F6] text-left text-xs text-[#536158]">
+                                <thead
+                                    class="bg-[#F5F8F6] text-left text-xs text-[#536158]"
+                                >
                                     <tr>
                                         <th class="px-4 py-3">Código CAFC</th>
                                         <th class="px-4 py-3">Rango</th>
-                                        <th class="px-4 py-3">Facturas usadas</th>
-                                        <th class="px-4 py-3">Facturas disponibles</th>
+                                        <th class="px-4 py-3">
+                                            Facturas usadas
+                                        </th>
+                                        <th class="px-4 py-3">
+                                            Facturas disponibles
+                                        </th>
                                         <th class="px-4 py-3">Estado</th>
-                                        <th class="px-4 py-3 text-right">Acciones</th>
+                                        <th class="px-4 py-3 text-right">
+                                            Acciones
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -807,15 +958,25 @@ onMounted(async () => {
                                         :key="String(item.id)"
                                         class="border-t border-[#dfe7e2]"
                                     >
-                                        <td class="px-4 py-3 font-medium">{{ item.codigo }}</td>
-                                        <td class="px-4 py-3">
-                                            {{ item.numero_inicial || '-' }} - {{ item.numero_final || '-' }}
+                                        <td class="px-4 py-3 font-medium">
+                                            {{ item.codigo }}
                                         </td>
                                         <td class="px-4 py-3">
-                                            {{ item.resumen?.facturas_utilizadas ?? 0 }}
+                                            {{ item.numero_inicial || '-' }} -
+                                            {{ item.numero_final || '-' }}
                                         </td>
                                         <td class="px-4 py-3">
-                                            {{ item.resumen?.disponibles_restantes ?? 'Sin rango' }}
+                                            {{
+                                                item.resumen
+                                                    ?.facturas_utilizadas ?? 0
+                                            }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {{
+                                                item.resumen
+                                                    ?.disponibles_restantes ??
+                                                'Sin rango'
+                                            }}
                                         </td>
                                         <td class="px-4 py-3">
                                             <span
@@ -823,8 +984,11 @@ onMounted(async () => {
                                                 :class="cafcEstadoClass(item)"
                                             >
                                                 {{
-                                                    item.resumen?.estado_label ||
-                                                    (item.estado ? 'Activo' : 'Inactivo')
+                                                    item.resumen
+                                                        ?.estado_label ||
+                                                    (item.estado
+                                                        ? 'Activo'
+                                                        : 'Inactivo')
                                                 }}
                                             </span>
                                         </td>
@@ -835,7 +999,9 @@ onMounted(async () => {
                                                     class="company-action-secondary h-9 gap-2"
                                                     @click="
                                                         activeTab = 'cafc';
-                                                        openEditCafcDialog(item);
+                                                        openEditCafcDialog(
+                                                            item,
+                                                        );
                                                     "
                                                 >
                                                     <Eye class="size-4" />
@@ -849,7 +1015,8 @@ onMounted(async () => {
                                             colspan="6"
                                             class="px-4 py-8 text-center text-[#536158]"
                                         >
-                                            No hay CAFC disponibles para los filtros seleccionados.
+                                            No hay CAFC disponibles para los
+                                            filtros seleccionados.
                                         </td>
                                     </tr>
                                 </tbody>
@@ -870,17 +1037,23 @@ onMounted(async () => {
                         </div>
                         <div v-else class="overflow-x-auto">
                             <table class="w-full min-w-[1020px] text-sm">
-                                <thead class="bg-[#F5F8F6] text-left text-xs text-[#536158]">
+                                <thead
+                                    class="bg-[#F5F8F6] text-left text-xs text-[#536158]"
+                                >
                                     <tr>
                                         <th class="px-4 py-3">Código</th>
                                         <th class="px-4 py-3">Ambiente</th>
                                         <th class="px-4 py-3">Sucursal</th>
-                                        <th class="px-4 py-3">Punto de venta</th>
+                                        <th class="px-4 py-3">
+                                            Punto de venta
+                                        </th>
                                         <th class="px-4 py-3">Rango</th>
                                         <th class="px-4 py-3">Uso</th>
                                         <th class="px-4 py-3">Vigencia</th>
                                         <th class="px-4 py-3">Estado</th>
-                                        <th class="px-4 py-3 text-right">Acciones</th>
+                                        <th class="px-4 py-3 text-right">
+                                            Acciones
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -889,31 +1062,74 @@ onMounted(async () => {
                                         :key="String(item.id)"
                                         class="border-t border-[#dfe7e2]"
                                     >
-                                        <td class="px-4 py-3 font-medium text-[#101713]">
+                                        <td
+                                            class="px-4 py-3 font-medium text-[#101713]"
+                                        >
                                             {{ item.codigo }}
                                         </td>
                                         <td class="px-4 py-3">
-                                            {{ ambienteLabel(item.ambiente_facturacion) }}
+                                            {{
+                                                ambienteLabel(
+                                                    item.ambiente_facturacion,
+                                                )
+                                            }}
                                         </td>
-                                        <td class="px-4 py-3">{{ item.sucursal?.nombre || '-' }}</td>
-                                        <td class="px-4 py-3">{{ item.punto_venta?.nombre || '-' }}</td>
                                         <td class="px-4 py-3">
-                                            <div>{{ item.numero_inicial || '-' }} - {{ item.numero_final || '-' }}</div>
+                                            {{ item.sucursal?.nombre || '-' }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {{
+                                                item.punto_venta?.nombre || '-'
+                                            }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div>
+                                                {{
+                                                    item.numero_inicial || '-'
+                                                }}
+                                                - {{ item.numero_final || '-' }}
+                                            </div>
                                             <div class="text-xs text-[#536158]">
-                                                Sig.: {{ item.resumen?.siguiente_numero_sugerido || '-' }}
+                                                Sig.:
+                                                {{
+                                                    item.resumen
+                                                        ?.siguiente_numero_sugerido ||
+                                                    '-'
+                                                }}
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">
-                                            <div>{{ item.resumen?.facturas_utilizadas || 0 }} usadas</div>
+                                            <div>
+                                                {{
+                                                    item.resumen
+                                                        ?.facturas_utilizadas ||
+                                                    0
+                                                }}
+                                                usadas
+                                            </div>
                                             <div class="text-xs text-[#536158]">
                                                 Disponibles:
-                                                {{ item.resumen?.disponibles_restantes ?? 'Sin rango' }}
+                                                {{
+                                                    item.resumen
+                                                        ?.disponibles_restantes ??
+                                                    'Sin rango'
+                                                }}
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">
-                                            <div>{{ formatDate(item.fecha_inicio_vigencia) }}</div>
+                                            <div>
+                                                {{
+                                                    formatDate(
+                                                        item.fecha_inicio_vigencia,
+                                                    )
+                                                }}
+                                            </div>
                                             <div class="text-xs text-[#536158]">
-                                                {{ formatDate(item.fecha_fin_vigencia) }}
+                                                {{
+                                                    formatDate(
+                                                        item.fecha_fin_vigencia,
+                                                    )
+                                                }}
                                             </div>
                                         </td>
                                         <td class="px-4 py-3">
@@ -922,8 +1138,11 @@ onMounted(async () => {
                                                 :class="cafcEstadoClass(item)"
                                             >
                                                 {{
-                                                    item.resumen?.estado_label ||
-                                                    (item.estado ? 'Activo' : 'Inactivo')
+                                                    item.resumen
+                                                        ?.estado_label ||
+                                                    (item.estado
+                                                        ? 'Activo'
+                                                        : 'Inactivo')
                                                 }}
                                             </span>
                                         </td>
@@ -933,7 +1152,9 @@ onMounted(async () => {
                                                     v-if="canManageCafc"
                                                     variant="outline"
                                                     class="company-action-secondary"
-                                                    @click="openEditCafcDialog(item)"
+                                                    @click="
+                                                        openEditCafcDialog(item)
+                                                    "
                                                 >
                                                     Editar
                                                 </Button>
@@ -942,11 +1163,19 @@ onMounted(async () => {
                                                     variant="outline"
                                                     class="company-action-secondary"
                                                     :disabled="
-                                                        cafcStore.state.updatingEstadoId === Number(item.id)
+                                                        cafcStore.state
+                                                            .updatingEstadoId ===
+                                                        Number(item.id)
                                                     "
-                                                    @click="toggleCafcEstado(item)"
+                                                    @click="
+                                                        toggleCafcEstado(item)
+                                                    "
                                                 >
-                                                    {{ item.estado ? 'Desactivar' : 'Activar' }}
+                                                    {{
+                                                        item.estado
+                                                            ? 'Desactivar'
+                                                            : 'Activar'
+                                                    }}
                                                 </Button>
                                             </div>
                                         </td>
@@ -956,24 +1185,35 @@ onMounted(async () => {
                                             colspan="9"
                                             class="px-4 py-10 text-center text-[#536158]"
                                         >
-                                            No hay CAFC registrados para los filtros seleccionados.
+                                            No hay CAFC registrados para los
+                                            filtros seleccionados.
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <div class="border-t border-[#dfe7e2] px-4 py-3 text-sm text-[#536158]">
+                        <div
+                            class="border-t border-[#dfe7e2] px-4 py-3 text-sm text-[#536158]"
+                        >
                             Mostrando {{ cafcItems.length }} códigos CAFC
                         </div>
                     </section>
                 </main>
 
                 <aside class="space-y-4">
-                    <section class="rounded-lg border border-[#dfe7e2] bg-white p-4">
-                        <div class="mb-4 flex items-start justify-between gap-3">
+                    <section
+                        class="rounded-lg border border-[#dfe7e2] bg-white p-4"
+                    >
+                        <div
+                            class="mb-4 flex items-start justify-between gap-3"
+                        >
                             <div>
-                                <h2 class="font-semibold text-[#101713]">Detalle del CUFD</h2>
-                                <p class="text-sm text-[#536158]">Estado operativo del registro seleccionado</p>
+                                <h2 class="font-semibold text-[#101713]">
+                                    Detalle del CUFD
+                                </h2>
+                                <p class="text-sm text-[#536158]">
+                                    Estado operativo del registro seleccionado
+                                </p>
                             </div>
                             <button
                                 type="button"
@@ -987,15 +1227,29 @@ onMounted(async () => {
 
                         <div v-if="selectedCufd" class="space-y-4">
                             <div class="flex items-center gap-3">
-                                <div class="rounded-lg bg-[#EAF7EF] p-3 text-[#168447]">
+                                <div
+                                    class="rounded-lg bg-[#EAF7EF] p-3 text-[#168447]"
+                                >
                                     <ShieldCheck class="size-6" />
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <p class="truncate font-semibold text-[#101713]">
-                                        {{ truncarCodigo(selectedCufd.codigo, 12, 6) }}
+                                    <p
+                                        class="truncate font-semibold text-[#101713]"
+                                    >
+                                        {{
+                                            truncarCodigo(
+                                                selectedCufd.codigo,
+                                                12,
+                                                6,
+                                            )
+                                        }}
                                     </p>
                                     <p class="text-sm text-[#536158]">
-                                        {{ ambienteLabel(selectedCufd.ambiente_facturacion) }}
+                                        {{
+                                            ambienteLabel(
+                                                selectedCufd.ambiente_facturacion,
+                                            )
+                                        }}
                                     </p>
                                 </div>
                                 <span
@@ -1006,86 +1260,136 @@ onMounted(async () => {
                                 </span>
                             </div>
 
-                            <dl class="grid gap-3 border-y border-[#dfe7e2] py-4 text-sm">
+                            <dl
+                                class="grid gap-3 border-y border-[#dfe7e2] py-4 text-sm"
+                            >
                                 <div class="flex justify-between gap-3">
-                                    <dt class="text-[#536158]">Código control</dt>
-                                    <dd class="text-right font-medium text-[#101713]">
+                                    <dt class="text-[#536158]">
+                                        Código control
+                                    </dt>
+                                    <dd
+                                        class="text-right font-medium text-[#101713]"
+                                    >
                                         {{ selectedCufd.codigo_control || '-' }}
                                     </dd>
                                 </div>
                                 <div class="flex justify-between gap-3">
                                     <dt class="text-[#536158]">Sucursal</dt>
-                                    <dd class="text-right font-medium text-[#101713]">
-                                        {{ selectedCufd.sucursal?.nombre || '-' }}
+                                    <dd
+                                        class="text-right font-medium text-[#101713]"
+                                    >
+                                        {{
+                                            selectedCufd.sucursal?.nombre || '-'
+                                        }}
                                     </dd>
                                 </div>
                                 <div class="flex justify-between gap-3">
-                                    <dt class="text-[#536158]">Punto de venta</dt>
-                                    <dd class="text-right font-medium text-[#101713]">
-                                        {{ selectedCufd.punto_venta?.nombre || '-' }}
+                                    <dt class="text-[#536158]">
+                                        Punto de venta
+                                    </dt>
+                                    <dd
+                                        class="text-right font-medium text-[#101713]"
+                                    >
+                                        {{
+                                            selectedCufd.punto_venta?.nombre ||
+                                            '-'
+                                        }}
                                     </dd>
                                 </div>
                                 <div class="flex justify-between gap-3">
                                     <dt class="text-[#536158]">Dirección</dt>
-                                    <dd class="text-right font-medium text-[#101713]">
+                                    <dd
+                                        class="text-right font-medium text-[#101713]"
+                                    >
                                         {{ selectedCufd.direccion || '-' }}
                                     </dd>
                                 </div>
                             </dl>
 
                             <div>
-                                <h3 class="mb-3 text-sm font-semibold text-[#101713]">
+                                <h3
+                                    class="mb-3 text-sm font-semibold text-[#101713]"
+                                >
                                     Vigencia del CUFD
                                 </h3>
-                                <div class="h-2 overflow-hidden rounded-full bg-[#EAF7EF]">
+                                <div
+                                    class="h-2 overflow-hidden rounded-full bg-[#EAF7EF]"
+                                >
                                     <div
                                         class="h-full rounded-full"
                                         :class="
                                             selectedCufdStatus === 'vencido'
                                                 ? 'bg-red-600'
-                                                : selectedCufdStatus === 'por_vencer'
+                                                : selectedCufdStatus ===
+                                                    'por_vencer'
                                                   ? 'bg-amber-500'
                                                   : 'bg-[#168447]'
                                         "
                                         :style="{ width: `${cufdProgress}%` }"
                                     />
                                 </div>
-                                <div class="mt-3 flex justify-between gap-3 text-xs text-[#536158]">
+                                <div
+                                    class="mt-3 flex justify-between gap-3 text-xs text-[#536158]"
+                                >
                                     <span>
-                                        {{ formatDateTime(selectedCufd.created_at) }}<br />
+                                        {{
+                                            formatDateTime(
+                                                selectedCufd.created_at,
+                                            )
+                                        }}<br />
                                         Inicio
                                     </span>
                                     <span class="text-right">
-                                        {{ formatDateTime(selectedCufd.fecha_vigencia) }}<br />
+                                        {{
+                                            formatDateTime(
+                                                selectedCufd.fecha_vigencia,
+                                            )
+                                        }}<br />
                                         Fin
                                     </span>
                                 </div>
                             </div>
 
-                            <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                            <div
+                                class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800"
+                            >
                                 <div class="flex gap-2">
-                                    <AlertTriangle class="mt-0.5 size-4 shrink-0" />
+                                    <AlertTriangle
+                                        class="mt-0.5 size-4 shrink-0"
+                                    />
                                     <p>{{ cufdRecommendation }}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div v-else class="rounded-lg bg-[#F5F8F6] p-4 text-sm text-[#536158]">
-                            Selecciona un CUFD del historial para ver su contexto y vigencia.
+                        <div
+                            v-else
+                            class="rounded-lg bg-[#F5F8F6] p-4 text-sm text-[#536158]"
+                        >
+                            Selecciona un CUFD del historial para ver su
+                            contexto y vigencia.
                         </div>
                     </section>
 
-                    <section class="rounded-lg border border-[#dfe7e2] bg-white p-4">
+                    <section
+                        class="rounded-lg border border-[#dfe7e2] bg-white p-4"
+                    >
                         <div class="flex gap-3">
-                            <div class="rounded-lg bg-[#EAF7EF] p-3 text-[#168447]">
+                            <div
+                                class="rounded-lg bg-[#EAF7EF] p-3 text-[#168447]"
+                            >
                                 <Landmark class="size-6" />
                             </div>
                             <div>
-                                <h2 class="font-semibold text-[#101713]">Información CAFC</h2>
+                                <h2 class="font-semibold text-[#101713]">
+                                    Información CAFC
+                                </h2>
                                 <p class="mt-1 text-sm text-[#536158]">
-                                    Los CAFC se usan únicamente en modo contingencia cuando los servicios
-                                    SIAT no están disponibles. Registra rangos reales y revisa su consumo
-                                    antes de operar manualmente.
+                                    Los CAFC se usan únicamente en modo
+                                    contingencia cuando los servicios SIAT no
+                                    están disponibles. Registra rangos reales y
+                                    revisa su consumo antes de operar
+                                    manualmente.
                                 </p>
                             </div>
                         </div>
@@ -1099,15 +1403,23 @@ onMounted(async () => {
                 <div class="company-panel shadow-none">
                     <div class="company-hero px-5 py-5 text-white">
                         <DialogHeader>
-                            <DialogTitle class="text-left text-lg font-semibold text-white">
+                            <DialogTitle
+                                class="text-left text-lg font-semibold text-white"
+                            >
                                 Solicitar nuevo CUFD
                             </DialogTitle>
-                            <DialogDescription class="text-left text-emerald-50/80">
-                                El sistema solicitará un CUFD a SIAT usando la sucursal y punto de venta operativos.
+                            <DialogDescription
+                                class="text-left text-emerald-50/80"
+                            >
+                                El sistema solicitará un CUFD a SIAT usando la
+                                sucursal y punto de venta operativos.
                             </DialogDescription>
                         </DialogHeader>
                     </div>
-                    <form class="space-y-5 p-5 md:p-6" @submit.prevent="submitCufd">
+                    <form
+                        class="space-y-5 p-5 md:p-6"
+                        @submit.prevent="submitCufd"
+                    >
                         <div
                             v-if="cufdStore.state.generalError"
                             class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
@@ -1117,8 +1429,13 @@ onMounted(async () => {
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="company-field">
                                 <Label class="company-label">Sucursal</Label>
-                                <select v-model="cufdStore.state.form.sucursal_id" class="company-select">
-                                    <option value="">Seleccione una sucursal</option>
+                                <select
+                                    v-model="cufdStore.state.form.sucursal_id"
+                                    class="company-select"
+                                >
+                                    <option value="">
+                                        Seleccione una sucursal
+                                    </option>
                                     <option
                                         v-for="sucursal in sucursales"
                                         :key="String(sucursal.id)"
@@ -1127,12 +1444,25 @@ onMounted(async () => {
                                         {{ sucursal.nombre }}
                                     </option>
                                 </select>
-                                <InputError :message="cufdStore.state.errors.sucursal_id?.[0]" />
+                                <InputError
+                                    :message="
+                                        cufdStore.state.errors.sucursal_id?.[0]
+                                    "
+                                />
                             </div>
                             <div class="company-field">
-                                <Label class="company-label">Punto de venta</Label>
-                                <select v-model="cufdStore.state.form.punto_venta_id" class="company-select">
-                                    <option value="">Seleccione un punto de venta</option>
+                                <Label class="company-label"
+                                    >Punto de venta</Label
+                                >
+                                <select
+                                    v-model="
+                                        cufdStore.state.form.punto_venta_id
+                                    "
+                                    class="company-select"
+                                >
+                                    <option value="">
+                                        Seleccione un punto de venta
+                                    </option>
                                     <option
                                         v-for="punto in puntosVentaCufdForm"
                                         :key="String(punto.id)"
@@ -1141,19 +1471,41 @@ onMounted(async () => {
                                         {{ punto.nombre }}
                                     </option>
                                 </select>
-                                <InputError :message="cufdStore.state.errors.punto_venta_id?.[0]" />
+                                <InputError
+                                    :message="
+                                        cufdStore.state.errors
+                                            .punto_venta_id?.[0]
+                                    "
+                                />
                             </div>
                         </div>
-                        <div class="rounded-lg border border-[#dfe7e2] bg-[#F5F8F6] p-4 text-sm text-[#536158]">
-                            Esta acción solicitará un nuevo CUFD al SIAT para el ambiente activo. Si SIAT devuelve
-                            una observación o presenta una caída, el CUFD vigente actual no será reemplazado.
+                        <div
+                            class="rounded-lg border border-[#dfe7e2] bg-[#F5F8F6] p-4 text-sm text-[#536158]"
+                        >
+                            Esta acción solicitará un nuevo CUFD al SIAT para el
+                            ambiente activo. Si SIAT devuelve una observación o
+                            presenta una caída, el CUFD vigente actual no será
+                            reemplazado.
                         </div>
                         <div class="flex justify-end gap-3">
-                            <Button type="button" variant="outline" class="company-action-secondary" @click="cufdDialogOpen = false">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                class="company-action-secondary"
+                                @click="cufdDialogOpen = false"
+                            >
                                 Cancelar
                             </Button>
-                            <Button type="submit" class="company-action-primary" :disabled="cufdStore.state.saving">
-                                {{ cufdStore.state.saving ? 'Solicitando...' : 'Solicitar CUFD' }}
+                            <Button
+                                type="submit"
+                                class="company-action-primary"
+                                :disabled="cufdStore.state.saving"
+                            >
+                                {{
+                                    cufdStore.state.saving
+                                        ? 'Solicitando...'
+                                        : 'Solicitar CUFD'
+                                }}
                             </Button>
                         </div>
                     </form>
@@ -1166,16 +1518,28 @@ onMounted(async () => {
                 <div class="company-panel shadow-none">
                     <div class="company-hero px-5 py-5 text-white">
                         <DialogHeader>
-                            <DialogTitle class="text-left text-lg font-semibold text-white">
-                                {{ cafcStore.state.form.id ? 'Editar CAFC' : 'Registrar CAFC' }}
+                            <DialogTitle
+                                class="text-left text-lg font-semibold text-white"
+                            >
+                                {{
+                                    cafcStore.state.form.id
+                                        ? 'Editar CAFC'
+                                        : 'Registrar CAFC'
+                                }}
                             </DialogTitle>
-                            <DialogDescription class="text-left text-emerald-50/80">
-                                Este código se usará para facturas manuales de contingencia en el contexto seleccionado.
+                            <DialogDescription
+                                class="text-left text-emerald-50/80"
+                            >
+                                Este código se usará para facturas manuales de
+                                contingencia en el contexto seleccionado.
                             </DialogDescription>
                         </DialogHeader>
                     </div>
 
-                    <form class="space-y-5 p-5 md:p-6" @submit.prevent="submitCafc">
+                    <form
+                        class="space-y-5 p-5 md:p-6"
+                        @submit.prevent="submitCafc"
+                    >
                         <div
                             v-if="cafcStore.state.generalError"
                             class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
@@ -1185,26 +1549,53 @@ onMounted(async () => {
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="company-field">
                                 <Label class="company-label">Código CAFC</Label>
-                                <Input v-model="cafcStore.state.form.codigo" class="company-input" />
-                                <InputError :message="cafcStore.state.errors.codigo?.[0]" />
+                                <Input
+                                    v-model="cafcStore.state.form.codigo"
+                                    class="company-input"
+                                />
+                                <InputError
+                                    :message="
+                                        cafcStore.state.errors.codigo?.[0]
+                                    "
+                                />
                             </div>
                             <div class="company-field">
                                 <Label class="company-label">PIN</Label>
-                                <Input v-model="cafcStore.state.form.pin" class="company-input" />
-                                <InputError :message="cafcStore.state.errors.pin?.[0]" />
+                                <Input
+                                    v-model="cafcStore.state.form.pin"
+                                    class="company-input"
+                                />
+                                <InputError
+                                    :message="cafcStore.state.errors.pin?.[0]"
+                                />
                             </div>
                         </div>
 
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="company-field">
                                 <Label class="company-label">Descripción</Label>
-                                <Input v-model="cafcStore.state.form.descripcion" class="company-input" />
-                                <InputError :message="cafcStore.state.errors.descripcion?.[0]" />
+                                <Input
+                                    v-model="cafcStore.state.form.descripcion"
+                                    class="company-input"
+                                />
+                                <InputError
+                                    :message="
+                                        cafcStore.state.errors.descripcion?.[0]
+                                    "
+                                />
                             </div>
                             <div class="company-field">
                                 <Label class="company-label">Ambiente</Label>
-                                <select v-model="cafcStore.state.form.ambiente_facturacion" class="company-select">
-                                    <option value="">Seleccione un ambiente</option>
+                                <select
+                                    v-model="
+                                        cafcStore.state.form
+                                            .ambiente_facturacion
+                                    "
+                                    class="company-select"
+                                >
+                                    <option value="">
+                                        Seleccione un ambiente
+                                    </option>
                                     <option
                                         v-for="ambiente in ambientes"
                                         :key="String(ambiente.value)"
@@ -1213,15 +1604,25 @@ onMounted(async () => {
                                         {{ ambiente.label }}
                                     </option>
                                 </select>
-                                <InputError :message="cafcStore.state.errors.ambiente_facturacion?.[0]" />
+                                <InputError
+                                    :message="
+                                        cafcStore.state.errors
+                                            .ambiente_facturacion?.[0]
+                                    "
+                                />
                             </div>
                         </div>
 
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="company-field">
                                 <Label class="company-label">Sucursal</Label>
-                                <select v-model="cafcStore.state.form.sucursal_id" class="company-select">
-                                    <option value="">Seleccione una sucursal</option>
+                                <select
+                                    v-model="cafcStore.state.form.sucursal_id"
+                                    class="company-select"
+                                >
+                                    <option value="">
+                                        Seleccione una sucursal
+                                    </option>
                                     <option
                                         v-for="sucursal in sucursales"
                                         :key="String(sucursal.id)"
@@ -1230,12 +1631,25 @@ onMounted(async () => {
                                         {{ sucursal.nombre }}
                                     </option>
                                 </select>
-                                <InputError :message="cafcStore.state.errors.sucursal_id?.[0]" />
+                                <InputError
+                                    :message="
+                                        cafcStore.state.errors.sucursal_id?.[0]
+                                    "
+                                />
                             </div>
                             <div class="company-field">
-                                <Label class="company-label">Punto de venta</Label>
-                                <select v-model="cafcStore.state.form.punto_venta_id" class="company-select">
-                                    <option value="">Seleccione un punto de venta</option>
+                                <Label class="company-label"
+                                    >Punto de venta</Label
+                                >
+                                <select
+                                    v-model="
+                                        cafcStore.state.form.punto_venta_id
+                                    "
+                                    class="company-select"
+                                >
+                                    <option value="">
+                                        Seleccione un punto de venta
+                                    </option>
                                     <option
                                         v-for="punto in puntosVentaCafcForm"
                                         :key="String(punto.id)"
@@ -1244,46 +1658,117 @@ onMounted(async () => {
                                         {{ punto.nombre }}
                                     </option>
                                 </select>
-                                <InputError :message="cafcStore.state.errors.punto_venta_id?.[0]" />
+                                <InputError
+                                    :message="
+                                        cafcStore.state.errors
+                                            .punto_venta_id?.[0]
+                                    "
+                                />
                             </div>
                         </div>
 
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="company-field">
-                                <Label class="company-label">Fecha inicio vigencia</Label>
-                                <Input v-model="cafcStore.state.form.fecha_inicio_vigencia" type="datetime-local" class="company-input" />
-                                <InputError :message="cafcStore.state.errors.fecha_inicio_vigencia?.[0]" />
+                                <Label class="company-label"
+                                    >Fecha inicio vigencia</Label
+                                >
+                                <Input
+                                    v-model="
+                                        cafcStore.state.form
+                                            .fecha_inicio_vigencia
+                                    "
+                                    type="datetime-local"
+                                    class="company-input"
+                                />
+                                <InputError
+                                    :message="
+                                        cafcStore.state.errors
+                                            .fecha_inicio_vigencia?.[0]
+                                    "
+                                />
                             </div>
                             <div class="company-field">
-                                <Label class="company-label">Fecha fin vigencia</Label>
-                                <Input v-model="cafcStore.state.form.fecha_fin_vigencia" type="datetime-local" class="company-input" />
-                                <InputError :message="cafcStore.state.errors.fecha_fin_vigencia?.[0]" />
+                                <Label class="company-label"
+                                    >Fecha fin vigencia</Label
+                                >
+                                <Input
+                                    v-model="
+                                        cafcStore.state.form.fecha_fin_vigencia
+                                    "
+                                    type="datetime-local"
+                                    class="company-input"
+                                />
+                                <InputError
+                                    :message="
+                                        cafcStore.state.errors
+                                            .fecha_fin_vigencia?.[0]
+                                    "
+                                />
                             </div>
                         </div>
 
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="company-field">
-                                <Label class="company-label">Número inicial autorizado</Label>
-                                <Input v-model="cafcStore.state.form.numero_inicial" type="number" min="1" step="1" class="company-input" />
-                                <InputError :message="cafcStore.state.errors.numero_inicial?.[0]" />
+                                <Label class="company-label"
+                                    >Número inicial autorizado</Label
+                                >
+                                <Input
+                                    v-model="
+                                        cafcStore.state.form.numero_inicial
+                                    "
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    class="company-input"
+                                />
+                                <InputError
+                                    :message="
+                                        cafcStore.state.errors
+                                            .numero_inicial?.[0]
+                                    "
+                                />
                             </div>
                             <div class="company-field">
-                                <Label class="company-label">Número final autorizado</Label>
-                                <Input v-model="cafcStore.state.form.numero_final" type="number" min="1" step="1" class="company-input" />
-                                <InputError :message="cafcStore.state.errors.numero_final?.[0]" />
+                                <Label class="company-label"
+                                    >Número final autorizado</Label
+                                >
+                                <Input
+                                    v-model="cafcStore.state.form.numero_final"
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    class="company-input"
+                                />
+                                <InputError
+                                    :message="
+                                        cafcStore.state.errors.numero_final?.[0]
+                                    "
+                                />
                             </div>
                         </div>
 
                         <div class="company-field">
                             <Label class="company-label">Observación</Label>
-                            <textarea v-model="cafcStore.state.form.observacion" class="company-textarea" />
+                            <textarea
+                                v-model="cafcStore.state.form.observacion"
+                                class="company-textarea"
+                            />
                         </div>
 
                         <div class="flex justify-end gap-3">
-                            <Button type="button" variant="outline" class="company-action-secondary" @click="cafcDialogOpen = false">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                class="company-action-secondary"
+                                @click="cafcDialogOpen = false"
+                            >
                                 Cancelar
                             </Button>
-                            <Button type="submit" class="company-action-primary" :disabled="cafcStore.state.saving">
+                            <Button
+                                type="submit"
+                                class="company-action-primary"
+                                :disabled="cafcStore.state.saving"
+                            >
                                 {{
                                     cafcStore.state.saving
                                         ? 'Guardando...'

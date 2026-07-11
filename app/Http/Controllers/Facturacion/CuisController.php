@@ -25,14 +25,18 @@ class CuisController extends Controller
                 'sucursal_id' => $request->integer('sucursal_id') ?: null,
                 'punto_venta_id' => $request->integer('punto_venta_id') ?: null,
                 'ambiente_facturacion' => $request->string('ambiente_facturacion')->toString() ?: null,
-            ]))->resolve(),
-            'meta' => $this->service->meta(),
+            ], $request->user()))->resolve(),
+            'meta' => $this->service->meta($request->user()),
         ]);
     }
 
     public function store(StoreCuisRequest $request): JsonResponse
     {
-        $cuis = $this->service->registrar($request->validated(), $request->user()->id);
+        $cuis = $this->service->registrar(
+            $request->validated(),
+            $request->user()->id,
+            $request->user(),
+        );
 
         return response()->json([
             'success' => true,

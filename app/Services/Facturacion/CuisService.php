@@ -3,9 +3,9 @@
 namespace App\Services\Facturacion;
 
 use App\Models\Configuracion\Configuracion;
-use App\Models\Configuracion\PuntoVenta;
-use App\Models\Configuracion\Sucursal;
+use App\Models\User;
 use App\Repositories\Facturacion\CuisRepository;
+use App\Support\OperationalContextScope;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
@@ -17,13 +17,19 @@ class CuisService
     ) {
     }
 
-    public function listar(array $filters = []): Collection
+    public function listar(array $filters = [], ?User $user = null): Collection
     {
-        return $this->repository->allForIndex($filters);
+        return $this->repository->allForIndex($filters, $user);
     }
 
-    public function registrar(array $data, int $userId)
+    public function registrar(array $data, int $userId, ?User $user = null)
     {
+        OperationalContextScope::authorize(
+            $user,
+            (int) $data['sucursal_id'],
+            (int) $data['punto_venta_id'],
+        );
+
         $configuracion = Configuracion::current();
         if (! $configuracion) {
             abort(422, 'No existe una configuracion general registrada para generar CUIS.');
@@ -100,11 +106,11 @@ class CuisService
         }
     }
 
-    public function meta(): array
+    public function meta(?User $user = null): array
     {
         return [
-            'sucursales' => Sucursal::query()->where('estado', true)->orderBy('codigo')->get(['id', 'codigo', 'nombre']),
-            'puntos_venta' => PuntoVenta::query()->where('estado', true)->orderBy('sucursal_id')->orderBy('codigo')->get(['id', 'sucursal_id', 'codigo', 'nombre']),
+            'sucursales' => OperationalContextScope::sucursalesQuery($user)->get(['id', 'codigo', 'nombre']),
+            'puntos_venta' => OperationalContextScope::puntosVentaQuery($user)->get(['id', 'sucursal_id', 'codigo', 'nombre']),
             'siat' => $this->client->profile(),
         ];
     }

@@ -33,6 +33,7 @@ use App\Models\SinUnidadMedida;
 use App\Models\User;
 use App\Models\VentaCabecera;
 use App\Repositories\Facturacion\FacturaRepository;
+use App\Support\OperationalContextScope;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Response;
@@ -63,9 +64,18 @@ class FacturaService
     ) {
     }
 
-    public function listar(array $filters = []): Collection
+    public function listar(array $filters = [], ?User $user = null): Collection
     {
-        return $this->repository->allForIndex($filters);
+        return $this->repository->allForIndex($filters, $user);
+    }
+
+    public function autorizarAcceso(Factura $factura, ?User $user): void
+    {
+        OperationalContextScope::authorize(
+            $user,
+            (int) $factura->sucursal_id,
+            (int) $factura->punto_venta_id,
+        );
     }
 
     public function emitir(array $data, User $user): Factura
@@ -79,6 +89,12 @@ class FacturaService
             if ($venta->factura) {
                 abort(422, 'La venta ya tiene una factura registrada.');
             }
+
+            OperationalContextScope::authorize(
+                $user,
+                (int) $venta->sucursal_id,
+                (int) $venta->punto_venta_id,
+            );
 
             $configuracion = Configuracion::current();
             if (! $configuracion) {
@@ -536,12 +552,21 @@ class FacturaService
     {
         $configuracion = Configuracion::current();
         $ambiente = (string) ($configuracion?->ambiente_facturacion ?: 'piloto');
-        $sucursalId = (int) ($filters['sucursal_id'] ?? 0);
-        $puntoVentaId = (int) ($filters['punto_venta_id'] ?? 0);
+        $scopedFilters = OperationalContextScope::mergeFilters($filters, $user);
+        $sucursalId = (int) ($scopedFilters['sucursal_id'] ?? 0);
+        $puntoVentaId = (int) ($scopedFilters['punto_venta_id'] ?? 0);
 
         if (! $sucursalId || ! $puntoVentaId) {
             $puntoVenta = PuntoVenta::query()
                 ->where('estado', true)
+                ->when(
+                    ! OperationalContextScope::isGlobal($user) && $user?->punto_venta_id,
+                    fn ($query) => $query->whereKey($user->punto_venta_id),
+                )
+                ->when(
+                    ! OperationalContextScope::isGlobal($user) && ! $user?->punto_venta_id && $user?->sucursal_id,
+                    fn ($query) => $query->where('sucursal_id', $user->sucursal_id),
+                )
                 ->when($sucursalId, fn ($query) => $query->where('sucursal_id', $sucursalId))
                 ->orderBy('sucursal_id')
                 ->orderBy('codigo')
@@ -588,7 +613,7 @@ class FacturaService
         $puedeOperar = (bool) ($configuracion?->facturacionSiatActiva() && $cuis && ($cufd || $eventoActivo));
 
         return [
-            'kpis' => $this->repository->operationalSummary($filters),
+            'kpis' => $this->repository->operationalSummary($filters, $user),
             'salud_siat' => [
                 'operativo' => $puedeOperar,
                 'mensaje' => $eventoActivo
@@ -634,10 +659,10 @@ class FacturaService
                 FacturaEstadoEnum::cases(),
             ),
             'clientes' => \App\Models\Cliente::query()->where('estado', true)->orderBy('nombre')->get(['id', 'nombre', 'razon_social', 'nit_ci']),
-            'sucursales' => Sucursal::query()->where('estado', true)->orderBy('codigo')->get(['id', 'codigo', 'nombre']),
-            'puntos_venta' => PuntoVenta::query()->where('estado', true)->orderBy('sucursal_id')->orderBy('codigo')->get(['id', 'sucursal_id', 'codigo', 'nombre']),
+            'sucursales' => OperationalContextScope::sucursalesQuery($user)->get(['id', 'codigo', 'nombre']),
+            'puntos_venta' => OperationalContextScope::puntosVentaQuery($user)->get(['id', 'sucursal_id', 'codigo', 'nombre']),
             'usuarios' => User::query()->where('estado', true)->orderBy('name')->get(['id', 'name', 'email']),
-            'ventas_facturables' => $this->repository->ventasFacturables()->map(fn (VentaCabecera $venta) => [
+            'ventas_facturables' => $this->repository->ventasFacturables($user)->map(fn (VentaCabecera $venta) => [
                 'id' => $venta->id,
                 'numero_venta' => $venta->numero_venta,
                 'fecha_venta' => optional($venta->fecha_venta)?->format('Y-m-d'),

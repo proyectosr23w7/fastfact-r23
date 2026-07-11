@@ -3,14 +3,21 @@
 namespace App\Repositories\Facturacion;
 
 use App\Models\Cuis;
+use App\Models\User;
+use App\Support\OperationalContextScope;
 use Illuminate\Database\Eloquent\Collection;
 
 class CuisRepository
 {
-    public function allForIndex(array $filters = []): Collection
+    public function allForIndex(array $filters = [], ?User $user = null): Collection
     {
-        return Cuis::query()
-            ->with(['sucursal:id,codigo,nombre', 'puntoVenta:id,sucursal_id,codigo,nombre', 'user:id,name,email'])
+        $query = Cuis::query()
+            ->with(['sucursal:id,codigo,nombre', 'puntoVenta:id,sucursal_id,codigo,nombre', 'user:id,name,email']);
+
+        OperationalContextScope::apply($query, $user);
+        $filters = OperationalContextScope::mergeFilters($filters, $user);
+
+        return $query
             ->when(
                 filled($filters['sucursal_id'] ?? null),
                 fn ($query) => $query->where('sucursal_id', $filters['sucursal_id']),

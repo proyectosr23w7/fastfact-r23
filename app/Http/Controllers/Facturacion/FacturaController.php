@@ -38,7 +38,7 @@ class FacturaController extends Controller
                 'sucursal_id' => $request->integer('sucursal_id') ?: null,
                 'punto_venta_id' => $request->integer('punto_venta_id') ?: null,
                 'estado_factura' => $request->string('estado_factura')->toString(),
-            ]))->resolve(),
+            ], $request->user()))->resolve(),
             'meta' => $this->service->meta($request->user(), [
                 'search' => $request->string('search')->toString(),
                 'fecha_desde' => $request->string('fecha_desde')->toString(),
@@ -50,8 +50,10 @@ class FacturaController extends Controller
         ]);
     }
 
-    public function show(Factura $factura): JsonResponse
+    public function show(Request $request, Factura $factura): JsonResponse
     {
+        $this->service->autorizarAcceso($factura, $request->user());
+
         return response()->json([
             'success' => true,
             'message' => 'Detalle de factura obtenido correctamente.',
@@ -98,6 +100,7 @@ class FacturaController extends Controller
 
     public function reintentar(RetryFacturaRequest $request, Factura $factura): JsonResponse
     {
+        $this->service->autorizarAcceso($factura, $request->user());
         $factura = $this->service->reintentar($factura, $request->validated(), $request->user());
 
         return response()->json([
@@ -109,6 +112,7 @@ class FacturaController extends Controller
 
     public function consultar(ConsultarFacturaRequest $request, Factura $factura): JsonResponse
     {
+        $this->service->autorizarAcceso($factura, $request->user());
         $factura = $this->service->consultar($factura);
 
         return response()->json([
@@ -120,6 +124,7 @@ class FacturaController extends Controller
 
     public function anular(AnularFacturaRequest $request, Factura $factura): JsonResponse
     {
+        $this->service->autorizarAcceso($factura, $request->user());
         $factura = $this->service->anular($factura, $request->validated(), $request->user());
 
         return response()->json([
@@ -131,6 +136,7 @@ class FacturaController extends Controller
 
     public function revertirAnulacion(Request $request, Factura $factura): JsonResponse
     {
+        $this->service->autorizarAcceso($factura, $request->user());
         $factura = $this->service->revertirAnulacion($factura, $request->user());
 
         return response()->json([
@@ -140,13 +146,17 @@ class FacturaController extends Controller
         ]);
     }
 
-    public function downloadXml(Factura $factura): Response
+    public function downloadXml(Request $request, Factura $factura): Response
     {
+        $this->service->autorizarAcceso($factura, $request->user());
+
         return $this->service->downloadXml($factura);
     }
 
-    public function downloadPdf(Factura $factura): Response
+    public function downloadPdf(Request $request, Factura $factura): Response
     {
+        $this->service->autorizarAcceso($factura, $request->user());
+
         return $this->service->downloadPdf($factura);
     }
 }

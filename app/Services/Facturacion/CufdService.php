@@ -6,9 +6,8 @@ use App\Actions\Facturacion\ObtenerCuisVigenteAction;
 use App\Models\Cufd;
 use App\Models\User;
 use App\Models\Configuracion\Configuracion;
-use App\Models\Configuracion\PuntoVenta;
-use App\Models\Configuracion\Sucursal;
 use App\Repositories\Facturacion\CufdRepository;
+use App\Support\OperationalContextScope;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
@@ -24,11 +23,17 @@ class CufdService
 
     public function listar(array $filters = [], ?User $user = null): Collection
     {
-        return $this->repository->allForIndex($filters);
+        return $this->repository->allForIndex($filters, $user);
     }
 
-    public function registrar(array $data, int $userId)
+    public function registrar(array $data, int $userId, ?User $user = null)
     {
+        OperationalContextScope::authorize(
+            $user,
+            (int) $data['sucursal_id'],
+            (int) $data['punto_venta_id'],
+        );
+
         $configuracion = Configuracion::current();
         if (! $configuracion) {
             abort(422, 'No existe una configuracion general registrada para generar CUFD.');
@@ -173,8 +178,8 @@ class CufdService
 
     public function meta(?User $user = null): array
     {
-        $sucursales = Sucursal::query()->where('estado', true)->orderBy('codigo');
-        $puntosVenta = PuntoVenta::query()->where('estado', true)->orderBy('sucursal_id')->orderBy('codigo');
+        $sucursales = OperationalContextScope::sucursalesQuery($user);
+        $puntosVenta = OperationalContextScope::puntosVentaQuery($user);
 
         return [
             'sucursales' => $sucursales->get(['id', 'codigo', 'nombre']),

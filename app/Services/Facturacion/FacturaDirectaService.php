@@ -21,6 +21,7 @@ use App\Models\Factura;
 use App\Models\SinMetodoPago;
 use App\Models\User;
 use App\Repositories\Facturacion\FacturaRepository;
+use App\Support\OperationalContextScope;
 use Illuminate\Support\Facades\DB;
 
 class FacturaDirectaService
@@ -52,6 +53,8 @@ class FacturaDirectaService
             $sucursal = Sucursal::query()->findOrFail($data['sucursal_id']);
             $puntoVenta = PuntoVenta::query()->findOrFail($data['punto_venta_id']);
             $ambiente = $configuracion->ambiente_facturacion ?: 'piloto';
+
+            OperationalContextScope::authorize($user, (int) $sucursal->id, (int) $puntoVenta->id);
 
             $cuis = ($this->obtenerCuisVigente)($sucursal->id, $puntoVenta->id, $ambiente);
             $cufd = ($this->obtenerCufdVigente)($sucursal->id, $puntoVenta->id, $ambiente);
