@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from "vue"
-import { PanelLeft } from "lucide-vue-next"
+import { SquareMenu } from "lucide-vue-next"
 import { cn } from "@/lib/utils"
 import { Button } from '@/components/ui/button'
 import { useSidebar } from "./utils"
@@ -18,10 +18,10 @@ const { toggleSidebar } = useSidebar()
     data-slot="sidebar-trigger"
     variant="ghost"
     size="icon"
-    :class="cn('h-7 w-7', props.class)"
+    :class="cn('h-9 w-9', props.class)"
     @click="toggleSidebar"
   >
-    <PanelLeft />
+    <SquareMenu class="size-5" />
     <span class="sr-only">Toggle Sidebar</span>
   </Button>
 </template>
