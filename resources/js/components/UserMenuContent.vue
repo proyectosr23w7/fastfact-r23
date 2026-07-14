@@ -6,7 +6,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { logout } from '@/routes';
+import { performLogout } from '@/lib/logout';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 import { Link } from '@inertiajs/vue3';
@@ -16,23 +16,7 @@ interface Props {
     user: User;
 }
 
-const handleLogout = () => {
-    const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
-    const form = document.createElement('form');
-    const tokenInput = document.createElement('input');
-
-    form.method = 'POST';
-    form.action = logout().url;
-    form.style.display = 'none';
-
-    tokenInput.type = 'hidden';
-    tokenInput.name = '_token';
-    tokenInput.value = csrfToken;
-
-    form.appendChild(tokenInput);
-    document.body.appendChild(form);
-    form.submit();
-};
+const handleLogout = () => performLogout();
 
 defineProps<Props>();
 </script>
@@ -54,7 +38,12 @@ defineProps<Props>();
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
     <DropdownMenuItem :as-child="true">
-        <button class="block w-full" type="button" @click="handleLogout" data-test="logout-button">
+        <button
+            class="block w-full"
+            type="button"
+            @click="handleLogout"
+            data-test="logout-button"
+        >
             <LogOut class="mr-2 h-4 w-4" />
             Cerrar sesión
         </button>

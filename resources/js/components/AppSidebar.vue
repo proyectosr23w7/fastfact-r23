@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import AppLogo from '@/components/AppLogo.vue';
 import { Sidebar, useSidebar } from '@/components/ui/sidebar';
+import { performLogout } from '@/lib/logout';
 import { urlIsActive } from '@/lib/utils';
-import { dashboard, logout } from '@/routes';
+import { dashboard } from '@/routes';
 import { usePermissionStore } from '@/src/stores/permissionStore';
 import type { SharedData } from '@/types';
 import { type NavGroup, type NavItem } from '@/types';
@@ -21,8 +22,8 @@ import {
     Package,
     ReceiptText,
     Store,
-    WalletCards,
     Users,
+    WalletCards,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 
@@ -36,27 +37,7 @@ const handleNavClick = () => {
     }
 };
 
-const handleLogout = () => {
-    handleNavClick();
-
-    const csrfToken =
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-            ?.content ?? '';
-    const form = document.createElement('form');
-    const tokenInput = document.createElement('input');
-
-    form.method = 'POST';
-    form.action = logout().url;
-    form.style.display = 'none';
-
-    tokenInput.type = 'hidden';
-    tokenInput.name = '_token';
-    tokenInput.value = csrfToken;
-
-    form.appendChild(tokenInput);
-    document.body.appendChild(form);
-    form.submit();
-};
+const handleLogout = () => performLogout(handleNavClick);
 
 const navGroups: NavGroup[] = [
     {
@@ -212,7 +193,9 @@ const visibleNavGroups = computed(() =>
             </div>
 
             <div class="px-3 pt-4">
-                <div class="rounded-lg border border-white/10 bg-white/[0.06] p-3">
+                <div
+                    class="rounded-lg border border-white/10 bg-white/[0.06] p-3"
+                >
                     <p
                         class="text-[10px] font-black tracking-[0.14em] text-white/45 uppercase"
                     >
