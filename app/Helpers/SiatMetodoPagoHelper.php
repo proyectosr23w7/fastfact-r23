@@ -7,7 +7,7 @@ class SiatMetodoPagoHelper
     public static function requiresCardNumber(?string $codigo, ?string $descripcion = null): bool
     {
         $normalizedCode = trim((string) ($codigo ?? ''));
-        $normalizedDescription = mb_strtolower(trim((string) ($descripcion ?? '')));
+        $normalizedDescription = self::normalizeText($descripcion);
 
         return $normalizedCode === '2'
             || str_contains($normalizedDescription, 'tarjeta');
@@ -16,11 +16,15 @@ class SiatMetodoPagoHelper
     public static function requiresGiftCardAmount(?string $codigo, ?string $descripcion = null): bool
     {
         $normalizedCode = trim((string) ($codigo ?? ''));
-        $normalizedDescription = mb_strtolower(trim((string) ($descripcion ?? '')));
+        $normalizedDescription = self::normalizeText($descripcion);
 
         return $normalizedCode === '7'
             || str_contains($normalizedDescription, 'gift')
-            || str_contains($normalizedDescription, 'gift card');
+            || str_contains($normalizedDescription, 'gift card')
+            || str_contains($normalizedDescription, 'giftcard')
+            || str_contains($normalizedDescription, 'tarjeta regalo')
+            || str_contains($normalizedDescription, 'vale')
+            || str_contains($normalizedDescription, 'prepag');
     }
 
     public static function normalizeCardNumber(?string $numeroTarjeta): ?string
@@ -72,5 +76,19 @@ class SiatMetodoPagoHelper
         }
 
         return round((float) $amount, 2);
+    }
+
+    private static function normalizeText(?string $value): string
+    {
+        $text = mb_strtolower(trim((string) ($value ?? '')));
+
+        return strtr($text, [
+            'á' => 'a',
+            'é' => 'e',
+            'í' => 'i',
+            'ó' => 'o',
+            'ú' => 'u',
+            'ñ' => 'n',
+        ]);
     }
 }

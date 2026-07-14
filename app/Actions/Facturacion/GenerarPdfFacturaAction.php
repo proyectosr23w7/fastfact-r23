@@ -95,6 +95,10 @@ class GenerarPdfFacturaAction
         $this->totalLine($pdf, 'Subtotal Bs.', $subtotal);
         $this->totalLine($pdf, 'Desc. global Bs.', (float) ($factura->descuento_global ?? 0));
         $this->totalLine($pdf, 'Total Bs.', (float) $factura->monto_total);
+        if ((float) ($factura->monto_gift_card ?? 0) > 0) {
+            $this->totalLine($pdf, 'Monto Gift Card Bs.', (float) $factura->monto_gift_card);
+            $this->totalLine($pdf, 'Monto a pagar Bs.', max((float) $factura->monto_total - (float) $factura->monto_gift_card, 0));
+        }
         $this->totalLine($pdf, 'Base Credito Fiscal Bs.', (float) $factura->monto_sujeto_iva);
         $pdf->Ln(2);
         $pdf->SetFont('Arial', 'B', 8);
@@ -118,7 +122,7 @@ class GenerarPdfFacturaAction
         $subtotal = $this->resolveSubtotal($items);
         $descuentoGlobal = (float) ($factura->descuento_global ?? 0);
         $montoGiftCard = (float) ($factura->monto_gift_card ?? 0);
-        $montoAPagar = round((float) $factura->monto_total + $montoGiftCard, 2);
+        $montoAPagar = round(max((float) $factura->monto_total - $montoGiftCard, 0), 2);
         $fechaEmision = optional($factura->fecha_emision)?->timezone(config('app.timezone'))->format('d/m/Y h:i A') ?: '-';
         $documentoId = trim((string) ($factura->cliente?->nit_ci ?: '-').' '.(string) ($factura->cliente?->complemento ?: ''));
         $nombreRazonSocial = (string) ($factura->cliente?->razon_social ?: $factura->cliente?->nombre ?: '-');

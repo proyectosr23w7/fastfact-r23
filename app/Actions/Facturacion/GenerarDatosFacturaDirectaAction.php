@@ -35,11 +35,11 @@ class GenerarDatosFacturaDirectaAction
         $codigoEmision = (int) ($extra['codigo_emision'] ?? 1);
         $documentoIdentidad = $this->resolveDocumentoIdentidad($cliente, $extra);
         $metodoPago = $this->resolveMetodoPago($extra);
-        $montoGiftCard = $this->resolveMontoGiftCard($extra, $metodoPago);
-        $montoGiftCardValue = round((float) ($montoGiftCard ?? 0), 2);
         $detalleFiscal = $this->resolveDetalles($detalles);
         $montoTotal = round(array_sum(array_column($detalleFiscal, 'subTotal')), 2);
-        $montoTotalSujetoIva = round(max($montoTotal - $montoGiftCardValue, 0), 2);
+        $montoGiftCard = $this->resolveMontoGiftCard($extra, $metodoPago, $montoTotal);
+        $montoGiftCardValue = $montoGiftCard !== null ? round($montoGiftCard, 2) : null;
+        $montoTotalSujetoIva = round(max($montoTotal - (float) ($montoGiftCardValue ?? 0), 0), 2);
         $moneda = $this->resolveMoneda();
         $leyenda = $this->resolveLeyenda();
 
@@ -149,7 +149,7 @@ class GenerarDatosFacturaDirectaAction
         return SiatMetodoPagoHelper::normalizeCardNumber($extra['numero_tarjeta'] ?? null);
     }
 
-    private function resolveMontoGiftCard(array $extra, string $codigoMetodoPago): ?float
+    private function resolveMontoGiftCard(array $extra, string $codigoMetodoPago, float $montoTotal): ?float
     {
         $metodoPago = SinMetodoPago::query()
             ->where('estado', true)
@@ -160,7 +160,17 @@ class GenerarDatosFacturaDirectaAction
             return null;
         }
 
-        return SiatMetodoPagoHelper::normalizeGiftCardAmount($extra['monto_gift_card'] ?? null);
+        $montoGiftCard = SiatMetodoPagoHelper::normalizeGiftCardAmount($extra['monto_gift_card'] ?? null);
+
+        if ($montoGiftCard === null || $montoGiftCard <= 0) {
+            abort(422, 'El monto gift card es obligatorio para este metodo de pago.');
+        }
+
+        if ($montoGiftCard > $montoTotal) {
+            abort(422, 'El monto gift card no puede ser mayor al total de la factura.');
+        }
+
+        return $montoGiftCard;
     }
 
     private function resolveDetalles(array $detalles): array
