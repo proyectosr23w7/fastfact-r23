@@ -111,6 +111,7 @@ class EventoSignificativoService
                 $data['punto_venta_id'],
                 $ambiente,
                 $fechaInicio,
+                $codigoEvento,
                 $data['cufd_evento_id'] ?? null,
             );
             $cafc = $tipoContingencia === 'manual'
@@ -293,6 +294,7 @@ class EventoSignificativoService
             'puntos_venta' => $puntosVenta->get(['id', 'sucursal_id', 'codigo', 'nombre']),
             'siat' => $this->client->profile(),
             'eventos_disponibles' => $this->availableEvents(),
+            'cufd_disponibles' => $this->cufdDisponibles($filters),
             'cafc_disponibles' => $this->cafcDisponibles($filters),
             'tipos_reporte' => $this->reportTypes(),
             'eventos_activos' => $this->repository->activeEvents($filters)->map(fn (EventoSignificativo $evento) => [
@@ -351,32 +353,35 @@ class EventoSignificativoService
         int $puntoVentaId,
         string $ambiente,
         Carbon $fechaInicio,
+        string $codigoEvento,
         ?int $cufdEventoId = null,
     ) {
-        $cufdEvento = null;
+        $esEventoAutomatico = in_array($codigoEvento, ['1', '2', '3', '4'], true);
 
-        if ($cufdEventoId) {
-            $cufdEvento = $this->cufdRepository->refresh(
-                \App\Models\Cufd::query()->findOrFail($cufdEventoId),
-            );
+        if ($esEventoAutomatico) {
+            $cufdEvento = $this->cufdRepository->ultimoGeneradoParaEvento($sucursalId, $puntoVentaId, $ambiente);
 
-            if (
-                $cufdEvento->sucursal_id !== $sucursalId
-                || $cufdEvento->punto_venta_id !== $puntoVentaId
-                || $cufdEvento->ambiente_facturacion !== $ambiente
-            ) {
-                abort(422, 'El CUFD seleccionado no corresponde al contexto operativo del evento.');
+            if (! $cufdEvento) {
+                abort(422, 'No existe un CUFD generado para la sucursal y punto de venta seleccionados.');
             }
-        } else {
-            $cufdEvento = $this->cufdRepository->vigenteEnFecha($sucursalId, $puntoVentaId, $ambiente, $fechaInicio);
+
+            return $this->cufdRepository->refresh($cufdEvento);
         }
 
-        if (! $cufdEvento) {
-            abort(422, 'No existe un CUFD valido que cubra la fecha de inicio del evento significativo.');
+        if (! $cufdEventoId) {
+            abort(422, 'Debes seleccionar el CUFD del evento para eventos significativos manuales 5 al 7.');
         }
 
-        if ($cufdEvento->fecha_vigencia && $fechaInicio->gt($cufdEvento->fecha_vigencia)) {
-            abort(422, 'La fecha de inicio del evento debe estar dentro de la vigencia del CUFD del evento.');
+        $cufdEvento = $this->cufdRepository->refresh(
+            \App\Models\Cufd::query()->findOrFail($cufdEventoId),
+        );
+
+        if (
+            $cufdEvento->sucursal_id !== $sucursalId
+            || $cufdEvento->punto_venta_id !== $puntoVentaId
+            || $cufdEvento->ambiente_facturacion !== $ambiente
+        ) {
+            abort(422, 'El CUFD seleccionado no corresponde al contexto operativo del evento.');
         }
 
         return $cufdEvento;
@@ -458,6 +463,25 @@ class EventoSignificativoService
                 'punto_venta_id' => $cafc->punto_venta_id,
                 'fecha_inicio_vigencia' => optional($cafc->fecha_inicio_vigencia)?->format('Y-m-d H:i:s'),
                 'fecha_fin_vigencia' => optional($cafc->fecha_fin_vigencia)?->format('Y-m-d H:i:s'),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function cufdDisponibles(array $filters): array
+    {
+        return $this->cufdRepository
+            ->disponiblesParaEvento($filters)
+            ->map(fn (Cufd $cufd) => [
+                'id' => $cufd->id,
+                'codigo' => $cufd->codigo,
+                'codigo_control' => $cufd->codigo_control,
+                'sucursal_id' => $cufd->sucursal_id,
+                'punto_venta_id' => $cufd->punto_venta_id,
+                'ambiente_facturacion' => $cufd->ambiente_facturacion,
+                'estado' => (bool) $cufd->estado,
+                'created_at' => optional($cufd->created_at)?->format('Y-m-d H:i:s'),
+                'fecha_vigencia' => optional($cufd->fecha_vigencia)?->format('Y-m-d H:i:s'),
             ])
             ->values()
             ->all();

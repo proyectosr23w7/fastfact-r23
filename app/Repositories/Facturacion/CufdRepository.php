@@ -132,6 +132,44 @@ class CufdRepository
             ->first();
     }
 
+    public function ultimoGeneradoParaEvento(int $sucursalId, int $puntoVentaId, string $ambiente): ?Cufd
+    {
+        return $this->usableQuery(Cufd::query())
+            ->where('sucursal_id', $sucursalId)
+            ->where('punto_venta_id', $puntoVentaId)
+            ->where('ambiente_facturacion', $ambiente)
+            ->latest('created_at')
+            ->latest('id')
+            ->first();
+    }
+
+    public function disponiblesParaEvento(array $filters = [], ?User $user = null): Collection
+    {
+        $query = $this->usableQuery(Cufd::query())
+            ->with(['sucursal:id,codigo,nombre', 'puntoVenta:id,sucursal_id,codigo,nombre', 'user:id,name,email']);
+
+        OperationalContextScope::apply($query, $user);
+        $filters = OperationalContextScope::mergeFilters($filters, $user);
+
+        return $query
+            ->when(
+                filled($filters['sucursal_id'] ?? null),
+                fn ($query) => $query->where('sucursal_id', $filters['sucursal_id']),
+            )
+            ->when(
+                filled($filters['punto_venta_id'] ?? null),
+                fn ($query) => $query->where('punto_venta_id', $filters['punto_venta_id']),
+            )
+            ->when(
+                filled($filters['ambiente_facturacion'] ?? null),
+                fn ($query) => $query->where('ambiente_facturacion', $filters['ambiente_facturacion']),
+            )
+            ->latest('created_at')
+            ->latest('id')
+            ->limit(100)
+            ->get();
+    }
+
     private function usableQuery($query)
     {
         return $query

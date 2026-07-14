@@ -41,6 +41,10 @@ class StoreEventoSignificativoRequest extends FormRequest
             if (in_array((string) $this->input('codigo_evento'), ['5', '6', '7'], true) && ! $this->filled('cafc_id')) {
                 $validator->errors()->add('cafc_id', 'Debes seleccionar un CAFC para eventos significativos manuales 5 al 7.');
             }
+
+            if (in_array((string) $this->input('codigo_evento'), ['5', '6', '7'], true) && ! $this->filled('cufd_evento_id')) {
+                $validator->errors()->add('cufd_evento_id', 'Debes seleccionar el CUFD del evento para eventos significativos manuales 5 al 7.');
+            }
         });
     }
 }

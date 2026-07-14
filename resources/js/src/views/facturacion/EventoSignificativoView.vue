@@ -108,9 +108,21 @@ const cafcDisponibles = computed(() =>
             String(cafc.sucursal_id ?? '') ===
                 String(store.state.form.sucursal_id ?? '') &&
             String(cafc.punto_venta_id ?? '') ===
+            String(store.state.form.punto_venta_id ?? ''),
+    ),
+);
+const cufdDisponibles = computed(() =>
+    (
+        (store.state.meta.cufd_disponibles as DataItem[] | undefined) ?? []
+    ).filter(
+        (cufd) =>
+            String(cufd.sucursal_id ?? '') ===
+                String(store.state.form.sucursal_id ?? '') &&
+            String(cufd.punto_venta_id ?? '') ===
                 String(store.state.form.punto_venta_id ?? ''),
     ),
 );
+const ultimoCufdAutomatico = computed(() => cufdDisponibles.value[0] ?? null);
 const eventoSeleccionadoConfig = computed(
     () =>
         eventosDisponibles.value.find(
@@ -488,6 +500,33 @@ watch(
             )
         )
             store.state.form.cafc_id = '';
+        if (
+            !cufdDisponibles.value.some(
+                (cufd) =>
+                    String(cufd.id) ===
+                    String(store.state.form.cufd_evento_id),
+            )
+        )
+            store.state.form.cufd_evento_id = '';
+    },
+);
+watch(
+    () => store.state.form.punto_venta_id,
+    () => {
+        if (
+            !cafcDisponibles.value.some(
+                (cafc) => String(cafc.id) === String(store.state.form.cafc_id),
+            )
+        )
+            store.state.form.cafc_id = '';
+        if (
+            !cufdDisponibles.value.some(
+                (cufd) =>
+                    String(cufd.id) ===
+                    String(store.state.form.cufd_evento_id),
+            )
+        )
+            store.state.form.cufd_evento_id = '';
     },
 );
 watch(
@@ -509,7 +548,10 @@ watch(
 watch(
     () => store.state.form.codigo_evento,
     () => {
-        if (!eventoManualSeleccionado.value) store.state.form.cafc_id = '';
+        if (!eventoManualSeleccionado.value) {
+            store.state.form.cafc_id = '';
+            store.state.form.cufd_evento_id = '';
+        }
     },
 );
 watch(reportDialogOpen, (open) => {
@@ -1522,12 +1564,53 @@ onMounted(async () => {
                             <div class="company-field">
                                 <Label class="company-label"
                                     >CUFD del evento</Label
-                                ><Input
+                                >
+                                <select
+                                    v-if="eventoManualSeleccionado"
                                     v-model="store.state.form.cufd_evento_id"
-                                    class="company-input"
-                                    inputmode="numeric"
-                                    placeholder="Opcional: identificador de CUFD específico"
-                                /><InputError
+                                    class="company-select"
+                                >
+                                    <option value="">Seleccione un CUFD</option>
+                                    <option
+                                        v-for="cufd in cufdDisponibles"
+                                        :key="cufd.id"
+                                        :value="String(cufd.id)"
+                                    >
+                                        Generado: {{ formatDate(cufd.created_at) }}
+                                        · Vigencia: {{ formatDate(cufd.fecha_vigencia) }}
+                                    </option>
+                                </select>
+                                <div
+                                    v-else
+                                    class="rounded-xl border border-[#dfe8e2] bg-[#f5f8f6] px-3 py-2 text-sm text-[#19221d]"
+                                >
+                                    <p v-if="ultimoCufdAutomatico">
+                                        Se usará automáticamente el último CUFD
+                                        generado para este punto de venta.
+                                    </p>
+                                    <p v-else>
+                                        No existe un CUFD generado para este
+                                        punto de venta.
+                                    </p>
+                                    <p
+                                        v-if="ultimoCufdAutomatico"
+                                        class="mt-1 text-xs text-[#65736a]"
+                                    >
+                                        Generado:
+                                        {{ formatDate(ultimoCufdAutomatico.created_at) }}
+                                        · Vigencia:
+                                        {{ formatDate(ultimoCufdAutomatico.fecha_vigencia) }}
+                                    </p>
+                                </div>
+                                <p
+                                    v-if="eventoManualSeleccionado"
+                                    class="text-xs text-[#65736a]"
+                                >
+                                    Para eventos 5 al 7 selecciona el CUFD que
+                                    corresponde al evento. Se muestran fecha de
+                                    generación y vigencia.
+                                </p>
+                                <InputError
                                     :message="
                                         store.state.errors.cufd_evento_id?.[0]
                                     "
