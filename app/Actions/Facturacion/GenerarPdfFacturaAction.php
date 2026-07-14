@@ -13,7 +13,6 @@ class GenerarPdfFacturaAction
         BoliviaPdfHelper::bootLibraries();
 
         $factura->loadMissing([
-            'venta.detalle.articulo.unidadMedida',
             'detalles.articulo.unidadMedida',
             'cliente',
             'sucursal',
@@ -94,7 +93,7 @@ class GenerarPdfFacturaAction
 
         $this->drawDottedSeparator($pdf);
         $this->totalLine($pdf, 'Subtotal Bs.', $subtotal);
-        $this->totalLine($pdf, 'Desc. global Bs.', (float) ($factura->descuento_global ?? $factura->venta?->descuento));
+        $this->totalLine($pdf, 'Desc. global Bs.', (float) ($factura->descuento_global ?? 0));
         $this->totalLine($pdf, 'Total Bs.', (float) $factura->monto_total);
         $this->totalLine($pdf, 'Base Credito Fiscal Bs.', (float) $factura->monto_sujeto_iva);
         $pdf->Ln(2);
@@ -117,7 +116,7 @@ class GenerarPdfFacturaAction
     {
         $items = $this->resolveItems($factura);
         $subtotal = $this->resolveSubtotal($items);
-        $descuentoGlobal = (float) ($factura->descuento_global ?? $factura->venta?->descuento);
+        $descuentoGlobal = (float) ($factura->descuento_global ?? 0);
         $montoGiftCard = (float) ($factura->monto_gift_card ?? 0);
         $montoAPagar = round((float) $factura->monto_total + $montoGiftCard, 2);
         $fechaEmision = optional($factura->fecha_emision)?->timezone(config('app.timezone'))->format('d/m/Y h:i A') ?: '-';
@@ -314,7 +313,7 @@ class GenerarPdfFacturaAction
             return $factura->detalles;
         }
 
-        return $factura->venta?->detalle ?? collect();
+        return collect();
     }
 
     private function itemCode(object $detalle): string

@@ -16,7 +16,6 @@ class ConsultarEstadoFacturaAction
     {
         return $this->client->consultarFactura([
             'factura_id' => $factura->id,
-            'venta_id' => $factura->venta_id,
             'codigo_recepcion' => $factura->codigo_recepcion,
             'cuf' => $factura->cuf,
             'cufd_id' => $factura->cufd_id,

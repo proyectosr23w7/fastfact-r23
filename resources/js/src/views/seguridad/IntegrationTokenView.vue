@@ -204,10 +204,13 @@ onMounted(load);
                 </button>
             </div>
 
-            <section class="grid gap-4 xl:grid-cols-[minmax(0,420px)_1fr]">
-                <form class="company-panel space-y-5 p-5" @submit.prevent="createToken">
-                    <div class="flex items-center justify-between">
-                        <div>
+            <section class="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,420px)_1fr]">
+                <form
+                    class="company-panel min-w-0 space-y-5 p-4 sm:p-5"
+                    @submit.prevent="createToken"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
                             <h2 class="text-lg font-bold text-[#101713]">
                                 Nuevo token
                             </h2>
@@ -281,11 +284,11 @@ onMounted(load);
                                 :value="ability"
                                 class="mt-0.5 size-4 accent-[#168447]"
                             />
-                            <span>
+                            <span class="min-w-0">
                                 <span class="block text-sm font-semibold text-[#202a24]">
                                     {{ abilityLabels[ability] ?? ability }}
                                 </span>
-                                <span class="block text-xs text-[#6e7971]">
+                                <span class="block break-all text-xs text-[#6e7971]">
                                     {{ ability }}
                                 </span>
                             </span>
@@ -307,13 +310,13 @@ onMounted(load);
                     </Button>
                 </form>
 
-                <div class="space-y-4">
+                <div class="min-w-0 space-y-4">
                     <div
                         v-if="generatedToken"
-                        class="company-panel border-[#bde5cb] bg-[#f3fbf6] p-5"
+                        class="company-panel min-w-0 border-[#bde5cb] bg-[#f3fbf6] p-4 sm:p-5"
                     >
                         <div class="mb-3 flex items-start justify-between gap-3">
-                            <div>
+                            <div class="min-w-0">
                                 <h2 class="text-lg font-bold text-[#101713]">
                                     Token generado
                                 </h2>
@@ -339,11 +342,11 @@ onMounted(load);
                         </Button>
                     </div>
 
-                    <section class="company-panel overflow-hidden">
+                    <section class="company-panel min-w-0 overflow-hidden">
                         <div
-                            class="flex flex-col gap-3 border-b border-[#dfe7e2] px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                            class="flex flex-col gap-3 border-b border-[#dfe7e2] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
                         >
-                            <div>
+                            <div class="min-w-0">
                                 <h2 class="text-lg font-bold text-[#101713]">
                                     Tokens registrados
                                 </h2>
@@ -367,7 +370,98 @@ onMounted(load);
                             </Button>
                         </div>
 
-                        <div class="overflow-x-auto">
+                        <div class="grid gap-3 p-3 md:hidden">
+                            <div
+                                v-if="state.loading"
+                                class="rounded-lg border border-[#e4ebe6] bg-white px-4 py-8 text-center text-sm text-[#647068]"
+                            >
+                                <LoaderCircle class="mx-auto mb-2 size-6 animate-spin text-[#168447]" />
+                                Cargando tokens...
+                            </div>
+                            <div
+                                v-else-if="!state.tokens.length"
+                                class="rounded-lg border border-[#e4ebe6] bg-white px-4 py-8 text-center text-sm text-[#647068]"
+                            >
+                                No hay tokens registrados.
+                            </div>
+                            <article
+                                v-for="token in state.tokens"
+                                v-else
+                                :key="token.id"
+                                class="rounded-lg border border-[#e4ebe6] bg-white p-4"
+                            >
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <h3 class="break-words font-semibold text-[#202a24]">
+                                            {{ token.name }}
+                                        </h3>
+                                        <p class="mt-1 break-all text-xs text-[#647068]">
+                                            {{ token.user?.email ?? '-' }}
+                                        </p>
+                                    </div>
+                                    <span
+                                        :class="[
+                                            'shrink-0 rounded-md px-2 py-1 text-xs font-semibold',
+                                            token.is_usable
+                                                ? 'bg-[#eaf7ef] text-[#116f3b]'
+                                                : 'bg-red-50 text-red-700',
+                                        ]"
+                                    >
+                                        {{ token.is_usable ? 'Activo' : 'Revocado' }}
+                                    </span>
+                                </div>
+
+                                <dl class="mt-4 grid gap-3 text-sm">
+                                    <div>
+                                        <dt class="text-xs font-semibold text-[#536158]">
+                                            Usuario
+                                        </dt>
+                                        <dd class="break-words text-[#202a24]">
+                                            {{ token.user?.name ?? '-' }}
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-xs font-semibold text-[#536158]">
+                                            Permisos
+                                        </dt>
+                                        <dd class="mt-1 flex flex-wrap gap-1">
+                                            <span
+                                                v-for="ability in token.abilities"
+                                                :key="ability"
+                                                class="max-w-full break-words rounded-md bg-[#eaf7ef] px-2 py-1 text-xs font-semibold text-[#116f3b]"
+                                            >
+                                                {{ abilityLabels[ability] ?? ability }}
+                                            </span>
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-xs font-semibold text-[#536158]">
+                                            Ultimo uso
+                                        </dt>
+                                        <dd class="text-[#647068]">
+                                            {{ formatDate(token.last_used_at) }}
+                                        </dd>
+                                    </div>
+                                </dl>
+
+                                <Button
+                                    v-if="token.is_usable"
+                                    type="button"
+                                    variant="outline"
+                                    class="mt-4 min-h-10 w-full border-red-300 text-red-700 hover:bg-red-50"
+                                    :disabled="state.revokingId === Number(token.id)"
+                                    @click="revokeToken(token)"
+                                >
+                                    {{
+                                        state.revokingId === Number(token.id)
+                                            ? 'Revocando...'
+                                            : 'Revocar'
+                                    }}
+                                </Button>
+                            </article>
+                        </div>
+
+                        <div class="hidden overflow-x-auto md:block">
                             <table class="w-full min-w-[780px] text-sm">
                                 <thead class="bg-white text-left text-xs text-[#536158]">
                                     <tr>
@@ -413,10 +507,10 @@ onMounted(load);
                                             {{ token.name }}
                                         </td>
                                         <td class="px-4 py-3">
-                                            <p class="font-medium text-[#202a24]">
+                                            <p class="max-w-[180px] truncate font-medium text-[#202a24]">
                                                 {{ token.user?.name ?? '-' }}
                                             </p>
-                                            <p class="text-xs text-[#647068]">
+                                            <p class="max-w-[220px] truncate text-xs text-[#647068]">
                                                 {{ token.user?.email ?? '-' }}
                                             </p>
                                         </td>

@@ -9,7 +9,6 @@ use App\Models\Configuracion\PuntoVenta;
 use App\Models\Configuracion\Sucursal;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -90,13 +89,4 @@ class User extends Authenticatable
             || $this->hasRole(RolSistemaEnum::ADMINISTRADOR->value);
     }
 
-    public function kardex(): HasMany
-    {
-        return $this->hasMany(Kardex::class);
-    }
-
-    public function ventas(): HasMany
-    {
-        return $this->hasMany(VentaCabecera::class);
-    }
 }

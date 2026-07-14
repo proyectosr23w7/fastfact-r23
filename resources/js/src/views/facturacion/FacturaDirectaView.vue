@@ -234,7 +234,7 @@ onMounted(async () => {
                             Nueva factura directa
                         </h1>
                         <p class="mt-1 text-sm text-[#66736a]">
-                            Carga cliente y productos igual que en una venta.
+                            Carga cliente, productos y metodo de pago para emitir.
                         </p>
                     </div>
                     <span

@@ -164,7 +164,6 @@ Route::middleware(['web', 'auth'])->prefix('facturacion')->group(function () {
     Route::get('facturas', [FacturaController::class, 'index'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');
     Route::get('facturas/{factura}', [FacturaController::class, 'show'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');
     Route::post('facturas/emitir-directa', [FacturaController::class, 'emitirDirecta'])->middleware('permission:facturacion.facturas.emitir');
-    Route::post('facturas/{factura}/reintentar', [FacturaController::class, 'reintentar'])->middleware('permission:facturacion.siat.sync');
     Route::patch('facturas/{factura}/anular', [FacturaController::class, 'anular'])->middleware('permission:facturacion.siat.sync');
     Route::patch('facturas/{factura}/revertir-anulacion', [FacturaController::class, 'revertirAnulacion'])->middleware('permission:facturacion.facturas.revertir_anulacion');
     Route::post('facturas/{factura}/reenviar-correo', [FacturaController::class, 'reenviarCorreo'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');

@@ -124,7 +124,7 @@ class SiatClientService
 
     public function emitirFactura(array $payload): array
     {
-        $factura = Factura::query()->with(['venta.cliente', 'sucursal', 'puntoVenta', 'cuis', 'cufd'])->find($payload['factura_id'] ?? null);
+        $factura = Factura::query()->with(['cliente', 'sucursal', 'puntoVenta', 'cuis', 'cufd'])->find($payload['factura_id'] ?? null);
 
         if (! $factura) {
             return $this->error('FACTURA_NOT_FOUND', 'No se pudo cargar la factura para enviarla al SIAT.');

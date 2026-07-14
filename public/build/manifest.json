@@ -198,7 +198,7 @@
     ]
   },
   "resources/js/app.ts": {
-    "file": "assets/app-C96PJ4GD.js",
+    "file": "assets/app-B3raIUj7.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -259,7 +259,7 @@
       "resources/js/pages/settings/TwoFactor.vue"
     ],
     "css": [
-      "assets/app-BxKx9woP.css"
+      "assets/app-DVXl9941.css"
     ]
   },
   "resources/js/pages/Dashboard.vue": {
@@ -444,7 +444,7 @@
     ]
   },
   "resources/js/pages/settings/Appearance.vue": {
-    "file": "assets/Appearance-BfhbyfvA.js",
+    "file": "assets/Appearance-D3lk_3Ek.js",
     "name": "Appearance",
     "src": "resources/js/pages/settings/Appearance.vue",
     "isDynamicEntry": true,
@@ -688,7 +688,7 @@
     ]
   },
   "resources/js/src/views/facturacion/FacturaDirectaView.vue": {
-    "file": "assets/FacturaDirectaView-BsxKDhad.js",
+    "file": "assets/FacturaDirectaView-Y-hVw50t.js",
     "name": "FacturaDirectaView",
     "src": "resources/js/src/views/facturacion/FacturaDirectaView.vue",
     "isDynamicEntry": true,
@@ -707,7 +707,7 @@
     ]
   },
   "resources/js/src/views/facturacion/FacturaView.vue": {
-    "file": "assets/FacturaView-ByYNioyr.js",
+    "file": "assets/FacturaView-CPIO2lkB.js",
     "name": "FacturaView",
     "src": "resources/js/src/views/facturacion/FacturaView.vue",
     "isDynamicEntry": true,
@@ -823,7 +823,7 @@
     ]
   },
   "resources/js/src/views/seguridad/IntegrationTokenView.vue": {
-    "file": "assets/IntegrationTokenView-D8suzdcV.js",
+    "file": "assets/IntegrationTokenView-EmnAUIuv.js",
     "name": "IntegrationTokenView",
     "src": "resources/js/src/views/seguridad/IntegrationTokenView.vue",
     "isDynamicEntry": true,

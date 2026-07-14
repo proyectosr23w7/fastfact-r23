@@ -1,10 +1,10 @@
 # Despliegue Multiempresa
 
-Este sistema se despliega como una copia independiente por empresa. Cada copia debe tener su propio subdominio, base de datos, storage, firma digital, token SIAT y usuarios.
+FastFact R23 se despliega como una copia independiente por empresa. Cada copia debe tener su propio subdominio, base de datos, storage, firma digital, token SIAT, configuracion y usuarios.
 
 ## Recomendacion de dominios
 
-Usar subdominio por empresa:
+Usar un subdominio por empresa:
 
 ```text
 facturacion.empresa1.com
@@ -26,6 +26,8 @@ No subir:
 
 ```text
 .env
+.env.backup
+.env.production
 vendor/
 node_modules/
 public/build/
@@ -40,7 +42,7 @@ storage/app/private/siat/certificados/
 *.pfx
 ```
 
-Cada empresa debe configurar esos datos en su servidor.
+Cada empresa debe configurar esos datos en su servidor. Tambien deben excluirse dumps productivos, certificados, respaldos, logs, caches, credenciales y archivos temporales de oficina generados al editar documentos.
 
 ## Instalacion por empresa
 
@@ -117,12 +119,16 @@ En hosting compartido, ajustar permisos desde el panel si no hay SSH completo.
 Por cada empresa:
 
 1. Ingresar al sistema.
-2. Registrar configuracion SIAT.
-3. Subir firma digital `.p12` o `.pfx`.
-4. Registrar contraseña de firma.
-5. Verificar CUIS.
-6. Generar CUFD.
-7. Emitir una factura de prueba oficial solo cuando corresponda.
+2. Registrar empresa y configuracion general.
+3. Registrar configuracion SIAT.
+4. Subir firma digital `.p12` o `.pfx`.
+5. Registrar contrasena de firma.
+6. Verificar CUIS.
+7. Generar CUFD.
+8. Sincronizar catalogos SIAT.
+9. Emitir una factura de prueba oficial solo cuando corresponda.
+
+Si la empresa operara contingencias manuales, registrar tambien los CAFC vigentes y revisar rangos autorizados por sucursal, punto de venta y ambiente.
 
 ## Workers y tareas
 
@@ -160,7 +166,23 @@ Routes: CACHED
 Pruebas minimas:
 
 1. Login.
-2. CUFD vigente.
-3. Descargar PDF/XML de una factura.
-4. Consultar factura en SIAT.
-5. Probar API con token Bearer.
+2. Acceso al dashboard.
+3. Empresa y configuracion SIAT cargadas.
+4. CUIS vigente.
+5. CUFD vigente.
+6. Sincronizacion de catalogos SIAT.
+7. Emision de factura de prueba en el ambiente correspondiente.
+8. Descargar PDF/XML de una factura.
+9. Consultar factura en SIAT.
+10. Anular factura de prueba cuando corresponda.
+11. Probar API con token Bearer.
+12. Verificar envio de correos si la empresa usara notificaciones.
+
+## Operacion posterior al despliegue
+
+- Mantener backup periodico de base de datos y storage.
+- Renovar firma digital y tokens SIAT antes de su vencimiento.
+- Revisar vigencia diaria de CUFD por sucursal y punto de venta.
+- Revisar logs ante facturas observadas o rechazadas.
+- Validar permisos de tokens de integracion antes de entregar credenciales a sistemas externos.
+- No copiar certificados, `.env` ni dumps entre empresas sin limpieza previa de datos sensibles.

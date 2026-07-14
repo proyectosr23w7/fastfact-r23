@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Facturacion\AnularFacturaRequest;
 use App\Http\Requests\Facturacion\ConsultarFacturaRequest;
 use App\Http\Requests\Facturacion\EmitirFacturaDirectaRequest;
-use App\Http\Requests\Facturacion\RetryFacturaRequest;
 use App\Http\Resources\FacturaResource;
 use App\Models\Factura;
 use App\Services\Facturacion\FacturaCorreoService;
@@ -84,18 +83,6 @@ class FacturaController extends Controller
             'message' => 'Factura directa emitida correctamente.',
             'data' => FacturaResource::make($factura)->resolve(),
         ], 201);
-    }
-
-    public function reintentar(RetryFacturaRequest $request, Factura $factura): JsonResponse
-    {
-        $this->service->autorizarAcceso($factura, $request->user());
-        $factura = $this->service->reintentar($factura, $request->validated(), $request->user());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Reintento de facturacion ejecutado correctamente.',
-            'data' => FacturaResource::make($factura)->resolve(),
-        ]);
     }
 
     public function consultar(ConsultarFacturaRequest $request, Factura $factura): JsonResponse

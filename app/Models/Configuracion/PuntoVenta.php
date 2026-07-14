@@ -3,7 +3,6 @@
 namespace App\Models\Configuracion;
 
 use App\Models\Cuis;
-use App\Models\VentaCabecera;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -46,8 +45,4 @@ class PuntoVenta extends Model
             ->latest('id');
     }
 
-    public function ventas(): HasMany
-    {
-        return $this->hasMany(VentaCabecera::class);
-    }
 }
