@@ -237,7 +237,7 @@ class EventoSignificativoRepository
 
     private function cafcRelation(): \Closure
     {
-        return static function (Builder $query): void {
+        return static function ($query): void {
             $query->select([
                 'id',
                 'codigo',
