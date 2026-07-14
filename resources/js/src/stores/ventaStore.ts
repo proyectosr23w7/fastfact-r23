@@ -155,21 +155,35 @@ export function useVentaStore() {
     });
 
     const resetForm = () => {
+        const contextoSiat = (state.meta.salud_siat as
+            | Record<string, unknown>
+            | undefined)?.contexto as Record<string, unknown> | undefined;
         const firstUser = ((state.meta.usuarios as
             | Record<string, unknown>[]
             | undefined) ?? [])[0];
-        const firstSucursal = ((state.meta.sucursales as
+        const sucursales = (state.meta.sucursales as
             | Record<string, unknown>[]
-            | undefined) ?? [])[0];
-        const firstPuntoVenta = (
-            (state.meta.puntos_venta as
-                | Record<string, unknown>[]
-                | undefined) ?? []
-        ).find(
-            (puntoVenta) =>
-                String(puntoVenta.sucursal_id ?? '') ===
-                String(firstSucursal?.id ?? ''),
-        );
+            | undefined) ?? [];
+        const puntosVenta = (state.meta.puntos_venta as
+            | Record<string, unknown>[]
+            | undefined) ?? [];
+        const firstSucursal =
+            sucursales.find(
+                (sucursal) =>
+                    String(sucursal.id ?? '') ===
+                    String(contextoSiat?.sucursal_id ?? ''),
+            ) ?? sucursales[0];
+        const firstPuntoVenta =
+            puntosVenta.find(
+                (puntoVenta) =>
+                    String(puntoVenta.id ?? '') ===
+                    String(contextoSiat?.punto_venta_id ?? ''),
+            ) ??
+            puntosVenta.find(
+                (puntoVenta) =>
+                    String(puntoVenta.sucursal_id ?? '') ===
+                    String(firstSucursal?.id ?? ''),
+            );
         const facturacionObligatoria = Boolean(
             state.meta.facturacion_obligatoria_ventas ?? false,
         );
