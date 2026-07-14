@@ -27,8 +27,8 @@
       "_icons-Y6r9mtYu.js"
     ]
   },
-  "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-OipEatxf.js": {
-    "file": "assets/CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-OipEatxf.js",
+  "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-B00zMhQa.js": {
+    "file": "assets/CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-B00zMhQa.js",
     "name": "CufdCafcWorkspace.vue_vue_type_script_setup_true_lang",
     "imports": [
       "_framework-CYv8xcdK.js",
@@ -36,7 +36,7 @@
       "_ui-kit-B84sLBGc.js",
       "_ModulePageLayout.vue_vue_type_script_setup_true_lang-CoorWinW.js",
       "_apiClient-CNUX18Uj.js",
-      "_facturacionService-Dts-Ayvf.js",
+      "_facturacionService-BKy1Dbhb.js",
       "_icons-Y6r9mtYu.js"
     ]
   },
@@ -121,8 +121,8 @@
       "_apiClient-CNUX18Uj.js"
     ]
   },
-  "_facturacionService-Dts-Ayvf.js": {
-    "file": "assets/facturacionService-Dts-Ayvf.js",
+  "_facturacionService-BKy1Dbhb.js": {
+    "file": "assets/facturacionService-BKy1Dbhb.js",
     "name": "facturacionService",
     "imports": [
       "_apiClient-CNUX18Uj.js"
@@ -198,7 +198,7 @@
     ]
   },
   "resources/js/app.ts": {
-    "file": "assets/app-BoyiWAnF.js",
+    "file": "assets/app-C96PJ4GD.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -259,7 +259,7 @@
       "resources/js/pages/settings/TwoFactor.vue"
     ],
     "css": [
-      "assets/app-nbo-sko0.css"
+      "assets/app-BxKx9woP.css"
     ]
   },
   "resources/js/pages/Dashboard.vue": {
@@ -444,7 +444,7 @@
     ]
   },
   "resources/js/pages/settings/Appearance.vue": {
-    "file": "assets/Appearance-DjK55uf5.js",
+    "file": "assets/Appearance-BfhbyfvA.js",
     "name": "Appearance",
     "src": "resources/js/pages/settings/Appearance.vue",
     "isDynamicEntry": true,
@@ -591,12 +591,12 @@
     ]
   },
   "resources/js/src/views/facturacion/CafcView.vue": {
-    "file": "assets/CafcView-Db-2Pk4Y.js",
+    "file": "assets/CafcView-BgIaLFuw.js",
     "name": "CafcView",
     "src": "resources/js/src/views/facturacion/CafcView.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-OipEatxf.js",
+      "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-B00zMhQa.js",
       "_framework-CYv8xcdK.js",
       "_InputError.vue_vue_type_script_setup_true_lang-V6_ibqMH.js",
       "_ui-kit-B84sLBGc.js",
@@ -607,7 +607,7 @@
       "_ModulePageLayout.vue_vue_type_script_setup_true_lang-CoorWinW.js",
       "_AppLayout.vue_vue_type_script_setup_true_lang-lAZ_cHTl.js",
       "_apiClient-CNUX18Uj.js",
-      "_facturacionService-Dts-Ayvf.js"
+      "_facturacionService-BKy1Dbhb.js"
     ]
   },
   "resources/js/src/views/facturacion/ClienteView.vue": {
@@ -630,12 +630,12 @@
     ]
   },
   "resources/js/src/views/facturacion/CufdView.vue": {
-    "file": "assets/CufdView-DXyhaQHX.js",
+    "file": "assets/CufdView-BGfaM-K3.js",
     "name": "CufdView",
     "src": "resources/js/src/views/facturacion/CufdView.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-OipEatxf.js",
+      "_CufdCafcWorkspace.vue_vue_type_script_setup_true_lang-B00zMhQa.js",
       "_framework-CYv8xcdK.js",
       "_InputError.vue_vue_type_script_setup_true_lang-V6_ibqMH.js",
       "_ui-kit-B84sLBGc.js",
@@ -646,11 +646,11 @@
       "_ModulePageLayout.vue_vue_type_script_setup_true_lang-CoorWinW.js",
       "_AppLayout.vue_vue_type_script_setup_true_lang-lAZ_cHTl.js",
       "_apiClient-CNUX18Uj.js",
-      "_facturacionService-Dts-Ayvf.js"
+      "_facturacionService-BKy1Dbhb.js"
     ]
   },
   "resources/js/src/views/facturacion/CuisView.vue": {
-    "file": "assets/CuisView-BBfonvnM.js",
+    "file": "assets/CuisView-Dj3qx0Lb.js",
     "name": "CuisView",
     "src": "resources/js/src/views/facturacion/CuisView.vue",
     "isDynamicEntry": true,
@@ -660,7 +660,7 @@
       "_ui-kit-B84sLBGc.js",
       "_ModulePageLayout.vue_vue_type_script_setup_true_lang-CoorWinW.js",
       "_apiClient-CNUX18Uj.js",
-      "_facturacionService-Dts-Ayvf.js",
+      "_facturacionService-BKy1Dbhb.js",
       "_vendor-_7Zn4n53.js",
       "_ui-vendor-E00ikNu6.js",
       "_app-shell-BQAOwwrt.js",
@@ -669,7 +669,7 @@
     ]
   },
   "resources/js/src/views/facturacion/EventoSignificativoView.vue": {
-    "file": "assets/EventoSignificativoView-CYWN8Zvx.js",
+    "file": "assets/EventoSignificativoView-DQX-aafJ.js",
     "name": "EventoSignificativoView",
     "src": "resources/js/src/views/facturacion/EventoSignificativoView.vue",
     "isDynamicEntry": true,
@@ -679,7 +679,7 @@
       "_ui-kit-B84sLBGc.js",
       "_ModulePageLayout.vue_vue_type_script_setup_true_lang-CoorWinW.js",
       "_apiClient-CNUX18Uj.js",
-      "_facturacionService-Dts-Ayvf.js",
+      "_facturacionService-BKy1Dbhb.js",
       "_icons-Y6r9mtYu.js",
       "_vendor-_7Zn4n53.js",
       "_ui-vendor-E00ikNu6.js",
@@ -688,7 +688,7 @@
     ]
   },
   "resources/js/src/views/facturacion/FacturaDirectaView.vue": {
-    "file": "assets/FacturaDirectaView-m0ttzBbd.js",
+    "file": "assets/FacturaDirectaView-BsxKDhad.js",
     "name": "FacturaDirectaView",
     "src": "resources/js/src/views/facturacion/FacturaDirectaView.vue",
     "isDynamicEntry": true,
@@ -699,15 +699,15 @@
       "_InputError.vue_vue_type_script_setup_true_lang-V6_ibqMH.js",
       "_icons-Y6r9mtYu.js",
       "_apiClient-CNUX18Uj.js",
-      "_facturacionService-Dts-Ayvf.js",
       "_clienteVentaService-CAXzlYle.js",
+      "_facturacionService-BKy1Dbhb.js",
       "_ui-vendor-E00ikNu6.js",
       "_vendor-_7Zn4n53.js",
       "_app-shell-BQAOwwrt.js"
     ]
   },
   "resources/js/src/views/facturacion/FacturaView.vue": {
-    "file": "assets/FacturaView-BjN4Kyz4.js",
+    "file": "assets/FacturaView-ByYNioyr.js",
     "name": "FacturaView",
     "src": "resources/js/src/views/facturacion/FacturaView.vue",
     "isDynamicEntry": true,
@@ -719,14 +719,14 @@
       "_icons-Y6r9mtYu.js",
       "_app-shell-BQAOwwrt.js",
       "_apiClient-CNUX18Uj.js",
-      "_facturacionService-Dts-Ayvf.js",
+      "_facturacionService-BKy1Dbhb.js",
       "_vendor-_7Zn4n53.js",
       "_ui-vendor-E00ikNu6.js",
       "_AppLayout.vue_vue_type_script_setup_true_lang-lAZ_cHTl.js"
     ]
   },
   "resources/js/src/views/facturacion/SincronizacionSiatView.vue": {
-    "file": "assets/SincronizacionSiatView-DcfiXuog.js",
+    "file": "assets/SincronizacionSiatView-ZRKI2oTG.js",
     "name": "SincronizacionSiatView",
     "src": "resources/js/src/views/facturacion/SincronizacionSiatView.vue",
     "isDynamicEntry": true,
@@ -736,7 +736,7 @@
       "_ui-kit-B84sLBGc.js",
       "_ModulePageLayout.vue_vue_type_script_setup_true_lang-CoorWinW.js",
       "_apiClient-CNUX18Uj.js",
-      "_facturacionService-Dts-Ayvf.js",
+      "_facturacionService-BKy1Dbhb.js",
       "_icons-Y6r9mtYu.js",
       "_vendor-_7Zn4n53.js",
       "_ui-vendor-E00ikNu6.js",
