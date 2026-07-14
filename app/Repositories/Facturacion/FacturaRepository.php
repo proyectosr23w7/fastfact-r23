@@ -4,10 +4,10 @@ namespace App\Repositories\Facturacion;
 
 use App\Models\Factura;
 use App\Models\User;
-use App\Models\VentaCabecera;
 use App\Support\OperationalContextScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class FacturaRepository
 {
@@ -15,7 +15,6 @@ class FacturaRepository
     {
         $query = Factura::query()
             ->with([
-                'venta:id,numero_venta,fecha_venta,estado,total,requiere_factura',
                 'cliente:id,nombre,razon_social,nit_ci',
                 'detalles',
                 'sucursal:id,codigo,nombre',
@@ -95,8 +94,6 @@ class FacturaRepository
     public function refresh(Factura $factura): Factura
     {
         return $factura->refresh()->load([
-            'venta.cliente',
-            'venta.detalle.articulo',
             'detalles.articulo.unidadMedida',
             'cliente',
             'sucursal',
@@ -110,19 +107,10 @@ class FacturaRepository
         ]);
     }
 
-    public function byVentaId(int $ventaId): ?Factura
-    {
-        return Factura::query()
-            ->where('venta_id', $ventaId)
-            ->first();
-    }
-
     public function findForProcess(Factura $factura): Factura
     {
         return Factura::query()
             ->with([
-                'venta.cliente',
-                'venta.detalle.articulo',
                 'detalles.articulo.unidadMedida',
                 'cliente',
                 'sucursal',
@@ -138,27 +126,45 @@ class FacturaRepository
             ->findOrFail($factura->id);
     }
 
-    public function ventasFacturables(?User $user = null): Collection
+    public function getNextInvoiceNumber(int $sucursalId, int $puntoVentaId, string $ambienteFacturacion = 'piloto', int $tipoFacturacion = 0): int
     {
-        $query = VentaCabecera::query()
-            ->with(['cliente:id,nombre,razon_social,nit_ci', 'sucursal:id,codigo,nombre', 'puntoVenta:id,sucursal_id,codigo,nombre'])
-            ->where('estado', 'confirmada')
-            ->where('requiere_factura', true)
-            ->whereDoesntHave('factura');
-
-        OperationalContextScope::apply($query, $user);
-
-        return $query
-            ->orderByDesc('fecha_venta')
-            ->orderByDesc('id')
-            ->get();
-    }
-
-    public function getNextInvoiceNumber(): int
-    {
-        return (int) Factura::query()
+        $ambienteFacturacion = $ambienteFacturacion ?: 'piloto';
+        $ultimoNumeroExistente = (int) Factura::query()
             ->whereNull('cafc_id')
-            ->max('numero_factura') + 1;
+            ->where('sucursal_id', $sucursalId)
+            ->where('punto_venta_id', $puntoVentaId)
+            ->where('ambiente_facturacion', $ambienteFacturacion)
+            ->where('tipo_facturacion', $tipoFacturacion)
+            ->max('numero_factura');
+
+        DB::table('factura_correlativos')->insertOrIgnore([
+            'sucursal_id' => $sucursalId,
+            'punto_venta_id' => $puntoVentaId,
+            'ambiente_facturacion' => $ambienteFacturacion,
+            'tipo_facturacion' => $tipoFacturacion,
+            'ultimo_numero' => $ultimoNumeroExistente,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $correlativo = DB::table('factura_correlativos')
+            ->where('sucursal_id', $sucursalId)
+            ->where('punto_venta_id', $puntoVentaId)
+            ->where('ambiente_facturacion', $ambienteFacturacion)
+            ->where('tipo_facturacion', $tipoFacturacion)
+            ->lockForUpdate()
+            ->first();
+
+        $nextNumber = max((int) ($correlativo?->ultimo_numero ?? 0), $ultimoNumeroExistente) + 1;
+
+        DB::table('factura_correlativos')
+            ->where('id', $correlativo->id)
+            ->update([
+                'ultimo_numero' => $nextNumber,
+                'updated_at' => now(),
+            ]);
+
+        return $nextNumber;
     }
 
     public function existsManualNumberForCafc(int $cafcId, int $numeroFactura, ?int $exceptFacturaId = null): bool
@@ -188,9 +194,7 @@ class FacturaRepository
                             ->orWhereHas('cliente', fn (Builder $cliente) => $cliente
                                 ->where('nombre', 'like', "%{$search}%")
                                 ->orWhere('razon_social', 'like', "%{$search}%")
-                                ->orWhere('nit_ci', 'like', "%{$search}%"))
-                            ->orWhereHas('venta', fn (Builder $venta) => $venta
-                                ->where('numero_venta', 'like', "%{$search}%"));
+                                ->orWhere('nit_ci', 'like', "%{$search}%"));
                     });
                 },
             )

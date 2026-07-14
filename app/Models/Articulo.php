@@ -65,23 +65,4 @@ class Articulo extends Model
         return $this->hasMany(ArticuloPrecio::class);
     }
 
-    public function kardex(): HasMany
-    {
-        return $this->hasMany(Kardex::class, 'articulo_id');
-    }
-
-    public function lotes(): HasMany
-    {
-        return $this->hasMany(ArticuloLote::class, 'articulo_id');
-    }
-
-    public function stocks(): HasMany
-    {
-        return $this->hasMany(ArticuloStock::class, 'articulo_id');
-    }
-
-    public function ventaDetalles(): HasMany
-    {
-        return $this->hasMany(VentaDetalle::class, 'articulo_id');
-    }
 }

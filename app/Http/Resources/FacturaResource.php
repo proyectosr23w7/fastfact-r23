@@ -16,7 +16,6 @@ class FacturaResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'venta_id' => $this->venta_id,
             'cliente_id' => $this->cliente_id,
             'sucursal_id' => $this->sucursal_id,
             'punto_venta_id' => $this->punto_venta_id,
@@ -92,11 +91,7 @@ class FacturaResource extends JsonResource
             'codigo_estado' => $this->codigo_estado,
             'descripcion_estado' => $this->descripcion_estado,
             'estado_factura' => is_string($this->estado_factura) ? $this->estado_factura : $this->estado_factura?->value,
-            'can_retry' => in_array(
-                is_string($this->estado_factura) ? $this->estado_factura : $this->estado_factura?->value,
-                ['rechazada', 'observada'],
-                true,
-            ) && (int) $this->codigo_emision === 1,
+            'can_retry' => false,
             'codigo_excepcion' => $this->codigo_excepcion,
             'observacion' => $this->observacion,
             'datos_respuesta_siat' => $this->datos_respuesta_siat,
@@ -104,7 +99,6 @@ class FacturaResource extends JsonResource
             'anulacion_reversion_codigo_respuesta' => $this->anulacion_reversion_codigo_respuesta,
             'anulacion_reversion_descripcion' => $this->anulacion_reversion_descripcion,
             'anulacion_reversion_respuesta_siat' => $this->anulacion_reversion_respuesta_siat,
-            'venta' => $this->whenLoaded('venta', fn () => VentaCabeceraResource::make($this->venta)->resolve()),
             'detalles' => $this->whenLoaded('detalles', fn () => $this->detalles->map(fn ($detalle) => [
                 'id' => $detalle->id,
                 'actividad_economica' => $detalle->actividad_economica,

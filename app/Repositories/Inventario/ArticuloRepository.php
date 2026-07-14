@@ -16,7 +16,6 @@ class ArticuloRepository
                 'unidadMedida:id,nombre,abreviatura',
                 'precios:id,articulo_id,cantidad_minima,precio,tipo_precio,estado',
             ])
-            ->withCount('ventaDetalles')
             ->when(
                 filled($filters['search'] ?? null),
                 function ($query) use ($filters): void {
@@ -54,8 +53,7 @@ class ArticuloRepository
                             END",
                             [$search, $search, $search, "%{$search}%", "%{$search}%", "%{$search}%", "%{$search}%", "%{$search}%", "%{$search}%"],
                         )
-                        ->orderByDesc('stock_actual')
-                        ->orderByDesc('venta_detalles_count');
+                        ->orderBy('nombre');
                 },
             )
             ->when(
@@ -125,6 +123,6 @@ class ArticuloRepository
             'marca:id,nombre',
             'unidadMedida:id,nombre,abreviatura',
             'precios:id,articulo_id,cantidad_minima,precio,tipo_precio,estado',
-        ])->loadCount('ventaDetalles');
+        ]);
     }
 }

@@ -16,7 +16,6 @@ class Factura extends Model
     protected $fillable = [
         'origen',
         'referencia_externa',
-        'venta_id',
         'cliente_id',
         'sucursal_id',
         'punto_venta_id',
@@ -76,11 +75,6 @@ class Factura extends Model
             'metadata' => 'array',
             'estado_factura' => FacturaEstadoEnum::class,
         ];
-    }
-
-    public function venta(): BelongsTo
-    {
-        return $this->belongsTo(VentaCabecera::class, 'venta_id');
     }
 
     public function cliente(): BelongsTo

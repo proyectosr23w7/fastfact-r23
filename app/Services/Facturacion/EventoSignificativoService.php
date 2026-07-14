@@ -762,10 +762,6 @@ class EventoSignificativoService
                 'evento_significativo_paquete_id' => $paqueteId ?? $factura->evento_significativo_paquete_id,
             ]);
 
-            $factura->venta?->update([
-                'codigo_recepcion' => $codigoRecepcionPaquete,
-                'estado_facturacion' => FacturaEstadoEnum::EMITIDA->value,
-            ]);
         }
     }
 

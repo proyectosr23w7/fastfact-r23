@@ -124,7 +124,6 @@ class FacturaDirectaService
             $factura = $this->repository->create([
                 'origen' => $data['origen'] ?? 'directa',
                 'referencia_externa' => $data['referencia_externa'] ?? null,
-                'venta_id' => null,
                 'cliente_id' => $cliente->id,
                 'sucursal_id' => $sucursal->id,
                 'punto_venta_id' => $puntoVenta->id,

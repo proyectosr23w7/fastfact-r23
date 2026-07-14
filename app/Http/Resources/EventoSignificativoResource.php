@@ -48,7 +48,6 @@ class EventoSignificativoResource extends JsonResource
             'alerta_cafc' => $this->buildCafcAlert($cafc),
             'facturas' => $this->whenLoaded('facturas', fn () => $this->facturas->map(fn ($factura) => [
                 'id' => $factura->id,
-                'venta_id' => $factura->venta_id,
                 'cliente_id' => $factura->cliente_id,
                 'cafc_id' => $factura->cafc_id,
                 'numero_factura' => $factura->numero_factura,
@@ -61,10 +60,6 @@ class EventoSignificativoResource extends JsonResource
                 'descripcion_estado' => $factura->descripcion_estado,
                 'monto_total' => (float) ($factura->monto_total ?? 0),
                 'fecha_emision' => optional($factura->fecha_emision)?->format('Y-m-d H:i:s'),
-                'venta' => $factura->venta ? [
-                    'id' => $factura->venta->id,
-                    'numero_venta' => $factura->venta->numero_venta,
-                ] : null,
                 'cliente' => $factura->cliente ? [
                     'id' => $factura->cliente->id,
                     'nombre' => $factura->cliente->nombre,

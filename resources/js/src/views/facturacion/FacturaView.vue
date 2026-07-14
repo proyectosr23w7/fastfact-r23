@@ -147,7 +147,6 @@ const puntosVentaDisponibles = computed(() =>
 );
 const productosServicios = computed(() => metaList('productos_servicios'));
 const unidadesMedida = computed(() => metaList('unidades_medida'));
-const ventasFacturables = computed(() => metaList('ventas_facturables'));
 const eventosFacturables = computed(() =>
     metaList('eventos_significativos_facturables'),
 );
@@ -156,29 +155,6 @@ const selectedFactura = computed(
         facturas.value.find(
             (item) => Number(item.id) === selectedFacturaId.value,
         ) ?? null,
-);
-const selectedVentaFacturable = computed(
-    () =>
-        ventasFacturables.value.find(
-            (venta) =>
-                String(venta.id ?? '') ===
-                String(store.state.emitForm.venta_id ?? ''),
-        ) ?? null,
-);
-const selectedEventoFacturable = computed(
-    () =>
-        eventosFacturables.value.find(
-            (evento) =>
-                String(evento.sucursal_id ?? '') ===
-                    String(selectedVentaFacturable.value?.sucursal_id ?? '') &&
-                String(evento.punto_venta_id ?? '') ===
-                    String(selectedVentaFacturable.value?.punto_venta_id ?? ''),
-        ) ?? null,
-);
-const selectedEventoManual = computed(
-    () =>
-        String(selectedEventoFacturable.value?.tipo_contingencia ?? '') ===
-        'manual',
 );
 const selectedAttention = computed(() =>
     selectedFactura.value &&
@@ -860,9 +836,7 @@ onMounted(store.load);
                             Ajusta los filtros o emite una factura directa.
                         </p>
                         <Button
-                            v-if="
-                                capabilities.emitir && ventasFacturables.length
-                            "
+                            v-if="capabilities.emitir"
                             class="mt-4 bg-[#168447] text-white hover:bg-[#116f3b]"
                             @click="openEmitDialog"
                             ><Plus class="size-4" />Emitir factura</Button
@@ -1198,15 +1172,6 @@ onMounted(store.load);
                                             selectedAttention.numero_factura ||
                                                 selectedAttention.id,
                                         ).padStart(7, '0')
-                                    }}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt class="text-xs text-[#6c786f]">Venta</dt>
-                                <dd>
-                                    {{
-                                        selectedAttention.venta?.numero_venta ||
-                                        '-'
                                     }}
                                 </dd>
                             </div>

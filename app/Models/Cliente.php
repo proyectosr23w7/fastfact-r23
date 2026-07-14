@@ -29,11 +29,6 @@ class Cliente extends Model
         ];
     }
 
-    public function ventas(): HasMany
-    {
-        return $this->hasMany(VentaCabecera::class, 'cliente_id');
-    }
-
     public function facturas(): HasMany
     {
         return $this->hasMany(Factura::class, 'cliente_id');

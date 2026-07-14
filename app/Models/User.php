@@ -6,7 +6,6 @@ use App\Traits\HasSecurityPermissions;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\RolSistemaEnum;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -73,13 +72,4 @@ class User extends Authenticatable
             || $this->hasRole(RolSistemaEnum::ADMINISTRADOR->value);
     }
 
-    public function kardex(): HasMany
-    {
-        return $this->hasMany(Kardex::class);
-    }
-
-    public function ventas(): HasMany
-    {
-        return $this->hasMany(VentaCabecera::class);
-    }
 }

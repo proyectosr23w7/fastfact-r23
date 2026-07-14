@@ -26,7 +26,6 @@ class FacturaCorreoService
     {
         $factura->loadMissing([
             'cliente',
-            'venta.detalle.articulo.unidadMedida',
             'detalles.articulo.unidadMedida',
             'sucursal',
             'puntoVenta',
@@ -54,7 +53,7 @@ class FacturaCorreoService
 
     public function enviarAdvertenciaAnulacion(Factura $factura, ?FacturaAnulacion $anulacion = null): void
     {
-        $factura->loadMissing(['cliente', 'venta', 'sucursal', 'puntoVenta', 'user']);
+        $factura->loadMissing(['cliente', 'sucursal', 'puntoVenta', 'user']);
 
         if (! $this->clienteTieneCorreoValido($factura->cliente?->correo)) {
             return;
@@ -77,7 +76,7 @@ class FacturaCorreoService
 
     public function enviarAdvertenciaReversionAnulacion(Factura $factura): void
     {
-        $factura->loadMissing(['cliente', 'venta', 'sucursal', 'puntoVenta', 'user']);
+        $factura->loadMissing(['cliente', 'sucursal', 'puntoVenta', 'user']);
 
         if (! $this->clienteTieneCorreoValido($factura->cliente?->correo)) {
             return;
@@ -102,7 +101,6 @@ class FacturaCorreoService
     {
         $factura->loadMissing([
             'cliente',
-            'venta.detalle.articulo.unidadMedida',
             'detalles.articulo.unidadMedida',
             'sucursal',
             'puntoVenta',

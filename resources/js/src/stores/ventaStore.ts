@@ -1,5 +1,6 @@
 import { ApiError } from '@/src/services/apiClient';
 import { clienteVentaService } from '@/src/services/clienteVentaService';
+import { facturacionService } from '@/src/services/facturacionService';
 import { ventaService } from '@/src/services/ventaService';
 import { reactive } from 'vue';
 
@@ -391,8 +392,8 @@ export function useVentaStore() {
         state.generalError = '';
 
         try {
-            const response = await ventaService.list(state.filters);
-            state.items = response.data;
+            const response = await facturacionService.listFacturas({});
+            state.items = [];
             state.meta = response.meta ?? {};
 
             if (!state.form.user_id) {
@@ -403,7 +404,7 @@ export function useVentaStore() {
             state.generalError =
                 error instanceof ApiError
                     ? error.message
-                    : 'No se pudo cargar el listado de ventas. Intenta nuevamente.';
+                    : 'No se pudo cargar los datos de facturacion. Intenta nuevamente.';
         } finally {
             state.loading = false;
         }
