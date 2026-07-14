@@ -27,7 +27,7 @@ class FacturaAnuladaMail extends Mailable
         $empresa = $this->empresa?->razon_social ?: $this->empresa?->nombre_empresa ?: config('app.name', 'FastFact R23');
 
         return $this
-            ->subject("Advertencia: factura {$numero} anulada - {$empresa}")
+            ->subject("Notificacion de anulacion de factura Nro. {$numero} - {$empresa}")
             ->view('emails.facturacion.factura_anulada');
     }
 }

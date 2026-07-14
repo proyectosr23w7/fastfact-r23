@@ -29,16 +29,16 @@ import {
     ChevronDown,
     CircleCheck,
     CreditCard,
-    PackagePlus,
     MapPin,
+    PackagePlus,
     Pencil,
     Plus,
     Printer,
     ReceiptText,
     Save,
     Search,
-    SlidersHorizontal,
     ShoppingCart,
+    SlidersHorizontal,
     Sparkles,
     Tag,
     UserRound,
@@ -275,6 +275,11 @@ const attributePairs = (value: unknown) =>
               )
         : [];
 
+const categoriaNombre = (articulo: Record<string, unknown>) =>
+    String(
+        (articulo.categoria as Record<string, unknown> | null)?.nombre ?? '',
+    );
+
 const articuloSearchText = (articulo: Record<string, unknown>) =>
     [
         articulo.nombre,
@@ -354,9 +359,7 @@ const assistantResults = computed(() => {
             );
             const stock = Number(articulo.stock_actual ?? 0);
             const score =
-                matched.length * 20 +
-                (stock > 0 ? 5 : 0) +
-                Math.min(usage, 10);
+                matched.length * 20 + (stock > 0 ? 5 : 0) + Math.min(usage, 10);
 
             return { articulo, matched, score, stock, usage };
         })
@@ -427,6 +430,13 @@ const clienteDocumento = computed(() => {
         clienteSeleccionado.value.complemento ?? '',
     ).trim();
     return complemento ? `${base}-${complemento}` : base;
+});
+
+const clienteCorreo = computed({
+    get: () => String(clienteSeleccionado.value?.correo ?? ''),
+    set: (value: string) => {
+        if (clienteSeleccionado.value) clienteSeleccionado.value.correo = value;
+    },
 });
 
 watch(
@@ -653,7 +663,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                 class="h-10 border-[#D6E2DB] text-[#405047] hover:bg-[#F5F8F6]"
                                 @click="openEditClientDialog"
                             >
-                                <Pencil class="mr-2 size-4" aria-hidden="true" />
+                                <Pencil
+                                    class="mr-2 size-4"
+                                    aria-hidden="true"
+                                />
                                 Editar
                             </Button>
                             <Button
@@ -958,9 +971,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                         class="mb-2 rounded-lg border border-[#E0E8E2] bg-[#FAFCFB] p-2.5"
                         aria-label="Contexto de emision"
                     >
-                        <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                        <div
+                            class="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"
+                        >
                             <div class="space-y-1">
-                                <Label for="sucursal_id" class="text-xs font-semibold"
+                                <Label
+                                    for="sucursal_id"
+                                    class="text-xs font-semibold"
                                     >Sucursal</Label
                                 >
                                 <div class="relative">
@@ -971,10 +988,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                     <select
                                         id="sucursal_id"
                                         v-model="form.sucursal_id"
-                                        :disabled="!puedeCambiarContextoOperativo"
+                                        :disabled="
+                                            !puedeCambiarContextoOperativo
+                                        "
                                         class="h-9 w-full rounded-lg border border-[#CDD9D1] bg-white pr-3 pl-9 text-sm outline-none focus:border-[#168447] focus:ring-2 focus:ring-[#168447]/20 disabled:cursor-not-allowed disabled:bg-[#F3F6F4] disabled:text-[#68766D]"
                                     >
-                                        <option value="">Seleccione una sucursal</option>
+                                        <option value="">
+                                            Seleccione una sucursal
+                                        </option>
                                         <option
                                             v-for="sucursal in sucursales"
                                             :key="String(sucursal.id)"
@@ -984,7 +1005,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                         </option>
                                     </select>
                                 </div>
-                                <InputError :message="errors.sucursal_id?.[0]" />
+                                <InputError
+                                    :message="errors.sucursal_id?.[0]"
+                                />
                             </div>
                             <div class="space-y-1">
                                 <Label
@@ -1000,10 +1023,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                     <select
                                         id="punto_venta_id"
                                         v-model="form.punto_venta_id"
-                                        :disabled="!puedeCambiarContextoOperativo"
+                                        :disabled="
+                                            !puedeCambiarContextoOperativo
+                                        "
                                         class="h-9 w-full rounded-lg border border-[#CDD9D1] bg-white pr-3 pl-9 text-sm outline-none focus:border-[#168447] focus:ring-2 focus:ring-[#168447]/20 disabled:cursor-not-allowed disabled:bg-[#F3F6F4] disabled:text-[#68766D]"
                                     >
-                                        <option value="">Seleccione un punto</option>
+                                        <option value="">
+                                            Seleccione un punto
+                                        </option>
                                         <option
                                             v-for="puntoVenta in puntosVenta"
                                             :key="String(puntoVenta.id)"
@@ -1013,7 +1040,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                         </option>
                                     </select>
                                 </div>
-                                <InputError :message="errors.punto_venta_id?.[0]" />
+                                <InputError
+                                    :message="errors.punto_venta_id?.[0]"
+                                />
                             </div>
                         </div>
                     </section>
@@ -1038,27 +1067,42 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                     v-model="form.codigo_metodo_pago"
                                     class="h-9 w-full rounded-lg border border-[#CDD9D1] bg-white pr-3 pl-9 text-sm outline-none focus:border-[#168447] focus:ring-2 focus:ring-[#168447]/20"
                                 >
-                                    <option value="">Seleccione un metodo</option>
+                                    <option value="">
+                                        Seleccione un metodo
+                                    </option>
                                     <option
                                         v-for="metodo in metodosPagoSiat"
-                                        :key="String(metodo.codigo_clasificador)"
-                                        :value="String(metodo.codigo_clasificador)"
+                                        :key="
+                                            String(metodo.codigo_clasificador)
+                                        "
+                                        :value="
+                                            String(metodo.codigo_clasificador)
+                                        "
                                     >
                                         {{ metodo.descripcion }}
                                     </option>
                                 </select>
                             </div>
-                            <InputError :message="errors.codigo_metodo_pago?.[0]" />
+                            <InputError
+                                :message="errors.codigo_metodo_pago?.[0]"
+                            />
                         </div>
 
-                        <div v-if="requiereNumeroTarjeta" class="mt-2 space-y-1.5">
+                        <div
+                            v-if="requiereNumeroTarjeta"
+                            class="mt-2 space-y-1.5"
+                        >
                             <Label class="text-xs font-semibold">
                                 Numero de tarjeta para SIAT
                             </Label>
-                            <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                            <div
+                                class="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"
+                            >
                                 <Input
                                     id="numero_tarjeta_inicio"
-                                    :model-value="String(form.numero_tarjeta_inicio ?? '')"
+                                    :model-value="
+                                        String(form.numero_tarjeta_inicio ?? '')
+                                    "
                                     inputmode="numeric"
                                     maxlength="4"
                                     class="company-input h-9 text-center font-mono"
@@ -1072,7 +1116,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                 />
                                 <Input
                                     id="numero_tarjeta_fin"
-                                    :model-value="String(form.numero_tarjeta_fin ?? '')"
+                                    :model-value="
+                                        String(form.numero_tarjeta_fin ?? '')
+                                    "
                                     inputmode="numeric"
                                     maxlength="4"
                                     class="company-input h-9 text-center font-mono"
@@ -1088,16 +1134,26 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                             <div
                                 class="rounded-lg border border-[#CFE3D6] bg-[#F1F8F4] px-3 py-1.5 text-center font-mono text-xs font-semibold text-[#126B3B]"
                             >
-                                {{ form.numero_tarjeta_inicio || '####' }}-xxxx-xxxx-{{ form.numero_tarjeta_fin || '####' }}
+                                {{
+                                    form.numero_tarjeta_inicio || '####'
+                                }}-xxxx-xxxx-{{
+                                    form.numero_tarjeta_fin || '####'
+                                }}
                             </div>
                             <p class="text-[11px] leading-4 text-[#68766D]">
-                                Registra solo los 4 primeros y los 4 ultimos digitos.
+                                Registra solo los 4 primeros y los 4 ultimos
+                                digitos.
                             </p>
                             <InputError :message="errors.numero_tarjeta?.[0]" />
                         </div>
 
-                        <div v-if="requiereMontoGiftCard" class="mt-2 space-y-1">
-                            <Label for="monto_gift_card" class="text-xs font-semibold"
+                        <div
+                            v-if="requiereMontoGiftCard"
+                            class="mt-2 space-y-1"
+                        >
+                            <Label
+                                for="monto_gift_card"
+                                class="text-xs font-semibold"
                                 >Monto gift card</Label
                             >
                             <Input
@@ -1109,7 +1165,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                 class="company-input h-9 text-right"
                                 placeholder="0.00"
                             />
-                            <InputError :message="errors.monto_gift_card?.[0]" />
+                            <InputError
+                                :message="errors.monto_gift_card?.[0]"
+                            />
                         </div>
                     </section>
 
@@ -1122,7 +1180,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                         </div>
                         <div class="flex items-center justify-between gap-4">
                             <dt>
-                                <Label for="descuento_global" class="font-normal"
+                                <Label
+                                    for="descuento_global"
+                                    class="font-normal"
                                     >Descuento global</Label
                                 >
                             </dt>
@@ -1138,7 +1198,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                         recalculateAfterGlobalDiscount
                                     "
                                 />
-                                <span class="min-w-16 text-right font-semibold"
+                                <span
+                                    class="min-w-16 text-right font-semibold"
                                     >{{ money(form.descuento_global) }}</span
                                 >
                             </dd>
@@ -1171,13 +1232,31 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                 class="rounded-lg border border-[#E0E8E2] bg-[#FAFCFB] p-2.5"
                             >
                                 <div
-                                    class="flex items-center gap-2 text-sm font-semibold text-[#126B3B]"
+                                    class="flex items-start justify-between gap-2"
                                 >
-                                    <UserRound class="size-4" aria-hidden="true" />
-                                    {{
-                                        clienteSeleccionado?.razon_social ??
-                                        'Cliente no seleccionado'
-                                    }}
+                                    <div
+                                        class="flex min-w-0 items-center gap-2 text-sm font-semibold text-[#126B3B]"
+                                    >
+                                        <UserRound
+                                            class="size-4 shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        <span class="truncate">{{
+                                            clienteSeleccionado?.razon_social ??
+                                            'Cliente no seleccionado'
+                                        }}</span>
+                                    </div>
+                                    <Button
+                                        v-if="clienteSeleccionado"
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        class="size-7 shrink-0 text-[#126B3B] hover:bg-[#EAF7EF]"
+                                        aria-label="Editar cliente"
+                                        @click="openEditClientDialog"
+                                    >
+                                        <Pencil class="size-4" />
+                                    </Button>
                                 </div>
                                 <div
                                     class="mt-1.5 flex items-center gap-3 text-xs text-[#526057]"
@@ -1186,6 +1265,20 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                     ><span class="font-medium text-[#26342B]">{{
                                         clienteDocumento
                                     }}</span>
+                                </div>
+                                <div v-if="clienteSeleccionado" class="mt-2">
+                                    <Label
+                                        for="cliente_correo_resumen"
+                                        class="mb-1 block text-xs text-[#526057]"
+                                        >Correo de envio</Label
+                                    >
+                                    <Input
+                                        id="cliente_correo_resumen"
+                                        v-model="clienteCorreo"
+                                        type="email"
+                                        class="company-input h-9"
+                                        placeholder="cliente@correo.com"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -1230,7 +1323,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                 class="mr-1 inline size-4 text-[#168447]"
                                 aria-hidden="true"
                             />
-                            La confirmacion afectara inventario y kardex inmediatamente.
+                            La confirmacion afectara inventario y kardex
+                            inmediatamente.
                         </div>
                     </div>
                     <div
@@ -1246,7 +1340,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                             @click="emit('submit', 'draft')"
                         >
                             <Save class="mr-2 size-4" aria-hidden="true" />{{
-                                saving ? actionLabels.processing : actionLabels.draft
+                                saving
+                                    ? actionLabels.processing
+                                    : actionLabels.draft
                             }}
                         </Button>
                         <Button
@@ -1259,7 +1355,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                             <CircleCheck
                                 class="mr-2 size-5"
                                 aria-hidden="true"
-                            />{{ saving ? actionLabels.processing : actionLabels.confirm }}
+                            />{{
+                                saving
+                                    ? actionLabels.processing
+                                    : actionLabels.confirm
+                            }}
                         </Button>
                         <Button
                             type="button"
@@ -1296,7 +1396,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
             side="right"
             class="w-full gap-0 overflow-hidden border-[#DDE7E0] p-0 sm:max-w-xl"
         >
-            <div class="border-b border-[#DDE7E0] bg-[#101713] px-5 py-5 text-white">
+            <div
+                class="border-b border-[#DDE7E0] bg-[#101713] px-5 py-5 text-white"
+            >
                 <SheetHeader>
                     <div
                         class="mb-2 flex size-10 items-center justify-center rounded-xl bg-[#20A85B]/20 text-[#72E39A]"
@@ -1314,7 +1416,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
             </div>
 
             <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
-                <div class="space-y-4 border-b border-[#E4ECE7] bg-[#FAFCFB] p-5">
+                <div
+                    class="space-y-4 border-b border-[#E4ECE7] bg-[#FAFCFB] p-5"
+                >
                     <div class="space-y-2">
                         <Label for="venta-asistente-busqueda">
                             ?Qu? est? buscando el cliente?
@@ -1334,14 +1438,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                     </div>
 
                     <div v-if="assistantTermPool.length" class="space-y-2">
-                        <div class="flex items-center gap-2 text-xs font-semibold text-[#435248]">
+                        <div
+                            class="flex items-center gap-2 text-xs font-semibold text-[#435248]"
+                        >
                             <SlidersHorizontal
                                 class="size-4 text-[#168447]"
                                 aria-hidden="true"
                             />
                             Sugerencias segun tu inventario
                         </div>
-                        <div class="flex max-h-28 flex-wrap gap-2 overflow-y-auto pr-1">
+                        <div
+                            class="flex max-h-28 flex-wrap gap-2 overflow-y-auto pr-1"
+                        >
                             <button
                                 v-for="term in assistantTermPool"
                                 :key="term.label"
@@ -1403,42 +1511,67 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                 <div
                                     class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#EAF7EF] text-[#168447]"
                                 >
-                                    <Barcode class="size-5" aria-hidden="true" />
+                                    <Barcode
+                                        class="size-5"
+                                        aria-hidden="true"
+                                    />
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <h3 class="truncate text-sm font-semibold text-[#101713]">
+                                    <h3
+                                        class="truncate text-sm font-semibold text-[#101713]"
+                                    >
                                         {{ String(item.articulo.nombre ?? '') }}
                                     </h3>
-                                    <p class="mt-0.5 truncate text-xs text-[#68766D]">
-                                        {{ String(item.articulo.codigo_generico ?? '') }}
-                                        <span v-if="item.articulo.codigo_barras">
-                                            / {{ String(item.articulo.codigo_barras) }}
+                                    <p
+                                        class="mt-0.5 truncate text-xs text-[#68766D]"
+                                    >
+                                        {{
+                                            String(
+                                                item.articulo.codigo_generico ??
+                                                    '',
+                                            )
+                                        }}
+                                        <span
+                                            v-if="item.articulo.codigo_barras"
+                                        >
+                                            /
+                                            {{
+                                                String(
+                                                    item.articulo.codigo_barras,
+                                                )
+                                            }}
                                         </span>
                                     </p>
                                     <div class="mt-2 flex flex-wrap gap-1.5">
                                         <span
-                                            v-if="(item.articulo.categoria as Record<string, unknown> | null)?.nombre"
+                                            v-if="
+                                                categoriaNombre(item.articulo)
+                                            "
                                             class="rounded-full bg-[#F1F8F4] px-2 py-1 text-[11px] font-medium text-[#126B3B]"
                                         >
-                                            {{
-                                                (item.articulo.categoria as Record<string, unknown>).nombre
-                                            }}
+                                            {{ categoriaNombre(item.articulo) }}
                                         </span>
                                         <span
-                                            v-for="attr in attributePairs(item.articulo.atributos).slice(0, 2)"
+                                            v-for="attr in attributePairs(
+                                                item.articulo.atributos,
+                                            ).slice(0, 2)"
                                             :key="`${String(attr.atributo)}-${String(attr.valor)}`"
                                             class="rounded-full bg-[#F5F8F6] px-2 py-1 text-[11px] font-medium text-[#435248]"
                                         >
-                                            {{ attr.atributo }}: {{ attr.valor }}
+                                            {{ attr.atributo }}:
+                                            {{ attr.valor }}
                                         </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="mt-3 flex items-center justify-between gap-3">
+                            <div
+                                class="mt-3 flex items-center justify-between gap-3"
+                            >
                                 <div class="text-xs text-[#526057]">
                                     <span class="font-semibold text-[#168447]">
-                                        Stock {{ Number(item.stock).toFixed(2) }}
+                                        Stock
+                                        {{ Number(item.stock).toFixed(2) }}
                                     </span>
                                     <span class="mx-1">/</span>
                                     Bs
@@ -1489,12 +1622,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                     >
                         <UsersRound class="size-5" aria-hidden="true" />
                     </div>
-                    <DialogTitle class="text-left text-xl text-white"
-                        >{{ clientEditingId ? 'Editar cliente' : 'Nuevo cliente' }}</DialogTitle
-                    >
-                    <DialogDescription class="text-left text-[#CFE3D6]"
-                        >{{ clientEditingId ? 'Actualiza los datos esenciales sin salir de la venta.' : 'Registra los datos esenciales sin salir de la venta.' }}</DialogDescription
-                    >
+                    <DialogTitle class="text-left text-xl text-white">{{
+                        clientEditingId ? 'Editar cliente' : 'Nuevo cliente'
+                    }}</DialogTitle>
+                    <DialogDescription class="text-left text-[#CFE3D6]">{{
+                        clientEditingId
+                            ? 'Actualiza los datos esenciales sin salir de la venta.'
+                            : 'Registra los datos esenciales sin salir de la venta.'
+                    }}</DialogDescription>
                 </DialogHeader>
             </div>
 
@@ -1595,14 +1730,16 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                         class="bg-[#168447] text-white hover:bg-[#126B3B]"
                         :disabled="clientSaving"
                     >
-                        {{ clientSaving ? 'Guardando...' : clientEditingId ? 'Actualizar cliente' : 'Guardar cliente' }}
+                        {{
+                            clientSaving
+                                ? 'Guardando...'
+                                : clientEditingId
+                                  ? 'Actualizar cliente'
+                                  : 'Guardar cliente'
+                        }}
                     </Button>
                 </div>
             </form>
         </DialogContent>
     </Dialog>
 </template>
-
-
-
-

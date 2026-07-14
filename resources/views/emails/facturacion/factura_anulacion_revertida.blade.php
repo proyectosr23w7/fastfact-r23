@@ -5,12 +5,13 @@
     <title>Reversion de anulacion de factura</title>
 </head>
 <body style="font-family: Arial, sans-serif; color: #1f2933; line-height: 1.5;">
-    <p>Estimado cliente,</p>
+    <p>Estimado cliente:</p>
 
     <p>
-        Le informamos que se revirtio la anulacion de la factura {{ $factura->numero_factura }} emitida por
-        {{ $empresa?->razon_social ?: $empresa?->nombre_empresa ?: config('app.name', 'FastFact R23') }}.
-        La factura vuelve a estar valida.
+        Le informamos que se revirtio la anulacion de la factura electronica Nro.
+        <strong>{{ $factura->numero_factura }}</strong>, emitida por
+        <strong>{{ $empresa?->razon_social ?: $empresa?->nombre_empresa ?: config('app.name', 'FastFact R23') }}</strong>.
+        En consecuencia, el documento fiscal vuelve a encontrarse vigente.
     </p>
 
     <p>
@@ -24,6 +25,9 @@
         Esta operacion restablece la validez de la factura y no permite una nueva anulacion posterior del mismo documento fiscal.
     </p>
 
-    <p>Este correo fue generado automaticamente por {{ config('app.name', 'FastFact R23') }}.</p>
+    <p>
+        Este mensaje fue generado automaticamente por {{ config('app.name', 'FastFact R23') }}.
+        Si requiere mayor informacion, por favor contactese con el emisor de la factura.
+    </p>
 </body>
 </html>

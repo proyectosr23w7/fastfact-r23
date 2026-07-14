@@ -16,59 +16,136 @@ const buildQuery = (filters: Record<string, unknown>) => {
 
 export const facturacionService = {
     listFacturas: (filters: Record<string, unknown> = {}) =>
-        apiClient.get<Record<string, unknown>[]>(`/api/facturacion/facturas${buildQuery(filters)}`),
-    showFactura: (id: number) => apiClient.get<Record<string, unknown>>(`/api/facturacion/facturas/${id}`),
+        apiClient.get<Record<string, unknown>[]>(
+            `/api/facturacion/facturas${buildQuery(filters)}`,
+        ),
+    showFactura: (id: number) =>
+        apiClient.get<Record<string, unknown>>(
+            `/api/facturacion/facturas/${id}`,
+        ),
     emitirFactura: (payload: Record<string, unknown>) =>
-        apiClient.post<Record<string, unknown>>('/api/facturacion/facturas/emitir', payload),
+        apiClient.post<Record<string, unknown>>(
+            '/api/facturacion/facturas/emitir',
+            payload,
+        ),
     emitirFacturaDirecta: (payload: Record<string, unknown>) =>
-        apiClient.post<Record<string, unknown>>('/api/facturacion/facturas/emitir-directa', payload),
+        apiClient.post<Record<string, unknown>>(
+            '/api/facturacion/facturas/emitir-directa',
+            payload,
+        ),
     reintentarFactura: (id: number, payload: Record<string, unknown> = {}) =>
-        apiClient.post<Record<string, unknown>>(`/api/facturacion/facturas/${id}/reintentar`, payload),
+        apiClient.post<Record<string, unknown>>(
+            `/api/facturacion/facturas/${id}/reintentar`,
+            payload,
+        ),
     consultarFactura: (id: number) =>
-        apiClient.post<Record<string, unknown>>(`/api/facturacion/facturas/${id}/consultar`, {}),
+        apiClient.post<Record<string, unknown>>(
+            `/api/facturacion/facturas/${id}/consultar`,
+            {},
+        ),
     anularFactura: (id: number, payload: Record<string, unknown>) =>
-        apiClient.patch<Record<string, unknown>>(`/api/facturacion/facturas/${id}/anular`, payload),
+        apiClient.patch<Record<string, unknown>>(
+            `/api/facturacion/facturas/${id}/anular`,
+            payload,
+        ),
     revertirAnulacionFactura: (id: number) =>
-        apiClient.patch<Record<string, unknown>>(`/api/facturacion/facturas/${id}/revertir-anulacion`, {}),
+        apiClient.patch<Record<string, unknown>>(
+            `/api/facturacion/facturas/${id}/revertir-anulacion`,
+            {},
+        ),
+    reenviarCorreoFactura: (id: number, payload: Record<string, unknown>) =>
+        apiClient.post<Record<string, unknown>>(
+            `/api/facturacion/facturas/${id}/reenviar-correo`,
+            payload,
+        ),
 
     listCuis: (filters: Record<string, unknown> = {}) =>
-        apiClient.get<Record<string, unknown>[]>(`/api/facturacion/cuis${buildQuery(filters)}`),
+        apiClient.get<Record<string, unknown>[]>(
+            `/api/facturacion/cuis${buildQuery(filters)}`,
+        ),
     createCuis: (payload: Record<string, unknown>) =>
-        apiClient.post<Record<string, unknown>>('/api/facturacion/cuis', payload),
+        apiClient.post<Record<string, unknown>>(
+            '/api/facturacion/cuis',
+            payload,
+        ),
 
     listCufd: (filters: Record<string, unknown> = {}) =>
-        apiClient.get<Record<string, unknown>[]>(`/api/facturacion/cufd${buildQuery(filters)}`),
+        apiClient.get<Record<string, unknown>[]>(
+            `/api/facturacion/cufd${buildQuery(filters)}`,
+        ),
     createCufd: (payload: Record<string, unknown>) =>
-        apiClient.post<Record<string, unknown>>('/api/facturacion/cufd', payload),
+        apiClient.post<Record<string, unknown>>(
+            '/api/facturacion/cufd',
+            payload,
+        ),
 
     listCafc: (filters: Record<string, unknown> = {}) =>
-        apiClient.get<Record<string, unknown>[]>(`/api/facturacion/cafc${buildQuery(filters)}`),
+        apiClient.get<Record<string, unknown>[]>(
+            `/api/facturacion/cafc${buildQuery(filters)}`,
+        ),
     createCafc: (payload: Record<string, unknown>) =>
-        apiClient.post<Record<string, unknown>>('/api/facturacion/cafc', payload),
+        apiClient.post<Record<string, unknown>>(
+            '/api/facturacion/cafc',
+            payload,
+        ),
     updateCafc: (id: number, payload: Record<string, unknown>) =>
-        apiClient.patch<Record<string, unknown>>(`/api/facturacion/cafc/${id}`, payload),
+        apiClient.patch<Record<string, unknown>>(
+            `/api/facturacion/cafc/${id}`,
+            payload,
+        ),
     updateCafcEstado: (id: number, estado: boolean) =>
-        apiClient.patch<Record<string, unknown>>(`/api/facturacion/cafc/${id}/estado`, { estado }),
+        apiClient.patch<Record<string, unknown>>(
+            `/api/facturacion/cafc/${id}/estado`,
+            { estado },
+        ),
 
     listSincronizaciones: () =>
-        apiClient.get<Record<string, unknown>[]>('/api/facturacion/sincronizaciones/catalogos'),
+        apiClient.get<Record<string, unknown>[]>(
+            '/api/facturacion/sincronizaciones/catalogos',
+        ),
     syncCatalogos: (payload: Record<string, unknown>) =>
-        apiClient.post<Record<string, unknown>[]>('/api/facturacion/sincronizaciones/catalogos', payload),
+        apiClient.post<Record<string, unknown>[]>(
+            '/api/facturacion/sincronizaciones/catalogos',
+            payload,
+        ),
     updateMetodoPagoEstado: (id: number, estado: boolean) =>
-        apiClient.patch<Record<string, unknown>>(`/api/facturacion/catalogos/metodos-pago/${id}/estado`, { estado }),
+        apiClient.patch<Record<string, unknown>>(
+            `/api/facturacion/catalogos/metodos-pago/${id}/estado`,
+            { estado },
+        ),
     updateMetodoPagoOperativo: (id: number, payload: Record<string, unknown>) =>
-        apiClient.patch<Record<string, unknown>>(`/api/facturacion/catalogos/metodos-pago/${id}/operativo`, payload),
+        apiClient.patch<Record<string, unknown>>(
+            `/api/facturacion/catalogos/metodos-pago/${id}/operativo`,
+            payload,
+        ),
     updateUnidadMedidaEstado: (id: number, estado: boolean) =>
-        apiClient.patch<Record<string, unknown>>(`/api/facturacion/catalogos/unidades-medida/${id}/estado`, { estado }),
+        apiClient.patch<Record<string, unknown>>(
+            `/api/facturacion/catalogos/unidades-medida/${id}/estado`,
+            { estado },
+        ),
 
     listEventos: (filters: Record<string, unknown> = {}) =>
-        apiClient.get<Record<string, unknown>[]>(`/api/facturacion/eventos-significativos${buildQuery(filters)}`),
+        apiClient.get<Record<string, unknown>[]>(
+            `/api/facturacion/eventos-significativos${buildQuery(filters)}`,
+        ),
     createEvento: (payload: Record<string, unknown>) =>
-        apiClient.post<Record<string, unknown>>('/api/facturacion/eventos-significativos', payload),
+        apiClient.post<Record<string, unknown>>(
+            '/api/facturacion/eventos-significativos',
+            payload,
+        ),
     closeEvento: (id: number, payload: Record<string, unknown>) =>
-        apiClient.patch<Record<string, unknown>>(`/api/facturacion/eventos-significativos/${id}/cerrar`, payload),
+        apiClient.patch<Record<string, unknown>>(
+            `/api/facturacion/eventos-significativos/${id}/cerrar`,
+            payload,
+        ),
     processRecoveryEvento: (id: number) =>
-        apiClient.post<Record<string, unknown>>(`/api/facturacion/eventos-significativos/${id}/procesar-recuperacion`, {}),
+        apiClient.post<Record<string, unknown>>(
+            `/api/facturacion/eventos-significativos/${id}/procesar-recuperacion`,
+            {},
+        ),
     reportEvento: (payload: Record<string, unknown>) =>
-        apiClient.post<Record<string, unknown>>('/api/facturacion/eventos-significativos/reportes', payload),
+        apiClient.post<Record<string, unknown>>(
+            '/api/facturacion/eventos-significativos/reportes',
+            payload,
+        ),
 };

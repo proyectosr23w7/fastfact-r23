@@ -16,11 +16,11 @@ use App\Http\Controllers\Inventario\ArticuloPrecioController;
 use App\Http\Controllers\Inventario\CategoriaController;
 use App\Http\Controllers\Inventario\MarcaController;
 use App\Http\Controllers\Inventario\UnidadMedidaController;
+use App\Http\Controllers\Seguridad\IntegrationApiTokenController;
 use App\Http\Controllers\Seguridad\PermisoController as SeguridadPermisoController;
 use App\Http\Controllers\Seguridad\RolController as SeguridadRolController;
 use App\Http\Controllers\Seguridad\UsuarioController as SeguridadUsuarioController;
 use App\Http\Controllers\Ventas\ClienteController as VentaClienteController;
-use App\Http\Controllers\Ventas\VentaController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['integration.auth'])->prefix('integracion')->group(function () {
@@ -78,6 +78,13 @@ Route::middleware(['web', 'auth'])->prefix('configuracion')->group(function () {
 Route::middleware(['web', 'auth'])->prefix('seguridad')->group(function () {
     Route::get('contexto', [SeguridadUsuarioController::class, 'contexto']);
 
+    Route::get('tokens-integracion', [IntegrationApiTokenController::class, 'index'])
+        ->middleware('permission:integracion.tokens.manage,seguridad.usuarios.manage');
+    Route::post('tokens-integracion', [IntegrationApiTokenController::class, 'store'])
+        ->middleware('permission:integracion.tokens.manage,seguridad.usuarios.manage');
+    Route::patch('tokens-integracion/{token}/revocar', [IntegrationApiTokenController::class, 'revoke'])
+        ->middleware('permission:integracion.tokens.manage,seguridad.usuarios.manage');
+
     Route::apiResource('usuarios', SeguridadUsuarioController::class)
         ->middleware('permission:seguridad.usuarios.manage')
         ->except('destroy')
@@ -134,14 +141,6 @@ Route::middleware(['web', 'auth'])->prefix('ventas')->group(function () {
     Route::put('clientes/{cliente}', [VentaClienteController::class, 'update'])->middleware('permission:ventas.clientes.edit,ventas.clientes.manage');
     Route::patch('clientes/{cliente}', [VentaClienteController::class, 'update'])->middleware('permission:ventas.clientes.edit,ventas.clientes.manage');
     Route::patch('clientes/{cliente}/estado', [VentaClienteController::class, 'updateEstado'])->middleware('permission:ventas.clientes.edit,ventas.clientes.manage');
-    Route::get('ventas', [VentaController::class, 'index'])->middleware('permission:facturacion.facturas.emitir,ventas.access');
-    Route::post('ventas', [VentaController::class, 'store'])->middleware('permission:facturacion.facturas.emitir,ventas.access');
-    Route::get('ventas/{venta}', [VentaController::class, 'show'])->middleware('permission:facturacion.facturas.emitir,ventas.access');
-    Route::put('ventas/{venta}', [VentaController::class, 'update'])->middleware('permission:facturacion.facturas.emitir,ventas.access');
-    Route::patch('ventas/{venta}', [VentaController::class, 'update'])->middleware('permission:facturacion.facturas.emitir,ventas.access');
-    Route::patch('ventas/{venta}/confirmar', [VentaController::class, 'confirmar'])->middleware('permission:facturacion.facturas.emitir,ventas.access');
-    Route::patch('ventas/{venta}/anular', [VentaController::class, 'anular'])->middleware('permission:facturacion.facturas.emitir,ventas.access');
-    Route::get('ventas/{venta}/descargar/pdf', [VentaController::class, 'downloadPdf'])->middleware('permission:facturacion.facturas.emitir,ventas.access');
 });
 
 Route::middleware(['web', 'auth'])->prefix('facturacion')->group(function () {
@@ -164,11 +163,11 @@ Route::middleware(['web', 'auth'])->prefix('facturacion')->group(function () {
 
     Route::get('facturas', [FacturaController::class, 'index'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');
     Route::get('facturas/{factura}', [FacturaController::class, 'show'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');
-    Route::post('facturas/emitir', [FacturaController::class, 'emitir'])->middleware('permission:facturacion.facturas.emitir');
     Route::post('facturas/emitir-directa', [FacturaController::class, 'emitirDirecta'])->middleware('permission:facturacion.facturas.emitir');
     Route::post('facturas/{factura}/reintentar', [FacturaController::class, 'reintentar'])->middleware('permission:facturacion.siat.sync');
     Route::patch('facturas/{factura}/anular', [FacturaController::class, 'anular'])->middleware('permission:facturacion.siat.sync');
     Route::patch('facturas/{factura}/revertir-anulacion', [FacturaController::class, 'revertirAnulacion'])->middleware('permission:facturacion.facturas.revertir_anulacion');
+    Route::post('facturas/{factura}/reenviar-correo', [FacturaController::class, 'reenviarCorreo'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');
     Route::post('facturas/{factura}/consultar', [FacturaController::class, 'consultar'])->middleware('permission:facturacion.siat.sync');
     Route::get('facturas/{factura}/descargar/xml', [FacturaController::class, 'downloadXml'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');
     Route::get('facturas/{factura}/descargar/pdf', [FacturaController::class, 'downloadPdf'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');

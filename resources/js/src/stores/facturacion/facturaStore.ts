@@ -54,6 +54,10 @@ export function useFacturaStore() {
             codigo_motivo_anulacion: '',
             descripcion_motivo: '',
         },
+        reenviarCorreoForm: {
+            correo: '',
+            actualizar_cliente: true,
+        },
         currentItem: null as Record<string, unknown> | null,
         loading: false,
         saving: false,
@@ -64,19 +68,41 @@ export function useFacturaStore() {
     });
 
     const defaultMetodoPago = () =>
-        (((state.meta.metodos_pago as Record<string, unknown>[] | undefined) ?? []).find((metodo) => Boolean(metodo.es_predeterminado ?? false)) ??
-            ((state.meta.metodos_pago as Record<string, unknown>[] | undefined) ?? [])[0]) as Record<string, unknown> | undefined;
+        ((
+            (state.meta.metodos_pago as
+                | Record<string, unknown>[]
+                | undefined) ?? []
+        ).find((metodo) => Boolean(metodo.es_predeterminado ?? false)) ??
+            ((state.meta.metodos_pago as
+                | Record<string, unknown>[]
+                | undefined) ?? [])[0]) as Record<string, unknown> | undefined;
 
     const defaultSucursal = () =>
-        (((state.meta.salud_siat as Record<string, any> | undefined)?.contexto?.sucursal_id
-            ? { id: (state.meta.salud_siat as Record<string, any>).contexto.sucursal_id }
+        (((state.meta.salud_siat as Record<string, any> | undefined)?.contexto
+            ?.sucursal_id
+            ? {
+                  id: (state.meta.salud_siat as Record<string, any>).contexto
+                      .sucursal_id,
+              }
             : null) ??
-            ((state.meta.sucursales as Record<string, unknown>[] | undefined) ?? [])[0]) as Record<string, unknown> | undefined;
+            ((state.meta.sucursales as Record<string, unknown>[] | undefined) ??
+                [])[0]) as Record<string, unknown> | undefined;
 
     const defaultPuntoVenta = (sucursalId?: unknown) =>
-        ((state.meta.puntos_venta as Record<string, unknown>[] | undefined) ?? []).find(
+        (
+            (state.meta.puntos_venta as
+                | Record<string, unknown>[]
+                | undefined) ?? []
+        ).find(
             (punto) =>
-                String(punto.id ?? '') === String((state.meta.salud_siat as Record<string, any> | undefined)?.contexto?.punto_venta_id ?? '') ||
+                String(punto.id ?? '') ===
+                    String(
+                        (
+                            state.meta.salud_siat as
+                                | Record<string, any>
+                                | undefined
+                        )?.contexto?.punto_venta_id ?? '',
+                    ) ||
                 String(punto.sucursal_id ?? '') === String(sucursalId ?? ''),
         ) as Record<string, unknown> | undefined;
 
@@ -90,7 +116,9 @@ export function useFacturaStore() {
             cliente_id: '',
             sucursal_id: sucursal ? String(sucursal.id ?? '') : '',
             punto_venta_id: puntoVenta ? String(puntoVenta.id ?? '') : '',
-            codigo_metodo_pago: metodo ? String(metodo.codigo_clasificador ?? '') : '',
+            codigo_metodo_pago: metodo
+                ? String(metodo.codigo_clasificador ?? '')
+                : '',
             numero_tarjeta_inicio: '',
             numero_tarjeta_fin: '',
             monto_gift_card: '',
@@ -104,7 +132,6 @@ export function useFacturaStore() {
         };
         state.errors = {};
     };
-
 
     const recalculateEmitDetail = (index: number) => {
         const item = state.emitForm.detalles[index];
@@ -133,13 +160,22 @@ export function useFacturaStore() {
 
     const removeEmitDetail = (index: number) => {
         state.emitForm.detalles.splice(index, 1);
-        if (state.emitForm.detalles.length === 0) state.emitForm.detalles.push(initialEmitDetail());
+        if (state.emitForm.detalles.length === 0)
+            state.emitForm.detalles.push(initialEmitDetail());
         recalculateEmitTotal();
     };
     const resetAnularForm = () => {
         state.anularForm = {
             codigo_motivo_anulacion: '',
             descripcion_motivo: '',
+        };
+        state.errors = {};
+    };
+
+    const resetReenviarCorreoForm = (correo = '') => {
+        state.reenviarCorreoForm = {
+            correo,
+            actualizar_cliente: true,
         };
         state.errors = {};
     };
@@ -236,7 +272,6 @@ export function useFacturaStore() {
         }
     };
 
-
     const emitirDirecta = async () => {
         state.saving = true;
         state.errors = {};
@@ -244,7 +279,9 @@ export function useFacturaStore() {
         state.generalSuccess = '';
 
         try {
-            state.emitForm.detalles.forEach((_, index) => recalculateEmitDetail(index));
+            state.emitForm.detalles.forEach((_, index) =>
+                recalculateEmitDetail(index),
+            );
 
             const numeroTarjeta =
                 state.emitForm.numero_tarjeta_inicio &&
@@ -268,9 +305,15 @@ export function useFacturaStore() {
                 origen: 'directa',
                 observacion: state.emitForm.observacion || null,
                 detalles: state.emitForm.detalles.map((detalle) => ({
-                    actividad_economica: String(detalle.actividad_economica ?? ''),
+                    actividad_economica: String(
+                        detalle.actividad_economica ?? '',
+                    ),
                     codigo_producto_sin: Number(detalle.codigo_producto_sin),
-                    codigo_producto: String(detalle.codigo_producto || detalle.codigo_producto_sin || ''),
+                    codigo_producto: String(
+                        detalle.codigo_producto ||
+                            detalle.codigo_producto_sin ||
+                            '',
+                    ),
                     descripcion: String(detalle.descripcion ?? ''),
                     cantidad: Number(detalle.cantidad || 0),
                     unidad_medida: Number(detalle.unidad_medida),
@@ -281,7 +324,8 @@ export function useFacturaStore() {
                 })),
             });
             await load();
-            state.generalSuccess = response.message ?? 'Factura directa emitida correctamente.';
+            state.generalSuccess =
+                response.message ?? 'Factura directa emitida correctamente.';
             resetEmitForm();
             return true;
         } catch (error) {
@@ -397,7 +441,9 @@ export function useFacturaStore() {
         state.generalSuccess = '';
 
         try {
-            const response = await facturacionService.revertirAnulacionFactura(Number(item.id));
+            const response = await facturacionService.revertirAnulacionFactura(
+                Number(item.id),
+            );
             await load();
             state.generalSuccess =
                 response.message ?? 'Reversion de anulacion procesada.';
@@ -412,6 +458,41 @@ export function useFacturaStore() {
                 error instanceof ApiError
                     ? error.message
                     : 'No se pudo revertir la anulacion de la factura.';
+            return false;
+        } finally {
+            state.processing = false;
+        }
+    };
+
+    const reenviarCorreo = async (item: Record<string, unknown>) => {
+        state.processing = true;
+        state.errors = {};
+        state.generalError = '';
+        state.generalSuccess = '';
+
+        try {
+            const response = await facturacionService.reenviarCorreoFactura(
+                Number(item.id),
+                {
+                    correo: state.reenviarCorreoForm.correo,
+                    actualizar_cliente:
+                        state.reenviarCorreoForm.actualizar_cliente,
+                },
+            );
+            await load();
+            state.generalSuccess =
+                response.message ?? 'Correo reenviado correctamente.';
+            return true;
+        } catch (error) {
+            if (error instanceof ApiError && error.status === 422) {
+                state.errors = error.errors;
+                state.generalError = error.message;
+                return false;
+            }
+            state.generalError =
+                error instanceof ApiError
+                    ? error.message
+                    : 'No se pudo reenviar el correo de la factura.';
             return false;
         } finally {
             state.processing = false;
@@ -445,8 +526,10 @@ export function useFacturaStore() {
         consultar,
         anular,
         revertirAnulacion,
+        reenviarCorreo,
         resetEmitForm,
         resetAnularForm,
+        resetReenviarCorreoForm,
         resetFilters,
     };
 }

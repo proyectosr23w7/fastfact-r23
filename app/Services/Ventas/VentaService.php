@@ -308,7 +308,7 @@ class VentaService
             'clientes' => Cliente::query()
                 ->where('estado', true)
                 ->orderBy('nombre')
-                ->get(['id', 'codigo', 'nombre', 'razon_social', 'nit_ci', 'tipo_documento_identidad', 'complemento'])
+                ->get(['id', 'codigo', 'nombre', 'razon_social', 'nit_ci', 'tipo_documento_identidad', 'complemento', 'telefono', 'correo', 'estado'])
                 ->map(fn (Cliente $cliente) => [
                     'id' => $cliente->id,
                     'codigo' => $cliente->codigo,
@@ -317,6 +317,9 @@ class VentaService
                     'nit_ci' => $cliente->nit_ci,
                     'tipo_documento_identidad' => $cliente->tipo_documento_identidad,
                     'complemento' => $cliente->complemento,
+                    'telefono' => $cliente->telefono,
+                    'correo' => $cliente->correo,
+                    'estado' => (bool) $cliente->estado,
                 ]),
             'sucursales' => Sucursal::query()
                 ->where('estado', true)
