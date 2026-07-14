@@ -38,8 +38,8 @@ class GenerarDatosFacturaDirectaAction
         $detalleFiscal = $this->resolveDetalles($detalles);
         $montoTotal = round(array_sum(array_column($detalleFiscal, 'subTotal')), 2);
         $montoGiftCard = $this->resolveMontoGiftCard($extra, $metodoPago, $montoTotal);
-        $montoGiftCardValue = $montoGiftCard !== null ? round($montoGiftCard, 2) : null;
-        $montoTotalSujetoIva = round(max($montoTotal - (float) ($montoGiftCardValue ?? 0), 0), 2);
+        $montoGiftCardValue = round((float) ($montoGiftCard ?? 0), 2);
+        $montoTotalSujetoIva = round(max($montoTotal - $montoGiftCardValue, 0), 2);
         $moneda = $this->resolveMoneda();
         $leyenda = $this->resolveLeyenda();
 
