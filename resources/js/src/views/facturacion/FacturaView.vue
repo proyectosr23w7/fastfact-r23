@@ -38,6 +38,7 @@ import {
     FileText,
     Filter,
     LoaderCircle,
+    Mail,
     MoreVertical,
     Plus,
     Printer,
@@ -113,6 +114,7 @@ const emitDialogOpen = ref(false);
 const detailDialogOpen = ref(false);
 const anularDialogOpen = ref(false);
 const retryDialogOpen = ref(false);
+const reenviarCorreoDialogOpen = ref(false);
 const selectedFacturaId = ref<number | null>(null);
 const pendingRetry = ref<Factura | null>(null);
 
@@ -330,6 +332,31 @@ const openAnularDialog = (item: Factura) => {
     store.resetAnularForm();
     anularDialogOpen.value = true;
 };
+const canReenviarCorreo = (item: Factura) => {
+    const estado = String(item.estado_factura ?? '');
+
+    return (
+        estado === 'anulada' ||
+        estado === 'emitida' ||
+        (estado === 'emitida' && Boolean(item.anulacion_revertida_at))
+    );
+};
+const correoTipoLabel = (item?: Factura | null) => {
+    if (!item) return 'correo de factura';
+    if (String(item.estado_factura ?? '') === 'anulada') {
+        return 'notificacion de anulacion';
+    }
+    if (item.anulacion_revertida_at) {
+        return 'notificacion de reversion de anulacion';
+    }
+
+    return 'factura emitida';
+};
+const openReenviarCorreoDialog = (item: Factura) => {
+    selectFactura(item);
+    store.resetReenviarCorreoForm(String(item.cliente?.correo ?? ''));
+    reenviarCorreoDialogOpen.value = true;
+};
 const requestRetry = (item: Factura) => {
     pendingRetry.value = item;
     retryDialogOpen.value = true;
@@ -347,6 +374,14 @@ const submitAnular = async () => {
         (factura) => Number(factura.id) === selectedFacturaId.value,
     );
     if (item && (await store.anular(item))) anularDialogOpen.value = false;
+};
+const submitReenviarCorreo = async () => {
+    const item = facturas.value.find(
+        (factura) => Number(factura.id) === selectedFacturaId.value,
+    );
+    if (item && (await store.reenviarCorreo(item))) {
+        reenviarCorreoDialogOpen.value = false;
+    }
 };
 const executeRevertirAnulacion = async (item: Factura) => {
     const numero = String(item.numero_factura ?? item.id ?? '');
@@ -1038,6 +1073,21 @@ onMounted(store.load);
                                                             class="size-4"
                                                         />Reintentar
                                                         envio</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        v-if="
+                                                            canReenviarCorreo(
+                                                                item,
+                                                            )
+                                                        "
+                                                        @select="
+                                                            openReenviarCorreoDialog(
+                                                                item,
+                                                            )
+                                                        "
+                                                        ><Mail
+                                                            class="size-4"
+                                                        />Reenviar
+                                                        correo</DropdownMenuItem
                                                     ><DropdownMenuSeparator
                                                         v-if="
                                                             capabilities.descargar
@@ -1429,6 +1479,93 @@ onMounted(store.load);
                 </div></DialogContent
             ></Dialog
         >
+
+        <Dialog v-model:open="reenviarCorreoDialogOpen">
+            <DialogContent class="max-w-md">
+                <DialogHeader>
+                    <div
+                        class="mb-2 flex size-11 items-center justify-center rounded-full bg-[#eaf7ef] text-[#168447]"
+                    >
+                        <Mail class="size-6" />
+                    </div>
+                    <DialogTitle class="text-left">Reenviar correo</DialogTitle>
+                    <DialogDescription class="text-left">
+                        Se enviara la {{ correoTipoLabel(selectedFactura) }} de
+                        la factura
+                        {{
+                            selectedFactura?.numero_factura ||
+                            selectedFactura?.id
+                        }}. Verifica el correo antes de continuar.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="space-y-4">
+                    <div>
+                        <label
+                            for="reenviar_correo"
+                            class="mb-1.5 block text-sm font-semibold text-[#26342B]"
+                            >Correo destino</label
+                        >
+                        <Input
+                            id="reenviar_correo"
+                            v-model="store.state.reenviarCorreoForm.correo"
+                            type="email"
+                            placeholder="cliente@correo.com"
+                        />
+                        <p
+                            v-if="store.state.errors.correo?.[0]"
+                            class="mt-1 text-xs text-red-700"
+                        >
+                            {{ store.state.errors.correo[0] }}
+                        </p>
+                    </div>
+
+                    <label
+                        class="flex items-start gap-2 rounded-lg border border-[#dce5df] bg-[#f8fbf9] p-3 text-sm"
+                    >
+                        <input
+                            v-model="
+                                store.state.reenviarCorreoForm
+                                    .actualizar_cliente
+                            "
+                            type="checkbox"
+                            class="mt-1"
+                        />
+                        <span>
+                            Actualizar este correo en el registro del cliente.
+                            <span class="block text-xs text-[#66736a]"
+                                >Se usara como correo predeterminado en los
+                                proximos envios.</span
+                            >
+                        </span>
+                    </label>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <Button
+                        variant="outline"
+                        @click="reenviarCorreoDialogOpen = false"
+                        >Cancelar</Button
+                    >
+                    <Button
+                        class="bg-[#168447] text-white hover:bg-[#116f3b]"
+                        :disabled="store.state.processing"
+                        @click="submitReenviarCorreo"
+                    >
+                        <LoaderCircle
+                            v-if="store.state.processing"
+                            class="size-4 animate-spin"
+                        />
+                        <Send v-else class="size-4" />
+                        {{
+                            store.state.processing
+                                ? 'Enviando...'
+                                : 'Reenviar correo'
+                        }}
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
 
         <FacturaDetalleModal
             v-model:open="detailDialogOpen"

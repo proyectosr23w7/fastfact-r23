@@ -29,7 +29,7 @@ class FacturaEmitidaMail extends Mailable
         $empresa = $this->empresa?->razon_social ?: $this->empresa?->nombre_empresa ?: config('app.name', 'FastFact R23');
 
         return $this
-            ->subject("Factura {$numero} - {$empresa}")
+            ->subject("Factura electronica Nro. {$numero} - {$empresa}")
             ->view('emails.facturacion.factura_emitida')
             ->attachData($this->pdfContent, $this->pdfFilename, [
                 'mime' => 'application/pdf',

@@ -668,22 +668,25 @@ class FacturaService
                 fn (FacturaEstadoEnum $estado) => ['label' => ucfirst($estado->value), 'value' => $estado->value],
                 FacturaEstadoEnum::cases(),
             ),
-            'clientes' => \App\Models\Cliente::query()->where('estado', true)->orderBy('nombre')->get(['id', 'nombre', 'razon_social', 'nit_ci']),
+            'clientes' => \App\Models\Cliente::query()
+                ->where('estado', true)
+                ->orderBy('nombre')
+                ->get([
+                    'id',
+                    'codigo',
+                    'nombre',
+                    'razon_social',
+                    'nit_ci',
+                    'tipo_documento_identidad',
+                    'complemento',
+                    'telefono',
+                    'correo',
+                    'direccion',
+                    'estado',
+                ]),
             'sucursales' => OperationalContextScope::sucursalesQuery($user)->get(['id', 'codigo', 'nombre']),
             'puntos_venta' => OperationalContextScope::puntosVentaQuery($user)->get(['id', 'sucursal_id', 'codigo', 'nombre']),
             'usuarios' => User::query()->where('estado', true)->orderBy('name')->get(['id', 'name', 'email']),
-            'ventas_facturables' => $this->repository->ventasFacturables($user)->map(fn (VentaCabecera $venta) => [
-                'id' => $venta->id,
-                'numero_venta' => $venta->numero_venta,
-                'fecha_venta' => optional($venta->fecha_venta)?->format('Y-m-d'),
-                'cliente' => $venta->cliente?->razon_social ?: $venta->cliente?->nombre,
-                'nit_ci' => $venta->cliente?->nit_ci,
-                'sucursal_id' => $venta->sucursal_id,
-                'punto_venta_id' => $venta->punto_venta_id,
-                'sucursal' => $venta->sucursal?->nombre,
-                'punto_venta' => $venta->puntoVenta?->nombre,
-                'total' => (float) $venta->total,
-            ])->values(),
             'motivos_anulacion' => SinMotivoAnulacion::query()->where('estado', true)->orderBy('descripcion')->get(['id', 'codigo_clasificador', 'descripcion']),
             'documentos_identidad' => SinDocumentoIdentidad::query()->where('estado', true)->orderBy('descripcion')->get(['id', 'codigo_clasificador', 'descripcion']),
             'productos_servicios' => SinProductoServicio::query()

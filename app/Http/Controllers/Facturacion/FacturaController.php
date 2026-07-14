@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Facturacion;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Facturacion\AnularFacturaRequest;
 use App\Http\Requests\Facturacion\ConsultarFacturaRequest;
-use App\Http\Requests\Facturacion\EmitirFacturaRequest;
 use App\Http\Requests\Facturacion\EmitirFacturaDirectaRequest;
 use App\Http\Requests\Facturacion\RetryFacturaRequest;
 use App\Http\Resources\FacturaResource;
 use App\Models\Factura;
+use App\Services\Facturacion\FacturaCorreoService;
 use App\Services\Facturacion\FacturaDirectaService;
 use App\Services\Facturacion\FacturaService;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +21,7 @@ class FacturaController extends Controller
     public function __construct(
         private readonly FacturaService $service,
         private readonly FacturaDirectaService $facturaDirectaService,
+        private readonly FacturaCorreoService $facturaCorreoService,
     ) {
     }
 
@@ -59,8 +60,6 @@ class FacturaController extends Controller
             'message' => 'Detalle de factura obtenido correctamente.',
             'data' => FacturaResource::make(
                 $factura->load([
-                    'venta.cliente',
-                    'venta.detalle.articulo',
                     'detalles.articulo.unidadMedida',
                     'cliente',
                     'sucursal',
@@ -74,17 +73,6 @@ class FacturaController extends Controller
                 ]),
             )->resolve(),
         ]);
-    }
-
-    public function emitir(EmitirFacturaRequest $request): JsonResponse
-    {
-        $factura = $this->service->emitir($request->validated(), $request->user());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Proceso de facturacion ejecutado correctamente.',
-            'data' => FacturaResource::make($factura)->resolve(),
-        ], 201);
     }
 
     public function emitirDirecta(EmitirFacturaDirectaRequest $request): JsonResponse
@@ -143,6 +131,32 @@ class FacturaController extends Controller
             'success' => true,
             'message' => 'Reversion de anulacion ejecutada correctamente.',
             'data' => FacturaResource::make($factura)->resolve(),
+        ]);
+    }
+
+    public function reenviarCorreo(Request $request, Factura $factura): JsonResponse
+    {
+        $this->service->autorizarAcceso($factura, $request->user());
+
+        $data = $request->validate([
+            'correo' => ['required', 'email', 'max:150'],
+            'actualizar_cliente' => ['sometimes', 'boolean'],
+        ]);
+
+        $tipo = $this->facturaCorreoService->reenviarSegunEstado(
+            $factura,
+            (string) $data['correo'],
+            (bool) ($data['actualizar_cliente'] ?? false),
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Correo reenviado correctamente.',
+            'data' => [
+                'tipo' => $tipo,
+                'correo' => $data['correo'],
+                'cliente' => $factura->cliente?->fresh(),
+            ],
         ]);
     }
 

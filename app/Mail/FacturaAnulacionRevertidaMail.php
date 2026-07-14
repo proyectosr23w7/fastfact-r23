@@ -25,7 +25,7 @@ class FacturaAnulacionRevertidaMail extends Mailable
         $empresa = $this->empresa?->razon_social ?: $this->empresa?->nombre_empresa ?: config('app.name', 'FastFact R23');
 
         return $this
-            ->subject("Advertencia: reversion de anulacion factura {$numero} - {$empresa}")
+            ->subject("Notificacion de reversion de anulacion de factura Nro. {$numero} - {$empresa}")
             ->view('emails.facturacion.factura_anulacion_revertida');
     }
 }
