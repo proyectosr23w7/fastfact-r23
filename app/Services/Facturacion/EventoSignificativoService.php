@@ -11,10 +11,9 @@ use App\Models\EventoSignificativoPaquete;
 use App\Models\Factura;
 use App\Models\User;
 use App\Models\Configuracion\Configuracion;
-use App\Models\Configuracion\PuntoVenta;
-use App\Models\Configuracion\Sucursal;
 use App\Repositories\Facturacion\CufdRepository;
 use App\Repositories\Facturacion\EventoSignificativoRepository;
+use App\Support\OperationalContextScope;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -77,7 +76,7 @@ class EventoSignificativoService
 
     public function listar(array $filters = [], ?User $user = null): Collection
     {
-        $filters = $this->applyUserContextFilters($filters, $user);
+        $filters = OperationalContextScope::mergeFilters($filters, $user);
 
         return $this->repository->allForIndex($filters);
     }
@@ -272,6 +271,8 @@ class EventoSignificativoService
     {
         $configuracion = Configuracion::current();
         $filters['ambiente_facturacion'] = $filters['ambiente_facturacion'] ?? (string) ($configuracion?->ambiente_facturacion ?: 'piloto');
+        $filters = OperationalContextScope::mergeFilters($filters, $user);
+
         return $this->repository->facturableEvents($filters);
     }
 
@@ -282,9 +283,10 @@ class EventoSignificativoService
         $filters = [
             'ambiente_facturacion' => $ambiente,
         ];
+        $filters = OperationalContextScope::mergeFilters($filters, $user);
 
-        $sucursales = Sucursal::query()->where('estado', true)->orderBy('codigo');
-        $puntosVenta = PuntoVenta::query()->where('estado', true)->orderBy('sucursal_id')->orderBy('codigo');
+        $sucursales = OperationalContextScope::sucursalesQuery($user);
+        $puntosVenta = OperationalContextScope::puntosVentaQuery($user);
 
         return [
             'sucursales' => $sucursales->get(['id', 'codigo', 'nombre']),
