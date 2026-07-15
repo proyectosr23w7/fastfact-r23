@@ -198,7 +198,7 @@
     ]
   },
   "resources/js/app.ts": {
-    "file": "assets/app-C4_1EQEe.js",
+    "file": "assets/app-R68wtBAF.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -259,7 +259,7 @@
       "resources/js/pages/settings/TwoFactor.vue"
     ],
     "css": [
-      "assets/app-DVXl9941.css"
+      "assets/app-CZ_fv7jH.css"
     ]
   },
   "resources/js/pages/Dashboard.vue": {
@@ -444,7 +444,7 @@
     ]
   },
   "resources/js/pages/settings/Appearance.vue": {
-    "file": "assets/Appearance-CX0FtXz1.js",
+    "file": "assets/Appearance-DN36OfOG.js",
     "name": "Appearance",
     "src": "resources/js/pages/settings/Appearance.vue",
     "isDynamicEntry": true,
@@ -669,7 +669,7 @@
     ]
   },
   "resources/js/src/views/facturacion/EventoSignificativoView.vue": {
-    "file": "assets/EventoSignificativoView-BMVJYl2S.js",
+    "file": "assets/EventoSignificativoView-BI7agnjQ.js",
     "name": "EventoSignificativoView",
     "src": "resources/js/src/views/facturacion/EventoSignificativoView.vue",
     "isDynamicEntry": true,

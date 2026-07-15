@@ -206,6 +206,7 @@ export function useEventoSignificativoStore() {
                 'Recuperacion de contingencia procesada correctamente.';
             return true;
         } catch (error) {
+            await load();
             if (error instanceof ApiError) {
                 state.generalError = error.message;
                 return false;

@@ -227,6 +227,13 @@ const selectedInvoices = computed<DataItem[]>(
 const selectedReports = computed<DataItem[]>(
     () => selectedEvento.value?.reportes ?? [],
 );
+const selectedPackageAlerts = computed(() =>
+    selectedPackages.value.filter((paquete) =>
+        ['observado', 'pendiente_validacion'].includes(
+            String(paquete.estado ?? ''),
+        ),
+    ),
+);
 const recoverableEstados = [
     'cerrado_local',
     'registrado_siat',
@@ -372,6 +379,32 @@ function statusClass(value?: unknown) {
     if (estado === 'observado_siat')
         return 'border-red-200 bg-red-50 text-red-800';
     return 'border-[#cfe8d8] bg-[#eaf7ef] text-[#116b3a]';
+}
+
+function packageResponseMessage(paquete: DataItem) {
+    const validation = paquete.datos_respuesta_validacion ?? {};
+    const reception = paquete.datos_respuesta_recepcion ?? {};
+    return (
+        paquete.descripcion_estado ||
+        validation.message ||
+        validation.descripcion ||
+        reception.message ||
+        reception.descripcion ||
+        'Sin detalle de respuesta registrado.'
+    );
+}
+
+function packageResponseCode(paquete: DataItem) {
+    const validation = paquete.datos_respuesta_validacion ?? {};
+    const reception = paquete.datos_respuesta_recepcion ?? {};
+    return (
+        paquete.codigo_estado ||
+        validation.code ||
+        validation.codigo ||
+        reception.code ||
+        reception.codigo ||
+        'Sin codigo'
+    );
 }
 
 function selectEvento(item: DataItem) {
@@ -959,6 +992,7 @@ onMounted(async () => {
                                         Paquetes
                                     </th>
                                     <th class="px-4 py-3">Estado</th>
+                                    <th class="px-4 py-3">Respuesta SIAT</th>
                                     <th class="px-4 py-3">Acciones</th>
                                 </tr>
                             </thead>
@@ -1070,7 +1104,7 @@ onMounted(async () => {
                     >
                         <table
                             v-if="pendingInvoices.length"
-                            class="w-full min-w-[760px] text-left text-sm"
+                            class="w-full min-w-[980px] text-left text-sm"
                         >
                             <thead class="bg-[#f7faf8] text-xs text-[#536158]">
                                 <tr>
@@ -1140,7 +1174,7 @@ onMounted(async () => {
                     <div v-else class="overflow-x-auto">
                         <table
                             v-if="visiblePackages.length"
-                            class="w-full min-w-[760px] text-left text-sm"
+                            class="w-full min-w-[980px] text-left text-sm"
                         >
                             <thead class="bg-[#f7faf8] text-xs text-[#536158]">
                                 <tr>
@@ -1150,6 +1184,7 @@ onMounted(async () => {
                                     <th class="px-4 py-3">Envío</th>
                                     <th class="px-4 py-3">Validación</th>
                                     <th class="px-4 py-3">Estado</th>
+                                    <th class="px-4 py-3">Respuesta SIAT</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1192,6 +1227,16 @@ onMounted(async () => {
                                                 statusLabel(paquete.estado)
                                             }}</span
                                         >
+                                    </td>
+                                    <td class="max-w-[320px] px-4 py-3">
+                                        <p class="font-medium text-[#26332b]">
+                                            {{ packageResponseCode(paquete) }}
+                                        </p>
+                                        <p
+                                            class="mt-1 line-clamp-2 text-xs text-[#65736a]"
+                                        >
+                                            {{ packageResponseMessage(paquete) }}
+                                        </p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -1288,6 +1333,74 @@ onMounted(async () => {
                             >
                                 {{ selectedEvento.alerta_cafc.detail }}
                             </p>
+                        </div>
+                        <div
+                            v-if="selectedPackageAlerts.length"
+                            class="space-y-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-950"
+                        >
+                            <div class="flex gap-2">
+                                <XCircle
+                                    class="mt-0.5 size-4 shrink-0 text-red-600"
+                                />
+                                <div>
+                                    <p class="font-semibold">
+                                        Observaciones de paquetes SIAT
+                                    </p>
+                                    <p class="mt-1 text-xs text-red-800">
+                                        Revisa estos datos antes de volver a
+                                        procesar la recuperacion.
+                                    </p>
+                                </div>
+                            </div>
+                            <div
+                                v-for="paquete in selectedPackageAlerts"
+                                :key="paquete.id"
+                                class="rounded-lg border border-red-200 bg-white p-3"
+                            >
+                                <div
+                                    class="flex flex-wrap items-center justify-between gap-2"
+                                >
+                                    <p class="font-semibold">
+                                        Paquete {{ paquete.numero_paquete }}
+                                    </p>
+                                    <span
+                                        class="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-800"
+                                    >
+                                        {{ packageResponseCode(paquete) }}
+                                    </span>
+                                </div>
+                                <p class="mt-2 text-xs text-red-900">
+                                    {{ packageResponseMessage(paquete) }}
+                                </p>
+                                <details
+                                    v-if="
+                                        paquete.datos_respuesta_recepcion ||
+                                        paquete.datos_respuesta_validacion
+                                    "
+                                    class="mt-2"
+                                >
+                                    <summary
+                                        class="cursor-pointer text-xs font-semibold text-red-800"
+                                    >
+                                        Ver respuesta tecnica
+                                    </summary>
+                                    <pre
+                                        class="mt-2 max-h-44 overflow-auto rounded-lg bg-[#101713] p-3 text-xs whitespace-pre-wrap text-[#eaf7ef]"
+                                        >{{
+                                            JSON.stringify(
+                                                {
+                                                    recepcion:
+                                                        paquete.datos_respuesta_recepcion,
+                                                    validacion:
+                                                        paquete.datos_respuesta_validacion,
+                                                },
+                                                null,
+                                                2,
+                                            )
+                                        }}</pre
+                                    >
+                                </details>
+                            </div>
                         </div>
                         <ol class="space-y-0" aria-label="Progreso del evento">
                             <li

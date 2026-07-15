@@ -88,6 +88,8 @@ class EventoSignificativoResource extends JsonResource
                 'nombre_archivo' => $paquete->nombre_archivo,
                 'fecha_envio' => optional($paquete->fecha_envio)?->format('Y-m-d H:i:s'),
                 'fecha_validacion' => optional($paquete->fecha_validacion)?->format('Y-m-d H:i:s'),
+                'datos_respuesta_recepcion' => $paquete->datos_respuesta_recepcion,
+                'datos_respuesta_validacion' => $paquete->datos_respuesta_validacion,
                 'cufd_envio' => $paquete->cufdEnvio ? [
                     'id' => $paquete->cufdEnvio->id,
                     'codigo' => $paquete->cufdEnvio->codigo,
