@@ -17,6 +17,7 @@ use App\Models\Configuracion\Configuracion;
 use App\Models\Configuracion\Empresa;
 use App\Models\Configuracion\PuntoVenta;
 use App\Models\Configuracion\Sucursal;
+use App\Models\EventoSignificativo;
 use App\Models\Factura;
 use App\Models\SinMetodoPago;
 use App\Models\User;
@@ -37,6 +38,7 @@ class FacturaDirectaService
         private readonly EnviarFacturaSiatAction $enviarFacturaSiat,
         private readonly RegistrarRespuestaSiatAction $registrarRespuestaSiat,
         private readonly FacturaCorreoService $facturaCorreoService,
+        private readonly EventoSignificativoService $eventoSignificativoService,
     ) {
     }
 
@@ -57,22 +59,40 @@ class FacturaDirectaService
             OperationalContextScope::authorize($user, (int) $sucursal->id, (int) $puntoVenta->id);
 
             $cuis = ($this->obtenerCuisVigente)($sucursal->id, $puntoVenta->id, $ambiente);
-            $cufd = ($this->obtenerCufdVigente)($sucursal->id, $puntoVenta->id, $ambiente);
+            $eventoActivo = $this->eventoSignificativoService->eventoActivoPorContexto(
+                (int) $sucursal->id,
+                (int) $puntoVenta->id,
+                $ambiente,
+            );
+            $emisionOffline = $eventoActivo instanceof EventoSignificativo;
+            $codigoEmision = $emisionOffline ? 2 : 1;
+            $cufd = $emisionOffline ? $eventoActivo->cufdEvento : ($this->obtenerCufdVigente)($sucursal->id, $puntoVenta->id, $ambiente);
+            $cafc = $emisionOffline && (string) $eventoActivo->tipo_contingencia === 'manual'
+                ? $eventoActivo->cafc
+                : null;
 
             if (! $cuis) {
                 abort(422, 'Debe existir un CUIS vigente para emitir la factura.');
             }
 
             if (! $cufd) {
-                abort(422, 'Debe existir un CUFD vigente para emitir la factura.');
+                abort(422, $emisionOffline
+                    ? 'La contingencia activa no tiene un CUFD asociado para emitir fuera de linea.'
+                    : 'Debe existir un CUFD vigente para emitir la factura.');
             }
 
-            $numeroFactura = $this->repository->getNextInvoiceNumber(
-                $sucursal->id,
-                $puntoVenta->id,
-                $ambiente,
-                (int) $configuracion->tipo_facturacion,
-            );
+            if ($emisionOffline && (string) $eventoActivo->tipo_contingencia === 'manual' && ! $cafc) {
+                abort(422, 'La contingencia manual activa no tiene un CAFC asociado.');
+            }
+
+            $numeroFactura = $cafc
+                ? $this->repository->getNextCafcInvoiceNumber($cafc)
+                : $this->repository->getNextInvoiceNumber(
+                    $sucursal->id,
+                    $puntoVenta->id,
+                    $ambiente,
+                    (int) $configuracion->tipo_facturacion,
+                );
             $fechaEmision = now(config('app.timezone'));
             $payload = ($this->generarDatosFacturaDirecta)(
                 $cliente,
@@ -87,7 +107,9 @@ class FacturaDirectaService
                     'numero_factura' => $numeroFactura,
                     'fecha_emision' => $fechaEmision,
                     'cufd' => $cufd->codigo,
-                    'codigo_emision' => 1,
+                    'codigo_emision' => $codigoEmision,
+                    'evento_significativo_id' => $eventoActivo?->id,
+                    'cafc' => $cafc?->codigo,
                 ]),
             );
 
@@ -120,7 +142,7 @@ class FacturaDirectaService
                 $payload['cabecera'],
                 $cufd,
                 (int) $configuracion->tipo_facturacion,
-                1,
+                $codigoEmision,
             );
 
             $xml = ($this->generarXmlFactura)($payload, $numeroFactura);
@@ -135,6 +157,8 @@ class FacturaDirectaService
                 'user_id' => $user->id,
                 'cuis_id' => $cuis->id,
                 'cufd_id' => $cufd->id,
+                'evento_significativo_id' => $eventoActivo?->id,
+                'cafc_id' => $cafc?->id,
                 'numero_factura' => $numeroFactura,
                 'cuf' => $payload['cabecera']['cuf'],
                 'codigo_metodo_pago' => $payload['cabecera']['codigoMetodoPago'],
@@ -142,16 +166,19 @@ class FacturaDirectaService
                 'monto_gift_card' => $payload['cabecera']['montoGiftCard'],
                 'descuento_global' => (float) ($payload['cabecera']['descuentoAdicional'] ?? 0),
                 'codigo_documento_identidad' => $payload['cabecera']['codigoTipoDocumentoIdentidad'],
+                'codigo_excepcion' => $payload['cabecera']['codigoExcepcion'],
                 'tipo_facturacion' => (int) $configuracion->tipo_facturacion,
                 'ambiente_facturacion' => $configuracion->ambiente_facturacion,
-                'codigo_emision' => 1,
+                'codigo_emision' => $codigoEmision,
                 'hash_xml' => $xml['hash'],
                 'xml_fiscal' => $signedXml['xml'],
                 'fecha_emision' => $fechaEmision,
                 'monto_total' => $payload['cabecera']['montoTotal'],
                 'monto_sujeto_iva' => $payload['cabecera']['montoTotalSujetoIva'],
-                'estado_factura' => FacturaEstadoEnum::PENDIENTE->value,
-                'estado_sincronizacion' => 'no_aplica',
+                'estado_factura' => $emisionOffline ? FacturaEstadoEnum::PENDIENTE_ENVIO->value : FacturaEstadoEnum::PENDIENTE->value,
+                'estado_sincronizacion' => $emisionOffline ? 'pendiente_paquete' : 'no_aplica',
+                'codigo_estado' => $emisionOffline ? 'LOCAL_CONTINGENCIA' : null,
+                'descripcion_estado' => $emisionOffline ? 'Factura emitida fuera de linea por contingencia activa. Pendiente de envio por paquete SIAT.' : null,
                 'observacion' => $data['observacion'] ?? null,
                 'metadata' => $data['metadata'] ?? null,
             ]);
@@ -170,6 +197,21 @@ class FacturaDirectaService
                     'subtotal' => $detalle['subTotal'],
                     'numero_serie' => $detalle['numeroSerie'],
                     'numero_imei' => $detalle['numeroImei'],
+                ]);
+            }
+
+            if ($emisionOffline) {
+                return $factura->load([
+                    'detalles',
+                    'cliente',
+                    'sucursal',
+                    'puntoVenta',
+                    'user',
+                    'cuis',
+                    'cufd',
+                    'cafc',
+                    'eventoSignificativo',
+                    'anulaciones.user',
                 ]);
             }
 

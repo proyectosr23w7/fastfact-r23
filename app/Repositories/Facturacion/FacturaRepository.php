@@ -3,6 +3,7 @@
 namespace App\Repositories\Facturacion;
 
 use App\Models\Factura;
+use App\Models\Cafc;
 use App\Models\User;
 use App\Support\OperationalContextScope;
 use Illuminate\Database\Eloquent\Builder;
@@ -174,6 +175,26 @@ class FacturaRepository
             ->where('numero_factura', $numeroFactura)
             ->when($exceptFacturaId, fn ($query) => $query->whereKeyNot($exceptFacturaId))
             ->exists();
+    }
+
+    public function getNextCafcInvoiceNumber(Cafc $cafc): int
+    {
+        if ($cafc->numero_inicial === null || $cafc->numero_final === null || $cafc->numero_final < $cafc->numero_inicial) {
+            abort(422, 'El CAFC no tiene un rango de numeracion valido para emitir facturas manuales.');
+        }
+
+        $ultimoNumero = (int) Factura::query()
+            ->where('cafc_id', $cafc->id)
+            ->lockForUpdate()
+            ->max('numero_factura');
+
+        $nextNumber = max($ultimoNumero + 1, (int) $cafc->numero_inicial);
+
+        if ($nextNumber > (int) $cafc->numero_final) {
+            abort(422, 'El rango de numeracion del CAFC seleccionado ya fue consumido.');
+        }
+
+        return $nextNumber;
     }
 
     private function applyFilters(Builder $query, array $filters): void
