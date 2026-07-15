@@ -198,7 +198,7 @@
     ]
   },
   "resources/js/app.ts": {
-    "file": "assets/app-R68wtBAF.js",
+    "file": "assets/app-BWx1QHQL.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -444,7 +444,7 @@
     ]
   },
   "resources/js/pages/settings/Appearance.vue": {
-    "file": "assets/Appearance-DN36OfOG.js",
+    "file": "assets/Appearance-CTAHVZ5I.js",
     "name": "Appearance",
     "src": "resources/js/pages/settings/Appearance.vue",
     "isDynamicEntry": true,
@@ -669,7 +669,7 @@
     ]
   },
   "resources/js/src/views/facturacion/EventoSignificativoView.vue": {
-    "file": "assets/EventoSignificativoView-BI7agnjQ.js",
+    "file": "assets/EventoSignificativoView-DwYCG_vH.js",
     "name": "EventoSignificativoView",
     "src": "resources/js/src/views/facturacion/EventoSignificativoView.vue",
     "isDynamicEntry": true,

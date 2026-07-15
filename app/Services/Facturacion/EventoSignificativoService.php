@@ -603,8 +603,18 @@ class EventoSignificativoService
             abort(422, 'El evento significativo manual no tiene un CAFC asociado. No se puede preparar el envio por paquetes.');
         }
 
+        $paquetesPendientesRecepcion = $evento->paquetes
+            ->filter(fn (EventoSignificativoPaquete $paquete) => (string) $paquete->estado === 'pendiente_recepcion')
+            ->values();
+
+        foreach ($paquetesPendientesRecepcion as $paquete) {
+            $this->enviarPaqueteARecepcionSiat($evento, $paquete, $paquete->facturas, $cufdRecuperacion, $user);
+        }
+
+        $evento = $this->repository->findForProcess($evento);
+
         $facturasPendientes = $evento->facturas
-            ->filter(fn (Factura $factura) => in_array((string) $factura->estado_sincronizacion, ['pendiente_paquete', 'observado_paquete', 'paquete_preparado'], true))
+            ->filter(fn (Factura $factura) => in_array((string) $factura->estado_sincronizacion, ['pendiente_paquete', 'paquete_preparado'], true))
             ->values();
 
         $numeroPaquete = ((int) $evento->paquetes->max('numero_paquete')) + 1;
@@ -626,33 +636,79 @@ class EventoSignificativoService
                     'estado_sincronizacion' => 'paquete_preparado',
                 ]);
 
-            $archivo = ($this->generarPaqueteFacturasSiat)($chunk, $evento->id, $numeroPaquete);
+            $this->enviarPaqueteARecepcionSiat($evento, $paquete, $chunk, $cufdRecuperacion, $user);
 
-            $response = $this->client->recepcionPaqueteFactura([
-                'sucursal_id' => $evento->sucursal_id,
-                'punto_venta_id' => $evento->punto_venta_id,
-                'archivo' => $archivo['binary'],
-                'fecha_envio' => now(config('app.timezone')),
-                'hash_archivo' => $archivo['hash'],
-                'cantidad_facturas' => $archivo['cantidad'],
-                'codigo_recepcion_evento' => $evento->codigo_recepcion,
-                'cafc' => $evento->tipo_contingencia === 'manual' ? $evento->cafc?->codigo : null,
-            ]);
+            $numeroPaquete++;
+        }
 
-            if (($response['success'] ?? false) !== true || blank($response['codigo_recepcion'] ?? $response['codigo'] ?? null)) {
+        return $this->repository->findForProcess($evento);
+    }
+
+    private function enviarPaqueteARecepcionSiat(
+        EventoSignificativo $evento,
+        EventoSignificativoPaquete $paquete,
+        \Illuminate\Support\Collection $facturas,
+        Cufd $cufdRecuperacion,
+        User $user,
+    ): void {
+        if ($facturas->isEmpty()) {
+            return;
+        }
+
+        $archivo = ($this->generarPaqueteFacturasSiat)($facturas, $evento->id, (int) $paquete->numero_paquete);
+
+        $response = $this->client->recepcionPaqueteFactura([
+            'sucursal_id' => $evento->sucursal_id,
+            'punto_venta_id' => $evento->punto_venta_id,
+            'archivo' => $archivo['binary'],
+            'fecha_envio' => now(config('app.timezone')),
+            'hash_archivo' => $archivo['hash'],
+            'cantidad_facturas' => $archivo['cantidad'],
+            'codigo_recepcion_evento' => $evento->codigo_recepcion,
+            'cafc' => $evento->tipo_contingencia === 'manual' ? $evento->cafc?->codigo : null,
+        ]);
+
+        if (($response['success'] ?? false) !== true || blank($response['codigo_recepcion'] ?? $response['codigo'] ?? null)) {
+            if ($this->isTimeoutResponse($response)) {
                 $paquete->update([
-                    'estado' => 'observado',
-                    'codigo_estado' => (string) ($response['code'] ?? ''),
-                    'descripcion_estado' => mb_substr((string) ($response['message'] ?? 'SIAT observo el envio del paquete.'), 0, 1000),
+                    'estado' => 'pendiente_recepcion',
+                    'codigo_estado' => (string) ($response['code'] ?? 'SOAP_TIMEOUT'),
+                    'descripcion_estado' => mb_substr((string) ($response['message'] ?? 'Timeout al enviar paquete a SIAT.'), 0, 1000),
                     'hash_archivo' => $archivo['hash'],
                     'nombre_archivo' => $archivo['nombre_archivo'],
+                    'fecha_envio' => now(config('app.timezone')),
                     'datos_respuesta_recepcion' => $response,
+                    'cufd_envio_id' => $cufdRecuperacion->id,
+                    'user_id' => $user->id,
                 ]);
 
-                $this->markFacturasAsObserved($chunk, $response, $paquete->id);
-                $this->repository->update($evento, ['estado' => 'observado_siat']);
-                abort(422, 'No se pudo enviar el paquete SIAT: '.($response['message'] ?? 'Sin detalle disponible.'));
+                Factura::query()
+                    ->whereKey($facturas->pluck('id')->all())
+                    ->update([
+                        'estado_sincronizacion' => 'paquete_preparado',
+                        'codigo_estado' => (string) ($response['code'] ?? 'SOAP_TIMEOUT'),
+                        'descripcion_estado' => mb_substr((string) ($response['message'] ?? 'Timeout al enviar paquete a SIAT.'), 0, 1000),
+                        'datos_respuesta_siat' => $response,
+                        'evento_significativo_paquete_id' => $paquete->id,
+                    ]);
+
+                $this->repository->update($evento, ['estado' => 'pendiente_validacion_paquetes']);
+                abort(422, 'SIAT no respondio a tiempo al recibir el paquete. El paquete queda pendiente de recepcion y se reintentara con el mismo numero.');
             }
+
+            $paquete->update([
+                'estado' => 'observado',
+                'codigo_estado' => (string) ($response['code'] ?? ''),
+                'descripcion_estado' => mb_substr((string) ($response['message'] ?? 'SIAT observo el envio del paquete.'), 0, 1000),
+                'hash_archivo' => $archivo['hash'],
+                'nombre_archivo' => $archivo['nombre_archivo'],
+                'datos_respuesta_recepcion' => $response,
+            ]);
+
+            $this->markFacturasAsObserved($facturas, $response, $paquete->id);
+            $this->repository->update($evento, ['estado' => 'observado_siat']);
+            abort(422, 'No se pudo enviar el paquete SIAT: '.($response['message'] ?? 'Sin detalle disponible.'));
+        }
 
             $codigoRecepcionPaquete = (string) ($response['codigo_recepcion'] ?? $response['codigo']);
 
@@ -668,7 +724,7 @@ class EventoSignificativoService
             ]);
 
             Factura::query()
-                ->whereKey($chunk->pluck('id')->all())
+                ->whereKey($facturas->pluck('id')->all())
                 ->update([
                     'estado_sincronizacion' => 'pendiente_validacion',
                     'codigo_recepcion' => $codigoRecepcionPaquete,
@@ -686,14 +742,14 @@ class EventoSignificativoService
 
             if (($validationResponse['success'] ?? false) !== true) {
                 $this->markPaqueteAsObserved($paquete, $validationResponse, $user->id);
-                $this->markFacturasAsObserved($chunk, $validationResponse, $paquete->id);
+                $this->markFacturasAsObserved($facturas, $validationResponse, $paquete->id);
                 $this->repository->update($evento, ['estado' => 'observado_siat']);
                 abort(422, 'SIAT observo la validacion del paquete: '.($validationResponse['message'] ?? 'Sin detalle disponible.'));
             }
 
             if ($this->isPaqueteValidado($validationResponse)) {
                 $this->markPaqueteAsValidated($paquete, $validationResponse, $cufdRecuperacion->id, $user->id);
-                $this->markFacturasAsSynchronized($chunk, $validationResponse, $codigoRecepcionPaquete, $paquete->id);
+                $this->markFacturasAsSynchronized($facturas, $validationResponse, $codigoRecepcionPaquete, $paquete->id);
             } else {
                 $paquete->update([
                     'estado' => 'pendiente_validacion',
@@ -706,7 +762,7 @@ class EventoSignificativoService
                 ]);
 
                 Factura::query()
-                    ->whereKey($chunk->pluck('id')->all())
+                    ->whereKey($facturas->pluck('id')->all())
                     ->update([
                         'estado_sincronizacion' => 'pendiente_validacion',
                         'codigo_recepcion' => $codigoRecepcionPaquete,
@@ -716,11 +772,16 @@ class EventoSignificativoService
                         'evento_significativo_paquete_id' => $paquete->id,
                     ]);
             }
-
-            $numeroPaquete++;
         }
 
-        return $this->repository->findForProcess($evento);
+    private function isTimeoutResponse(array $response): bool
+    {
+        $message = mb_strtolower((string) ($response['message'] ?? ''));
+
+        return str_contains($message, 'timeoutexception')
+            || str_contains($message, 'request timeout')
+            || str_contains($message, 'timed out')
+            || str_contains($message, 'timeout');
     }
 
     private function actualizarEstadoFinalDelEvento(EventoSignificativo $evento): EventoSignificativo
@@ -737,7 +798,7 @@ class EventoSignificativoService
 
         $hayPendienteValidacion = EventoSignificativoPaquete::query()
             ->where('evento_significativo_id', $evento->id)
-            ->whereIn('estado', ['enviado', 'pendiente_validacion'])
+            ->whereIn('estado', ['enviado', 'pendiente_validacion', 'pendiente_recepcion'])
             ->exists();
 
         if ($hayPendienteValidacion) {
@@ -747,6 +808,7 @@ class EventoSignificativoService
         $hayObservados = EventoSignificativoPaquete::query()
             ->where('evento_significativo_id', $evento->id)
             ->where('estado', 'observado')
+            ->whereHas('facturas', fn ($facturas) => $facturas->where('estado_sincronizacion', '<>', 'sincronizada'))
             ->exists();
 
         if ($hayObservados) {

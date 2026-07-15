@@ -229,7 +229,7 @@ const selectedReports = computed<DataItem[]>(
 );
 const selectedPackageAlerts = computed(() =>
     selectedPackages.value.filter((paquete) =>
-        ['observado', 'pendiente_validacion'].includes(
+        ['observado', 'pendiente_recepcion', 'pendiente_validacion'].includes(
             String(paquete.estado ?? ''),
         ),
     ),
@@ -360,6 +360,7 @@ function statusLabel(value?: unknown) {
         activo_local: 'Activa',
         cerrado_local: 'Pendiente de registro',
         registrado_siat: 'Registrada en SIAT',
+        pendiente_recepcion: 'Pendiente de recepcion',
         pendiente_validacion_paquetes: 'Pendiente de validación',
         observado_siat: 'Observada por SIAT',
         concluido: 'Procesada',
