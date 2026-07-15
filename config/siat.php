@@ -27,8 +27,9 @@ return [
                 'codigos' => env('SIAT_PILOTO_CODIGOS_WSDL', 'https://pilotosiatservicios.impuestos.gob.bo/v2/FacturacionCodigos?wsdl'),
                 'sincronizacion' => env('SIAT_PILOTO_SINCRONIZACION_WSDL', 'https://pilotosiatservicios.impuestos.gob.bo/v2/FacturacionSincronizacion?wsdl'),
                 'operaciones' => env('SIAT_PILOTO_OPERACIONES_WSDL', 'https://pilotosiatservicios.impuestos.gob.bo/v2/FacturacionOperaciones?wsdl'),
-                'facturacion_computarizada' => env('SIAT_PILOTO_FACTURACION_COMPUTARIZADA_WSDL', 'https://pilotosiatservicios.impuestos.gob.bo/v2/ServicioFacturacionComputarizada?wsdl'),
-                'facturacion_electronica' => env('SIAT_PILOTO_FACTURACION_ELECTRONICA_WSDL', 'https://pilotosiatservicios.impuestos.gob.bo/v2/ServicioFacturacionElectronica?wsdl'),
+                // Para el documento sector Factura Compra-Venta, SIAT usa este servicio en ambas modalidades.
+                'facturacion_computarizada' => env('SIAT_PILOTO_FACTURACION_COMPUTARIZADA_WSDL', 'https://pilotosiatservicios.impuestos.gob.bo/v2/ServicioFacturacionCompraVenta?wsdl'),
+                'facturacion_electronica' => env('SIAT_PILOTO_FACTURACION_ELECTRONICA_WSDL', 'https://pilotosiatservicios.impuestos.gob.bo/v2/ServicioFacturacionCompraVenta?wsdl'),
             ],
         ],
         'produccion' => [
@@ -40,8 +41,8 @@ return [
                 'codigos' => env('SIAT_PRODUCCION_CODIGOS_WSDL', 'https://siatrest.impuestos.gob.bo/v2/FacturacionCodigos?wsdl'),
                 'sincronizacion' => env('SIAT_PRODUCCION_SINCRONIZACION_WSDL', 'https://siatrest.impuestos.gob.bo/v2/FacturacionSincronizacion?wsdl'),
                 'operaciones' => env('SIAT_PRODUCCION_OPERACIONES_WSDL', 'https://siatrest.impuestos.gob.bo/v2/FacturacionOperaciones?wsdl'),
-                'facturacion_computarizada' => env('SIAT_PRODUCCION_FACTURACION_COMPUTARIZADA_WSDL', 'https://siatrest.impuestos.gob.bo/v2/ServicioFacturacionComputarizada?wsdl'),
-                'facturacion_electronica' => env('SIAT_PRODUCCION_FACTURACION_ELECTRONICA_WSDL', 'https://siatrest.impuestos.gob.bo/v2/ServicioFacturacionElectronica?wsdl'),
+                'facturacion_computarizada' => env('SIAT_PRODUCCION_FACTURACION_COMPUTARIZADA_WSDL', 'https://siatrest.impuestos.gob.bo/v2/ServicioFacturacionCompraVenta?wsdl'),
+                'facturacion_electronica' => env('SIAT_PRODUCCION_FACTURACION_ELECTRONICA_WSDL', 'https://siatrest.impuestos.gob.bo/v2/ServicioFacturacionCompraVenta?wsdl'),
             ],
         ],
     ],
