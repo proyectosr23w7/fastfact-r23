@@ -101,7 +101,7 @@ class EventoSignificativoRepository
                 'facturas:id,evento_significativo_id,evento_significativo_paquete_id,cafc_id,fecha_emision,estado_factura,estado_sincronizacion,codigo_recepcion,numero_factura,cuf,xml_fiscal',
                 'facturas.cafc:id,codigo',
                 'paquetes.cufdEnvio:id,codigo,codigo_control,fecha_vigencia',
-                'paquetes.facturas:id,evento_significativo_paquete_id,numero_factura,estado_sincronizacion',
+                'paquetes.facturas:id,evento_significativo_paquete_id,numero_factura,cuf,xml_fiscal,estado_sincronizacion',
                 'reportes.user:id,name,email',
             ])
             ->lockForUpdate()
