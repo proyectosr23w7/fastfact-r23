@@ -2,8 +2,8 @@
 
 use App\Helpers\SiatMetodoPagoHelper;
 
-test('detecta metodos gift card por codigo y descripcion', function () {
-    expect(SiatMetodoPagoHelper::requiresGiftCardAmount('7', 'Otro metodo'))->toBeTrue()
+test('detecta metodos gift card por descripcion sin confundir transferencia', function () {
+    expect(SiatMetodoPagoHelper::requiresGiftCardAmount('7', 'Transferencia bancaria'))->toBeFalse()
         ->and(SiatMetodoPagoHelper::requiresGiftCardAmount('99', 'Gift Card'))->toBeTrue()
         ->and(SiatMetodoPagoHelper::requiresGiftCardAmount('99', 'Vale de consumo'))->toBeTrue()
         ->and(SiatMetodoPagoHelper::requiresGiftCardAmount('99', 'Tarjeta regalo'))->toBeTrue()

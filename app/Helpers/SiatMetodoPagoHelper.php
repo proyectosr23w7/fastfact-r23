@@ -15,11 +15,9 @@ class SiatMetodoPagoHelper
 
     public static function requiresGiftCardAmount(?string $codigo, ?string $descripcion = null): bool
     {
-        $normalizedCode = trim((string) ($codigo ?? ''));
         $normalizedDescription = self::normalizeText($descripcion);
 
-        return $normalizedCode === '7'
-            || str_contains($normalizedDescription, 'gift')
+        return str_contains($normalizedDescription, 'gift')
             || str_contains($normalizedDescription, 'gift card')
             || str_contains($normalizedDescription, 'giftcard')
             || str_contains($normalizedDescription, 'tarjeta regalo')
