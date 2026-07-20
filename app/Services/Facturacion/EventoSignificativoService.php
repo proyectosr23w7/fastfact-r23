@@ -889,6 +889,21 @@ class EventoSignificativoService
 
         return $codigo === '908'
             || str_contains($mensaje, 'VALIDADA')
-            || str_contains($mensaje, 'VALIDADO');
+            || str_contains($mensaje, 'VALIDADO')
+            || $this->isPaqueteYaRegistradoEnSiat($response);
+    }
+
+    private function isPaqueteYaRegistradoEnSiat(array $response): bool
+    {
+        if (($response['success'] ?? false) !== true) {
+            return false;
+        }
+
+        $codigo = (string) ($response['code'] ?? '');
+        $mensaje = mb_strtoupper((string) ($response['message'] ?? ''));
+
+        return $codigo === '904'
+            && str_contains($mensaje, 'CUF')
+            && str_contains($mensaje, 'YA EXISTE');
     }
 }
