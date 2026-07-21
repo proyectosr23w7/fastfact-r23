@@ -13,7 +13,7 @@ class GenerarPaqueteFacturasSiatAction
 {
     /**
      * @param  Collection<int, Factura>  $facturas
-     * @return array{binary: string, hash: string, cantidad: int, nombre_archivo: string}
+     * @return array{binary: string, hash: string, cantidad: int, nombre_archivo: string, manifiesto: array<int, array<string, mixed>>}
      */
     public function __invoke(Collection $facturas, int $eventoId, int $numeroPaquete): array
     {
@@ -35,7 +35,10 @@ class GenerarPaqueteFacturasSiatAction
         File::ensureDirectoryExists($xmlDirectory);
 
         try {
-            foreach ($facturas as $factura) {
+            $manifiesto = [];
+            $numeroArchivo = 0;
+
+            foreach ($facturas->values() as $factura) {
                 $xml = trim((string) $factura->xml_fiscal);
 
                 if ($xml === '') {
@@ -44,6 +47,15 @@ class GenerarPaqueteFacturasSiatAction
 
                 $filename = ($factura->cuf ?: "factura-{$factura->id}").'.xml';
                 File::put("{$xmlDirectory}/{$filename}", $xml);
+
+                $manifiesto[] = [
+                    'numero_archivo' => $numeroArchivo,
+                    'factura_id' => $factura->id,
+                    'numero_factura' => $factura->numero_factura,
+                    'cuf' => $factura->cuf,
+                    'nombre_xml' => $filename,
+                ];
+                $numeroArchivo++;
             }
 
             if (file_exists($tarPath)) {
@@ -81,6 +93,7 @@ class GenerarPaqueteFacturasSiatAction
                 'hash' => hash('sha256', $binary),
                 'cantidad' => $facturas->count(),
                 'nombre_archivo' => basename($tarGzPath),
+                'manifiesto' => $manifiesto,
             ];
         } finally {
             File::deleteDirectory($workingDirectory);

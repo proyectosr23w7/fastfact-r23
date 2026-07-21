@@ -5,12 +5,12 @@ namespace App\Services\Facturacion;
 use App\Actions\Facturacion\GenerarPaqueteFacturasSiatAction;
 use App\Enums\FacturaEstadoEnum;
 use App\Models\Cafc;
+use App\Models\Configuracion\Configuracion;
 use App\Models\Cufd;
 use App\Models\EventoSignificativo;
 use App\Models\EventoSignificativoPaquete;
 use App\Models\Factura;
 use App\Models\User;
-use App\Models\Configuracion\Configuracion;
 use App\Repositories\Facturacion\CufdRepository;
 use App\Repositories\Facturacion\EventoSignificativoRepository;
 use App\Support\OperationalContextScope;
@@ -71,8 +71,7 @@ class EventoSignificativoService
         private readonly SiatClientService $client,
         private readonly CufdService $cufdService,
         private readonly GenerarPaqueteFacturasSiatAction $generarPaqueteFacturasSiat,
-    ) {
-    }
+    ) {}
 
     public function listar(array $filters = [], ?User $user = null): Collection
     {
@@ -567,29 +566,12 @@ class EventoSignificativoService
 
             if ($this->isPaqueteValidado($response)) {
                 $this->markPaqueteAsValidated($paquete, $response, $cufdRecuperacion->id, $user->id);
-                $this->markFacturasAsSynchronized($paquete->facturas, $response, $paquete->codigo_recepcion);
+                $this->applyPackageValidationToInvoices($paquete, $paquete->facturas, $response, (string) $paquete->codigo_recepcion);
+
                 continue;
             }
 
-            $paquete->update([
-                'estado' => 'pendiente_validacion',
-                'codigo_estado' => (string) ($response['code'] ?? $paquete->codigo_estado),
-                'descripcion_estado' => mb_substr((string) ($response['message'] ?? $paquete->descripcion_estado), 0, 1000),
-                'fecha_validacion' => now(config('app.timezone')),
-                'datos_respuesta_validacion' => $response,
-                'cufd_envio_id' => $cufdRecuperacion->id,
-                'user_id' => $user->id,
-            ]);
-
-            foreach ($paquete->facturas as $factura) {
-                $factura->update([
-                    'estado_sincronizacion' => 'pendiente_validacion',
-                    'codigo_recepcion' => $paquete->codigo_recepcion,
-                    'codigo_estado' => (string) ($response['code'] ?? $factura->codigo_estado),
-                    'descripcion_estado' => mb_substr((string) ($response['message'] ?? $factura->descripcion_estado), 0, 1000),
-                    'datos_respuesta_siat' => $response,
-                ]);
-            }
+            $this->applyObservedPackageValidation($paquete, $paquete->facturas, $response, (string) $paquete->codigo_recepcion, $cufdRecuperacion->id, $user->id);
         }
 
         return $this->repository->findForProcess($evento);
@@ -677,7 +659,7 @@ class EventoSignificativoService
                     'hash_archivo' => $archivo['hash'],
                     'nombre_archivo' => $archivo['nombre_archivo'],
                     'fecha_envio' => now(config('app.timezone')),
-                    'datos_respuesta_recepcion' => $response,
+                    'datos_respuesta_recepcion' => $this->withPackageManifest($response, $archivo),
                     'cufd_envio_id' => $cufdRecuperacion->id,
                     'user_id' => $user->id,
                 ]);
@@ -702,7 +684,7 @@ class EventoSignificativoService
                 'descripcion_estado' => mb_substr((string) ($response['message'] ?? 'SIAT observo el envio del paquete.'), 0, 1000),
                 'hash_archivo' => $archivo['hash'],
                 'nombre_archivo' => $archivo['nombre_archivo'],
-                'datos_respuesta_recepcion' => $response,
+                'datos_respuesta_recepcion' => $this->withPackageManifest($response, $archivo),
             ]);
 
             $this->markFacturasAsObserved($facturas, $response, $paquete->id);
@@ -710,69 +692,252 @@ class EventoSignificativoService
             abort(422, 'No se pudo enviar el paquete SIAT: '.($response['message'] ?? 'Sin detalle disponible.'));
         }
 
-            $codigoRecepcionPaquete = (string) ($response['codigo_recepcion'] ?? $response['codigo']);
+        $codigoRecepcionPaquete = (string) ($response['codigo_recepcion'] ?? $response['codigo']);
 
-            $paquete->update([
+        $paquete->update([
+            'codigo_recepcion' => $codigoRecepcionPaquete,
+            'codigo_estado' => (string) ($response['code'] ?? ''),
+            'descripcion_estado' => mb_substr((string) ($response['message'] ?? 'Paquete recibido por SIAT.'), 0, 1000),
+            'estado' => 'enviado',
+            'hash_archivo' => $archivo['hash'],
+            'nombre_archivo' => $archivo['nombre_archivo'],
+            'fecha_envio' => now(config('app.timezone')),
+            'datos_respuesta_recepcion' => $this->withPackageManifest($response, $archivo),
+        ]);
+
+        Factura::query()
+            ->whereKey($facturas->pluck('id')->all())
+            ->update([
+                'estado_sincronizacion' => 'pendiente_validacion',
                 'codigo_recepcion' => $codigoRecepcionPaquete,
                 'codigo_estado' => (string) ($response['code'] ?? ''),
-                'descripcion_estado' => mb_substr((string) ($response['message'] ?? 'Paquete recibido por SIAT.'), 0, 1000),
-                'estado' => 'enviado',
-                'hash_archivo' => $archivo['hash'],
-                'nombre_archivo' => $archivo['nombre_archivo'],
-                'fecha_envio' => now(config('app.timezone')),
-                'datos_respuesta_recepcion' => $response,
+                'descripcion_estado' => mb_substr((string) ($response['message'] ?? 'Paquete recibido por SIAT. Pendiente de validacion.'), 0, 1000),
+                'datos_respuesta_siat' => $response,
+                'evento_significativo_paquete_id' => $paquete->id,
             ]);
 
-            Factura::query()
-                ->whereKey($facturas->pluck('id')->all())
-                ->update([
-                    'estado_sincronizacion' => 'pendiente_validacion',
+        $validationResponse = $this->client->validacionRecepcionPaqueteFactura([
+            'sucursal_id' => $evento->sucursal_id,
+            'punto_venta_id' => $evento->punto_venta_id,
+            'codigo_recepcion' => $codigoRecepcionPaquete,
+        ]);
+
+        if (($validationResponse['success'] ?? false) !== true) {
+            $this->markPaqueteAsObserved($paquete, $validationResponse, $user->id);
+            $this->markFacturasAsObserved($facturas, $validationResponse, $paquete->id);
+            $this->repository->update($evento, ['estado' => 'observado_siat']);
+            abort(422, 'SIAT observo la validacion del paquete: '.($validationResponse['message'] ?? 'Sin detalle disponible.'));
+        }
+
+        if ($this->isPaqueteValidado($validationResponse)) {
+            $this->markPaqueteAsValidated($paquete, $validationResponse, $cufdRecuperacion->id, $user->id);
+            $this->applyPackageValidationToInvoices($paquete, $facturas, $validationResponse, $codigoRecepcionPaquete);
+        } else {
+            $this->applyObservedPackageValidation($paquete, $facturas, $validationResponse, $codigoRecepcionPaquete, $cufdRecuperacion->id, $user->id);
+        }
+    }
+
+    private function withPackageManifest(array $response, array $archivo): array
+    {
+        $response['manifiesto_paquete'] = $archivo['manifiesto'] ?? [];
+
+        return $response;
+    }
+
+    private function applyPackageValidationToInvoices(
+        EventoSignificativoPaquete $paquete,
+        \Illuminate\Support\Collection $facturas,
+        array $response,
+        string $codigoRecepcionPaquete,
+    ): void {
+        $messagesByInvoice = $this->packageMessagesByInvoice($paquete, $facturas, $response);
+
+        foreach ($facturas as $factura) {
+            $messages = $messagesByInvoice[(int) $factura->id] ?? [];
+            $message = $this->joinPackageMessages($messages, (string) ($response['message'] ?? 'Factura sincronizada por paquete SIAT.'));
+
+            $factura->update([
+                'estado_factura' => FacturaEstadoEnum::EMITIDA->value,
+                'estado_sincronizacion' => 'sincronizada',
+                'codigo_recepcion' => $codigoRecepcionPaquete,
+                'codigo_estado' => (string) ($response['code'] ?? $factura->codigo_estado),
+                'descripcion_estado' => mb_substr($message, 0, 1000),
+                'datos_respuesta_siat' => $response,
+                'evento_significativo_paquete_id' => $paquete->id,
+            ]);
+        }
+    }
+
+    private function applyObservedPackageValidation(
+        EventoSignificativoPaquete $paquete,
+        \Illuminate\Support\Collection $facturas,
+        array $response,
+        string $codigoRecepcionPaquete,
+        int $cufdRecuperacionId,
+        int $userId,
+    ): void {
+        $messagesByInvoice = $this->packageMessagesByInvoice($paquete, $facturas, $response);
+        $hasRejectedInvoice = false;
+        $hasPendingInvoice = false;
+
+        foreach ($facturas as $factura) {
+            $messages = $messagesByInvoice[(int) $factura->id] ?? [];
+            $hasCufAlreadyExists = collect($messages)->contains(fn (array $message) => $this->messageIndicatesExistingCuf($message));
+            $blockingMessages = collect($messages)
+                ->reject(fn (array $message) => $this->messageIndicatesExistingCuf($message))
+                ->reject(fn (array $message) => (bool) ($message['advertencia'] ?? false))
+                ->values()
+                ->all();
+
+            if ($hasCufAlreadyExists && $blockingMessages === []) {
+                $factura->update([
+                    'estado_factura' => FacturaEstadoEnum::EMITIDA->value,
+                    'estado_sincronizacion' => 'sincronizada',
                     'codigo_recepcion' => $codigoRecepcionPaquete,
-                    'codigo_estado' => (string) ($response['code'] ?? ''),
-                    'descripcion_estado' => mb_substr((string) ($response['message'] ?? 'Paquete recibido por SIAT. Pendiente de validacion.'), 0, 1000),
+                    'codigo_estado' => (string) ($response['code'] ?? $factura->codigo_estado),
+                    'descripcion_estado' => mb_substr($this->joinPackageMessages($messages, 'Factura registrada previamente en SIAT.'), 0, 1000),
                     'datos_respuesta_siat' => $response,
                     'evento_significativo_paquete_id' => $paquete->id,
                 ]);
 
-            $validationResponse = $this->client->validacionRecepcionPaqueteFactura([
-                'sucursal_id' => $evento->sucursal_id,
-                'punto_venta_id' => $evento->punto_venta_id,
-                'codigo_recepcion' => $codigoRecepcionPaquete,
-            ]);
-
-            if (($validationResponse['success'] ?? false) !== true) {
-                $this->markPaqueteAsObserved($paquete, $validationResponse, $user->id);
-                $this->markFacturasAsObserved($facturas, $validationResponse, $paquete->id);
-                $this->repository->update($evento, ['estado' => 'observado_siat']);
-                abort(422, 'SIAT observo la validacion del paquete: '.($validationResponse['message'] ?? 'Sin detalle disponible.'));
+                continue;
             }
 
-            if ($this->isPaqueteValidado($validationResponse)) {
-                $this->markPaqueteAsValidated($paquete, $validationResponse, $cufdRecuperacion->id, $user->id);
-                $this->markFacturasAsSynchronized($facturas, $validationResponse, $codigoRecepcionPaquete, $paquete->id);
-            } else {
-                $paquete->update([
-                    'estado' => 'pendiente_validacion',
-                    'codigo_estado' => (string) ($validationResponse['code'] ?? $paquete->codigo_estado),
-                    'descripcion_estado' => mb_substr((string) ($validationResponse['message'] ?? $paquete->descripcion_estado), 0, 1000),
-                    'fecha_validacion' => now(config('app.timezone')),
-                    'datos_respuesta_validacion' => $validationResponse,
-                    'cufd_envio_id' => $cufdRecuperacion->id,
-                    'user_id' => $user->id,
+            if ($blockingMessages !== []) {
+                $hasRejectedInvoice = true;
+                $factura->update([
+                    'estado_factura' => FacturaEstadoEnum::RECHAZADA->value,
+                    'estado_sincronizacion' => 'observado_paquete',
+                    'codigo_recepcion' => $codigoRecepcionPaquete,
+                    'codigo_estado' => (string) ($response['code'] ?? $factura->codigo_estado),
+                    'descripcion_estado' => mb_substr($this->joinPackageMessages($blockingMessages, (string) ($response['message'] ?? 'Factura observada por SIAT.')), 0, 1000),
+                    'datos_respuesta_siat' => $response,
+                    'evento_significativo_paquete_id' => $paquete->id,
                 ]);
 
-                Factura::query()
-                    ->whereKey($facturas->pluck('id')->all())
-                    ->update([
-                        'estado_sincronizacion' => 'pendiente_validacion',
-                        'codigo_recepcion' => $codigoRecepcionPaquete,
-                        'codigo_estado' => (string) ($validationResponse['code'] ?? ''),
-                        'descripcion_estado' => mb_substr((string) ($validationResponse['message'] ?? 'Paquete pendiente de validacion en SIAT.'), 0, 1000),
-                        'datos_respuesta_siat' => $validationResponse,
-                        'evento_significativo_paquete_id' => $paquete->id,
-                    ]);
+                continue;
+            }
+
+            $factura->update([
+                'estado_sincronizacion' => 'pendiente_validacion',
+                'codigo_recepcion' => $codigoRecepcionPaquete,
+                'codigo_estado' => (string) ($response['code'] ?? ''),
+                'descripcion_estado' => mb_substr((string) ($response['message'] ?? 'Paquete pendiente de validacion en SIAT.'), 0, 1000),
+                'datos_respuesta_siat' => $response,
+                'evento_significativo_paquete_id' => $paquete->id,
+            ]);
+
+            $hasPendingInvoice = true;
+        }
+
+        $paquete->update([
+            'estado' => match (true) {
+                $hasRejectedInvoice => 'validado_parcial',
+                $hasPendingInvoice => 'pendiente_validacion',
+                default => 'validado',
+            },
+            'codigo_estado' => (string) ($response['code'] ?? $paquete->codigo_estado),
+            'descripcion_estado' => mb_substr((string) ($response['message'] ?? $paquete->descripcion_estado), 0, 1000),
+            'fecha_validacion' => now(config('app.timezone')),
+            'datos_respuesta_validacion' => $response,
+            'cufd_envio_id' => $cufdRecuperacionId,
+            'user_id' => $userId,
+        ]);
+    }
+
+    private function packageMessagesByInvoice(EventoSignificativoPaquete $paquete, \Illuminate\Support\Collection $facturas, array $response): array
+    {
+        $messages = $this->extractPackageMessages($response);
+        $manifest = $this->packageManifest($paquete, $facturas);
+        $byInvoice = [];
+
+        foreach ($messages as $message) {
+            $facturaId = $this->resolvePackageMessageFacturaId($message, $manifest, $facturas);
+
+            if ($facturaId === null) {
+                continue;
+            }
+
+            $byInvoice[$facturaId][] = $message;
+        }
+
+        return $byInvoice;
+    }
+
+    private function extractPackageMessages(array $response): array
+    {
+        $messages = $response['raw']['RespuestaServicioFacturacion']['mensajesList'] ?? [];
+
+        if (! is_array($messages)) {
+            return [];
+        }
+
+        if (array_is_list($messages)) {
+            return array_values(array_filter($messages, 'is_array'));
+        }
+
+        return [array_filter($messages, fn ($value) => $value !== null)];
+    }
+
+    private function packageManifest(EventoSignificativoPaquete $paquete, \Illuminate\Support\Collection $facturas): array
+    {
+        $manifest = $paquete->datos_respuesta_recepcion['manifiesto_paquete'] ?? null;
+
+        if (is_array($manifest) && $manifest !== []) {
+            return $manifest;
+        }
+
+        return $facturas->values()
+            ->map(fn (Factura $factura, int $index) => [
+                'numero_archivo' => $index,
+                'factura_id' => $factura->id,
+                'numero_factura' => $factura->numero_factura,
+                'cuf' => $factura->cuf,
+            ])
+            ->all();
+    }
+
+    private function resolvePackageMessageFacturaId(array $message, array $manifest, \Illuminate\Support\Collection $facturas): ?int
+    {
+        $numeroArchivo = $message['numeroArchivo'] ?? null;
+
+        if ($numeroArchivo !== null) {
+            foreach ($manifest as $item) {
+                if ((string) ($item['numero_archivo'] ?? '') === (string) $numeroArchivo) {
+                    return isset($item['factura_id']) ? (int) $item['factura_id'] : null;
+                }
             }
         }
+
+        $descripcion = mb_strtoupper((string) ($message['descripcion'] ?? ''));
+
+        foreach ($facturas as $factura) {
+            if ($factura->cuf && str_contains($descripcion, mb_strtoupper((string) $factura->cuf))) {
+                return (int) $factura->id;
+            }
+        }
+
+        return $facturas->count() === 1 ? (int) $facturas->first()->id : null;
+    }
+
+    private function messageIndicatesExistingCuf(array $message): bool
+    {
+        $descripcion = mb_strtoupper((string) ($message['descripcion'] ?? ''));
+
+        return str_contains($descripcion, 'CUF')
+            && str_contains($descripcion, 'YA EXISTE');
+    }
+
+    private function joinPackageMessages(array $messages, string $fallback): string
+    {
+        $descriptions = collect($messages)
+            ->map(fn (array $message) => trim((string) ($message['descripcion'] ?? '')))
+            ->filter()
+            ->values()
+            ->all();
+
+        return $descriptions !== [] ? implode(' | ', $descriptions) : $fallback;
+    }
 
     private function isTimeoutResponse(array $response): bool
     {
@@ -807,11 +972,15 @@ class EventoSignificativoService
 
         $hayObservados = EventoSignificativoPaquete::query()
             ->where('evento_significativo_id', $evento->id)
-            ->where('estado', 'observado')
+            ->whereIn('estado', ['observado', 'validado_parcial'])
             ->whereHas('facturas', fn ($facturas) => $facturas->where('estado_sincronizacion', '<>', 'sincronizada'))
             ->exists();
 
-        if ($hayObservados) {
+        $hayFacturasObservadas = $facturas->contains(
+            fn (Factura $factura) => (string) $factura->estado_sincronizacion === 'observado_paquete'
+        );
+
+        if ($hayObservados || $hayFacturasObservadas) {
             return $this->repository->update($evento, ['estado' => 'observado_siat']);
         }
 
@@ -889,21 +1058,6 @@ class EventoSignificativoService
 
         return $codigo === '908'
             || str_contains($mensaje, 'VALIDADA')
-            || str_contains($mensaje, 'VALIDADO')
-            || $this->isPaqueteYaRegistradoEnSiat($response);
-    }
-
-    private function isPaqueteYaRegistradoEnSiat(array $response): bool
-    {
-        if (($response['success'] ?? false) !== true) {
-            return false;
-        }
-
-        $codigo = (string) ($response['code'] ?? '');
-        $mensaje = mb_strtoupper((string) ($response['message'] ?? ''));
-
-        return $codigo === '904'
-            && str_contains($mensaje, 'CUF')
-            && str_contains($mensaje, 'YA EXISTE');
+            || str_contains($mensaje, 'VALIDADO');
     }
 }
