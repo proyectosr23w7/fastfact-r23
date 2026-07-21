@@ -252,7 +252,9 @@ class CentralizacionService
             return ['estado' => 'sin_vigencia', 'dias_para_vencer' => null];
         }
 
-        $days = now(config('app.timezone'))->startOfDay()->diffInDays($expiresAt->copy()->startOfDay(), false);
+        $days = (int) now(config('app.timezone'))
+            ->startOfDay()
+            ->diffInDays($expiresAt->copy()->timezone(config('app.timezone'))->startOfDay(), false);
 
         return [
             'estado' => match (true) {
