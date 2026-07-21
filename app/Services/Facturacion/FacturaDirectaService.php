@@ -39,8 +39,7 @@ class FacturaDirectaService
         private readonly RegistrarRespuestaSiatAction $registrarRespuestaSiat,
         private readonly FacturaCorreoService $facturaCorreoService,
         private readonly EventoSignificativoService $eventoSignificativoService,
-    ) {
-    }
+    ) {}
 
     public function emitir(array $data, User $user): Factura
     {
@@ -167,6 +166,7 @@ class FacturaDirectaService
                 'descuento_global' => (float) ($payload['cabecera']['descuentoAdicional'] ?? 0),
                 'codigo_documento_identidad' => $payload['cabecera']['codigoTipoDocumentoIdentidad'],
                 'codigo_excepcion' => $payload['cabecera']['codigoExcepcion'],
+                'leyenda' => $payload['cabecera']['leyenda'],
                 'tipo_facturacion' => (int) $configuracion->tipo_facturacion,
                 'ambiente_facturacion' => $configuracion->ambiente_facturacion,
                 'codigo_emision' => $codigoEmision,

@@ -49,6 +49,7 @@ class Factura extends Model
         'estado_factura',
         'estado_sincronizacion',
         'codigo_excepcion',
+        'leyenda',
         'observacion',
         'datos_respuesta_siat',
         'anulacion_revertida_at',

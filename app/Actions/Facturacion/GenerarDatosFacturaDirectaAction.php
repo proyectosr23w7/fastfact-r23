@@ -41,7 +41,7 @@ class GenerarDatosFacturaDirectaAction
         $montoGiftCardValue = round((float) ($montoGiftCard ?? 0), 2);
         $montoTotalSujetoIva = round(max($montoTotal - $montoGiftCardValue, 0), 2);
         $moneda = $this->resolveMoneda();
-        $leyenda = $this->resolveLeyenda();
+        $leyenda = $this->resolveLeyenda($detalleFiscal);
 
         return [
             'root' => $tipoFacturacion === TipoFacturacionEnum::COMPUTARIZADA->value
@@ -263,10 +263,26 @@ class GenerarDatosFacturaDirectaAction
         );
     }
 
-    private function resolveLeyenda(): string
+    private function resolveLeyenda(array $detalles): string
     {
+        $actividades = collect($detalles)
+            ->pluck('actividadEconomica')
+            ->map(fn ($actividad) => trim((string) $actividad))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $leyendaPorActividad = $actividades->isNotEmpty()
+            ? SinLeyenda::query()
+                ->where('estado', true)
+                ->whereIn('codigo_actividad', $actividades->all())
+                ->inRandomOrder()
+                ->value('descripcion_leyenda')
+            : null;
+
         return (string) (
-            SinLeyenda::query()->where('estado', true)->inRandomOrder()->value('descripcion_leyenda')
+            $leyendaPorActividad
+            ?? SinLeyenda::query()->where('estado', true)->inRandomOrder()->value('descripcion_leyenda')
             ?? 'Ley N 453: Tienes derecho a recibir informacion sobre las caracteristicas y contenidos de los servicios que utilices.'
         );
     }

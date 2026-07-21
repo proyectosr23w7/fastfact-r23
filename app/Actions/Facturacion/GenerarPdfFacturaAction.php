@@ -8,6 +8,12 @@ use App\Models\Factura;
 
 class GenerarPdfFacturaAction
 {
+    private const LEYENDA_REPRESENTACION_EN_LINEA = 'Este documento es la Representacion Grafica de un Documento Fiscal Digital emitido en una modalidad de facturacion en linea.';
+
+    private const LEYENDA_REPRESENTACION_FUERA_LINEA = 'Este documento es la Representacion Grafica de un Documento Fiscal Digital emitido fuera de linea, verifique su envio con su proveedor o en la pagina web www.impuestos.gob.bo.';
+
+    private const LEYENDA_CONSUMIDOR_FALLBACK = 'Ley N 453: Puedes acceder a la reclamacion cuando tus derechos han sido vulnerados.';
+
     public function __invoke(Factura $factura): array
     {
         BoliviaPdfHelper::bootLibraries();
@@ -41,7 +47,9 @@ class GenerarPdfFacturaAction
     {
         $items = $this->resolveItems($factura);
         $subtotal = $this->resolveSubtotal($items);
-        $height = max(210, 160 + ($items->count() * 14));
+        $leyenda = $this->resolveLeyendaConsumidor($factura);
+        $leyendaModalidad = $this->resolveLeyendaRepresentacionGrafica($factura);
+        $height = max(220, 170 + ($items->count() * 14));
         $pdf = new \FPDF('P', 'mm', [80, $height]);
         $pdf->SetMargins(5, 5, 5);
         $pdf->AddPage();
@@ -106,7 +114,8 @@ class GenerarPdfFacturaAction
         $this->drawSeparator($pdf);
         $pdf->SetFont('Arial', '', 6.5);
         $pdf->MultiCell(0, 3.5, BoliviaPdfHelper::text('ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAIS, EL USO ILICITO SERA SANCIONADO PENALMENTE DE ACUERDO A LEY'), 0, 'C');
-        $pdf->MultiCell(0, 3.5, BoliviaPdfHelper::text('Este documento es la Representacion Grafica de un Documento Fiscal Digital emitido en una modalidad de facturacion en linea.'), 0, 'C');
+        $pdf->MultiCell(0, 3.5, BoliviaPdfHelper::text($leyenda), 0, 'C');
+        $pdf->MultiCell(0, 3.5, BoliviaPdfHelper::text($leyendaModalidad), 0, 'C');
 
         $qrPath = BoliviaPdfHelper::createQrTempFile(BoliviaPdfHelper::emisorQrUrl($factura, (string) ($empresa?->nit ?: '')));
         $y = $pdf->GetY() + 3;
@@ -131,6 +140,9 @@ class GenerarPdfFacturaAction
         $leyendaModalidad = $factura->ambiente_facturacion === 'produccion'
             ? '"Este documento es la Representacion Grafica de un Documento Fiscal Digital emitido en una modalidad de facturacion en linea"'
             : '"Este documento es la Representacion Grafica de un Documento Fiscal Digital emitido en una modalidad de facturacion en linea"';
+
+        $leyenda = $this->resolveLeyendaConsumidor($factura);
+        $leyendaModalidad = $this->resolveLeyendaRepresentacionGrafica($factura);
 
         $pdf = new \FPDF('P', 'mm', 'Letter');
         $pdf->AddPage();
@@ -309,6 +321,47 @@ class GenerarPdfFacturaAction
     private function drawDottedSeparator(\FPDF $pdf): void
     {
         $pdf->Cell(0, 4, BoliviaPdfHelper::text(str_repeat('.', 74)), 0, 1, 'C');
+    }
+
+    private function resolveLeyendaConsumidor(Factura $factura): string
+    {
+        $leyenda = trim((string) ($factura->leyenda ?? ''));
+
+        if ($leyenda !== '') {
+            return $leyenda;
+        }
+
+        $xmlLeyenda = $this->extractLeyendaFromXml((string) ($factura->xml_fiscal ?? ''));
+
+        return $xmlLeyenda !== '' ? $xmlLeyenda : self::LEYENDA_CONSUMIDOR_FALLBACK;
+    }
+
+    private function resolveLeyendaRepresentacionGrafica(Factura $factura): string
+    {
+        return (int) ($factura->codigo_emision ?? 1) === 2
+            ? self::LEYENDA_REPRESENTACION_FUERA_LINEA
+            : self::LEYENDA_REPRESENTACION_EN_LINEA;
+    }
+
+    private function extractLeyendaFromXml(string $xml): string
+    {
+        if (trim($xml) === '') {
+            return '';
+        }
+
+        $previous = libxml_use_internal_errors(true);
+        $document = new \DOMDocument;
+        $loaded = $document->loadXML($xml);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        if (! $loaded) {
+            return '';
+        }
+
+        $nodes = $document->getElementsByTagName('leyenda');
+
+        return $nodes->length > 0 ? trim((string) $nodes->item(0)?->nodeValue) : '';
     }
 
     private function resolveItems(Factura $factura)
