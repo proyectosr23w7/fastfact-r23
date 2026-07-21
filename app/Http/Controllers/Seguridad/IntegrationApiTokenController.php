@@ -19,6 +19,10 @@ class IntegrationApiTokenController extends Controller
         RolSistemaEnum::CAJERO->value,
     ];
 
+    private const CENTRALIZATION_ROLES = [
+        RolSistemaEnum::SUPERADMIN->value,
+    ];
+
     private const DEFAULT_ABILITIES = [
         'integracion.productos.manage',
         'integracion.clientes.manage',
@@ -29,16 +33,27 @@ class IntegrationApiTokenController extends Controller
         'integracion.cufd.manage',
     ];
 
-    public function index(): JsonResponse
+    private const CENTRALIZATION_ABILITIES = [
+        'centralizacion.estado',
+        'centralizacion.backups',
+    ];
+
+    public function index(Request $request): JsonResponse
     {
         $tokens = IntegrationApiToken::query()
             ->with('user.roles.permissions')
             ->latest()
             ->get();
 
+        $rolesPermitidos = self::API_ROLES;
+
+        if ($request->user()?->hasRole(RolSistemaEnum::SUPERADMIN->value)) {
+            $rolesPermitidos = array_merge($rolesPermitidos, self::CENTRALIZATION_ROLES);
+        }
+
         $apiUsers = User::query()
             ->where('estado', true)
-            ->whereHas('roles', fn ($query) => $query->whereIn('slug', self::API_ROLES))
+            ->whereHas('roles', fn ($query) => $query->whereIn('slug', $rolesPermitidos))
             ->with('roles.permissions')
             ->orderBy('name')
             ->get();
@@ -48,7 +63,9 @@ class IntegrationApiTokenController extends Controller
             'message' => 'Tokens de integracion obtenidos correctamente.',
             'data' => IntegrationApiTokenResource::collection($tokens)->resolve(),
             'meta' => [
-                'abilities' => self::DEFAULT_ABILITIES,
+                'abilities' => $request->user()?->hasRole(RolSistemaEnum::SUPERADMIN->value)
+                    ? array_merge(self::DEFAULT_ABILITIES, self::CENTRALIZATION_ABILITIES)
+                    : self::DEFAULT_ABILITIES,
                 'users' => UsuarioResource::collection($apiUsers)->resolve(),
             ],
         ]);
@@ -60,22 +77,33 @@ class IntegrationApiTokenController extends Controller
             'user_id' => ['required', 'integer', Rule::exists('users', 'id')->where('estado', true)],
             'name' => ['required', 'string', 'max:120'],
             'abilities' => ['nullable', 'array', 'min:1'],
-            'abilities.*' => ['required', 'string', Rule::in(self::DEFAULT_ABILITIES)],
+            'abilities.*' => ['required', 'string', Rule::in(array_merge(self::DEFAULT_ABILITIES, self::CENTRALIZATION_ABILITIES))],
             'expires_at' => ['nullable', 'date', 'after:now'],
         ]);
 
         $user = User::query()->with('roles')->findOrFail($data['user_id']);
+        $abilities = $data['abilities'] ?? self::DEFAULT_ABILITIES;
+        $usesCentralization = collect($abilities)->contains(fn (string $ability) => in_array($ability, self::CENTRALIZATION_ABILITIES, true));
 
-        abort_unless(
-            $user->roles->contains(fn ($role) => in_array($role->slug, self::API_ROLES, true)),
-            422,
-            'Solo se pueden generar tokens API para usuarios con rol administrador o cajero.',
-        );
+        if ($usesCentralization) {
+            abort_unless(
+                $request->user()?->hasRole(RolSistemaEnum::SUPERADMIN->value)
+                && $user->roles->contains(fn ($role) => in_array($role->slug, self::CENTRALIZATION_ROLES, true)),
+                422,
+                'Los permisos API de centralizacion solo pueden asignarse a usuarios superadministradores.',
+            );
+        } else {
+            abort_unless(
+                $user->roles->contains(fn ($role) => in_array($role->slug, array_merge(self::API_ROLES, self::CENTRALIZATION_ROLES), true)),
+                422,
+                'Solo se pueden generar tokens API para usuarios con rol administrador, cajero o superadministrador.',
+            );
+        }
 
         [$token, $plainTextToken] = IntegrationApiToken::issueFor(
             $user,
             $data['name'],
-            $data['abilities'] ?? self::DEFAULT_ABILITIES,
+            $abilities,
             isset($data['expires_at']) ? new \DateTimeImmutable($data['expires_at']) : null,
         );
 

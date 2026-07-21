@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Centralizacion\CentralizacionController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -71,6 +72,11 @@ Route::middleware(['auth', 'permission:sistema.access', 'empresa.configurada'])-
     Route::get('facturacion/eventos-significativos', fn () => Inertia::render('facturacion/EventoSignificativoView'))
         ->middleware('permission:facturacion.siat.sync')
         ->name('facturacion.eventos.page');
+});
+
+Route::middleware(['auth', 'superadmin'])->prefix('centralizacion')->group(function () {
+    Route::get('estado', [CentralizacionController::class, 'estado'])->name('centralizacion.estado');
+    Route::get('backups/manifest', [CentralizacionController::class, 'respaldoManifest'])->name('centralizacion.backups.manifest');
 });
 
 require __DIR__.'/settings.php';

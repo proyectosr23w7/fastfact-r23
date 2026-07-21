@@ -1,16 +1,18 @@
 <?php
 
-use App\Http\Middleware\EnsureEmpresaConfigurada;
 use App\Http\Middleware\AuthenticateIntegrationToken;
+use App\Http\Middleware\EnsureEmpresaConfigurada;
 use App\Http\Middleware\EnsureIntegrationPermission;
+use App\Http\Middleware\EnsureIntegrationTokenAbility;
 use App\Http\Middleware\EnsurePermission;
+use App\Http\Middleware\EnsureSuperadmin;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -28,8 +30,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'empresa.configurada' => EnsureEmpresaConfigurada::class,
             'integration.auth' => AuthenticateIntegrationToken::class,
+            'integration.ability' => EnsureIntegrationTokenAbility::class,
             'integration.permission' => EnsureIntegrationPermission::class,
             'permission' => EnsurePermission::class,
+            'superadmin' => EnsureSuperadmin::class,
         ]);
 
         $middleware->web(append: [

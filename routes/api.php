@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Centralizacion\CentralizacionController;
 use App\Http\Controllers\Configuracion\ConfiguracionController;
 use App\Http\Controllers\Configuracion\EmpresaController;
 use App\Http\Controllers\Configuracion\PuntoVentaController;
@@ -58,6 +59,11 @@ Route::middleware(['integration.auth'])->prefix('integracion')->group(function (
         ->middleware('integration.permission:integracion.facturas.anular');
     Route::patch('facturas/{factura}/revertir-anulacion', [IntegrationController::class, 'revertirFactura'])
         ->middleware('integration.permission:integracion.facturas.revertir');
+});
+
+Route::middleware(['integration.auth', 'superadmin'])->prefix('centralizacion')->group(function () {
+    Route::get('estado', [CentralizacionController::class, 'estado'])->middleware('integration.ability:centralizacion.estado');
+    Route::get('backups/manifest', [CentralizacionController::class, 'respaldoManifest'])->middleware('integration.ability:centralizacion.backups');
 });
 
 Route::middleware(['web', 'auth'])->prefix('configuracion')->group(function () {
