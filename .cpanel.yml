@@ -9,3 +9,12 @@ deployment:
     - /bin/mkdir -p /home/proyect2/fastfactr23-demo.proyectosr23w7.com/bootstrap/cache /home/proyect2/fastfactr23-demo.proyectosr23w7.com/storage/app/public /home/proyect2/fastfactr23-demo.proyectosr23w7.com/storage/app/private /home/proyect2/fastfactr23-demo.proyectosr23w7.com/storage/framework/cache/data /home/proyect2/fastfactr23-demo.proyectosr23w7.com/storage/framework/sessions /home/proyect2/fastfactr23-demo.proyectosr23w7.com/storage/framework/views /home/proyect2/fastfactr23-demo.proyectosr23w7.com/storage/logs
     - cd /home/proyect2/fastfactr23-demo.proyectosr23w7.com && php artisan migrate --force --no-interaction
     - /bin/echo "Deploy FastFact R23 DEMO finalizado"
+
+    - /bin/echo "Iniciando deploy FastFact R23 - KLOUD KIDS"
+    - /bin/mkdir -p /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com
+    - /bin/rm -rf /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com/public/build
+    - /bin/rm -f /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com/bootstrap/cache/*.php
+    - /bin/cp -R /home/proyect2/repositories/fastfact-r23/* /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com/
+    - /bin/mkdir -p /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com/bootstrap/cache /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com/storage/app/public /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com/storage/app/private /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com/storage/framework/cache/data /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com/storage/framework/sessions /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com/storage/framework/views /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com/storage/logs
+    - cd /home/proyect2/ffr23-kloud-kids.proyectosr23w7.com && if [ -f .env ]; then php artisan migrate --force --no-interaction; else /bin/echo "KLOUD KIDS sin .env: se omite migrate inicial"; fi
+    - /bin/echo "Deploy FastFact R23 KLOUD KIDS finalizado"
