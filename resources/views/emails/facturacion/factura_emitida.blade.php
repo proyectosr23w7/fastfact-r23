@@ -7,12 +7,37 @@
 <body style="font-family: Arial, sans-serif; color: #1f2933; line-height: 1.5;">
     <p>Estimado cliente:</p>
 
-    <p>
-        Por medio del presente le hacemos llegar la factura electronica Nro.
-        <strong>{{ $factura->numero_factura }}</strong>, emitida por
-        <strong>{{ $empresa?->razon_social ?: $empresa?->nombre_empresa ?: config('app.name', 'FastFact R23') }}</strong>.
-        Adjuntamos el documento en formato PDF y el XML fiscal correspondiente.
-    </p>
+    @if ($contexto === 'fuera_linea')
+        <p>
+            Por medio del presente le hacemos llegar la factura Nro.
+            <strong>{{ $factura->numero_factura }}</strong>, emitida fuera de linea por
+            <strong>{{ $empresa?->razon_social ?: $empresa?->nombre_empresa ?: config('app.name', 'FastFact R23') }}</strong>.
+            Adjuntamos la representacion grafica en PDF y el XML fiscal correspondiente.
+        </p>
+
+        <p>
+            Esta factura fue generada durante una contingencia y se encuentra pendiente de envio o validacion ante SIAT.
+            Una vez concluido el proceso de recuperacion, recibira una confirmacion de validacion.
+        </p>
+    @elseif ($contexto === 'validada_siat')
+        <p>
+            Le confirmamos que la factura Nro.
+            <strong>{{ $factura->numero_factura }}</strong>, emitida por
+            <strong>{{ $empresa?->razon_social ?: $empresa?->nombre_empresa ?: config('app.name', 'FastFact R23') }}</strong>,
+            fue validada correctamente por SIAT.
+        </p>
+
+        <p>
+            Adjuntamos nuevamente la representacion grafica en PDF y el XML fiscal para su respaldo.
+        </p>
+    @else
+        <p>
+            Por medio del presente le hacemos llegar la factura electronica Nro.
+            <strong>{{ $factura->numero_factura }}</strong>, emitida por
+            <strong>{{ $empresa?->razon_social ?: $empresa?->nombre_empresa ?: config('app.name', 'FastFact R23') }}</strong>.
+            Adjuntamos el documento en formato PDF y el XML fiscal correspondiente.
+        </p>
+    @endif
 
     <p>
         CUF: {{ $factura->cuf ?: 'No disponible' }}<br>

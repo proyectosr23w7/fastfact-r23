@@ -19,10 +19,24 @@ class FacturaCorreoService
 {
     public function __construct(
         private readonly GenerarPdfFacturaAction $generarPdfFactura,
-    ) {
-    }
+    ) {}
 
     public function enviarFacturaEmitida(Factura $factura): void
+    {
+        $this->enviarFacturaConContexto($factura, 'emitida');
+    }
+
+    public function enviarFacturaFueraLinea(Factura $factura): void
+    {
+        $this->enviarFacturaConContexto($factura, 'fuera_linea');
+    }
+
+    public function enviarConfirmacionFacturaValidada(Factura $factura): void
+    {
+        $this->enviarFacturaConContexto($factura, 'validada_siat');
+    }
+
+    private function enviarFacturaConContexto(Factura $factura, string $contexto): void
     {
         $factura->loadMissing([
             'cliente',
@@ -32,20 +46,21 @@ class FacturaCorreoService
             'user',
         ]);
 
-        if (! $this->puedeEnviar($factura)) {
+        if (! $this->puedeEnviar($factura, $contexto)) {
             return;
         }
 
         try {
             $empresa = Empresa::query()->first();
 
-            $this->sendFacturaEmitida($factura, (string) $factura->cliente->correo, $empresa);
+            $this->sendFacturaEmitida($factura, (string) $factura->cliente->correo, $empresa, $contexto);
         } catch (Throwable $exception) {
             Log::warning('No se pudo enviar la factura por correo electronico.', [
                 'factura_id' => $factura->id,
                 'numero_factura' => $factura->numero_factura,
                 'cliente_id' => $factura->cliente_id,
                 'correo' => $factura->cliente?->correo,
+                'contexto' => $contexto,
                 'error' => $exception->getMessage(),
             ]);
         }
@@ -155,12 +170,24 @@ class FacturaCorreoService
             return 'emision';
         }
 
+        if ($estado === FacturaEstadoEnum::PENDIENTE_ENVIO->value && (int) ($factura->codigo_emision ?? 1) === 2) {
+            if (blank($factura->xml_fiscal)) {
+                throw ValidationException::withMessages([
+                    'factura' => ['La factura no tiene XML fiscal disponible para reenviar.'],
+                ]);
+            }
+
+            $this->sendFacturaEmitida($factura, $correo, $empresa, 'fuera_linea');
+
+            return 'emision_fuera_linea';
+        }
+
         throw ValidationException::withMessages([
-            'estado_factura' => ['Solo se puede reenviar correo para facturas emitidas, anuladas o con anulacion revertida.'],
+            'estado_factura' => ['Solo se puede reenviar correo para facturas emitidas, emitidas fuera de linea, anuladas o con anulacion revertida.'],
         ]);
     }
 
-    private function sendFacturaEmitida(Factura $factura, string $correo, ?Empresa $empresa): void
+    private function sendFacturaEmitida(Factura $factura, string $correo, ?Empresa $empresa, string $contexto = 'emitida'): void
     {
         $pdf = ($this->generarPdfFactura)($factura);
         $xmlFilename = 'factura-'.$factura->numero_factura.'.xml';
@@ -173,6 +200,7 @@ class FacturaCorreoService
                 pdfFilename: (string) $pdf['filename'],
                 xmlContent: (string) $factura->xml_fiscal,
                 xmlFilename: $xmlFilename,
+                contexto: $contexto,
             ),
         );
     }
@@ -202,7 +230,7 @@ class FacturaCorreoService
         );
     }
 
-    private function puedeEnviar(Factura $factura): bool
+    private function puedeEnviar(Factura $factura, string $contexto = 'emitida'): bool
     {
         $estado = is_string($factura->estado_factura)
             ? $factura->estado_factura
@@ -210,9 +238,16 @@ class FacturaCorreoService
 
         $correo = trim((string) $factura->cliente?->correo);
 
-        return $estado === FacturaEstadoEnum::EMITIDA->value
-            && $this->clienteTieneCorreoValido($correo)
-            && filled($factura->xml_fiscal);
+        if (! $this->clienteTieneCorreoValido($correo) || blank($factura->xml_fiscal)) {
+            return false;
+        }
+
+        if ($contexto === 'fuera_linea') {
+            return $estado === FacturaEstadoEnum::PENDIENTE_ENVIO->value
+                && (int) ($factura->codigo_emision ?? 1) === 2;
+        }
+
+        return $estado === FacturaEstadoEnum::EMITIDA->value;
     }
 
     private function clienteTieneCorreoValido(?string $correo): bool

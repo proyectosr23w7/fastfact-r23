@@ -201,6 +201,8 @@ class FacturaDirectaService
             }
 
             if ($emisionOffline) {
+                DB::afterCommit(fn () => $this->facturaCorreoService->enviarFacturaFueraLinea($factura->refresh()));
+
                 return $factura->load([
                     'detalles',
                     'cliente',

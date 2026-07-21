@@ -71,6 +71,7 @@ class EventoSignificativoService
         private readonly SiatClientService $client,
         private readonly CufdService $cufdService,
         private readonly GenerarPaqueteFacturasSiatAction $generarPaqueteFacturasSiat,
+        private readonly FacturaCorreoService $facturaCorreoService,
     ) {}
 
     public function listar(array $filters = [], ?User $user = null): Collection
@@ -765,6 +766,8 @@ class EventoSignificativoService
                 'datos_respuesta_siat' => $response,
                 'evento_significativo_paquete_id' => $paquete->id,
             ]);
+
+            $this->programarCorreoConfirmacionValidacion($factura);
         }
     }
 
@@ -799,6 +802,8 @@ class EventoSignificativoService
                     'datos_respuesta_siat' => $response,
                     'evento_significativo_paquete_id' => $paquete->id,
                 ]);
+
+                $this->programarCorreoConfirmacionValidacion($factura);
 
                 continue;
             }
@@ -1019,7 +1024,25 @@ class EventoSignificativoService
                 'evento_significativo_paquete_id' => $paqueteId ?? $factura->evento_significativo_paquete_id,
             ]);
 
+            $this->programarCorreoConfirmacionValidacion($factura);
         }
+    }
+
+    private function programarCorreoConfirmacionValidacion(Factura $factura): void
+    {
+        if ((int) ($factura->codigo_emision ?? 1) !== 2) {
+            return;
+        }
+
+        $callback = fn () => $this->facturaCorreoService->enviarConfirmacionFacturaValidada($factura->refresh());
+
+        if (DB::transactionLevel() > 0) {
+            DB::afterCommit($callback);
+
+            return;
+        }
+
+        $callback();
     }
 
     private function markPaqueteAsObserved(EventoSignificativoPaquete $paquete, array $response, int $userId): void

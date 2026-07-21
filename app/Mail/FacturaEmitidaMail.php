@@ -20,16 +20,21 @@ class FacturaEmitidaMail extends Mailable
         private readonly string $pdfFilename,
         private readonly string $xmlContent,
         private readonly string $xmlFilename,
-    ) {
-    }
+        public readonly string $contexto = 'emitida',
+    ) {}
 
     public function build(): self
     {
         $numero = $this->factura->numero_factura ?: $this->factura->id;
         $empresa = $this->empresa?->razon_social ?: $this->empresa?->nombre_empresa ?: config('app.name', 'FastFact R23');
+        $subjectPrefix = match ($this->contexto) {
+            'fuera_linea' => 'Factura emitida fuera de linea',
+            'validada_siat' => 'Factura validada por SIAT',
+            default => 'Factura electronica',
+        };
 
         return $this
-            ->subject("Factura electronica Nro. {$numero} - {$empresa}")
+            ->subject("{$subjectPrefix} Nro. {$numero} - {$empresa}")
             ->view('emails.facturacion.factura_emitida')
             ->attachData($this->pdfContent, $this->pdfFilename, [
                 'mime' => 'application/pdf',
