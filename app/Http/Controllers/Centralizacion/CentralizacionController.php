@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Centralizacion;
 use App\Http\Controllers\Controller;
 use App\Services\Centralizacion\CentralizacionService;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CentralizacionController extends Controller
 {
@@ -28,5 +29,28 @@ class CentralizacionController extends Controller
             'message' => 'Manifiesto de respaldo obtenido correctamente.',
             'data' => $this->service->respaldoManifest(),
         ]);
+    }
+
+    public function backups(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Backups obtenidos correctamente.',
+            'data' => $this->service->listarBackups(),
+        ]);
+    }
+
+    public function generarBackup(): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Backup generado correctamente.',
+            'data' => $this->service->generarBackup(),
+        ], 201);
+    }
+
+    public function descargarBackup(string $filename): BinaryFileResponse
+    {
+        return response()->download($this->service->backupPath($filename), $filename);
     }
 }

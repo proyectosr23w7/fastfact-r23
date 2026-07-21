@@ -12,10 +12,15 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
+use ZipArchive;
 
 class CentralizacionService
 {
     private const WARNING_DAYS = 15;
+
+    private const BACKUP_DISK = 'local';
+
+    private const BACKUP_DIRECTORY = 'backups';
 
     public function estado(): array
     {
@@ -98,8 +103,91 @@ class CentralizacionService
                 'bootstrap/cache',
             ],
             'automation_ready' => true,
-            'download_endpoint_reserved' => '/api/centralizacion/backups',
+            'download_endpoint' => '/api/centralizacion/backups/{filename}',
+            'generate_endpoint' => '/api/centralizacion/backups',
         ];
+    }
+
+    public function listarBackups(): array
+    {
+        Storage::disk(self::BACKUP_DISK)->makeDirectory(self::BACKUP_DIRECTORY);
+
+        return collect(Storage::disk(self::BACKUP_DISK)->files(self::BACKUP_DIRECTORY))
+            ->filter(fn (string $path) => str_ends_with($path, '.zip'))
+            ->map(fn (string $path) => $this->backupMetadata($path))
+            ->sortByDesc('created_at')
+            ->values()
+            ->all();
+    }
+
+    public function generarBackup(): array
+    {
+        abort_unless(class_exists(ZipArchive::class), 422, 'La extension ZIP de PHP no esta habilitada en el servidor.');
+        abort_unless(DB::connection()->getDriverName() === 'mysql', 422, 'La generacion de backup SQL esta disponible para MySQL/MariaDB.');
+
+        Storage::disk(self::BACKUP_DISK)->makeDirectory(self::BACKUP_DIRECTORY);
+
+        $timestamp = now(config('app.timezone'))->format('Ymd-His');
+        $database = preg_replace('/[^A-Za-z0-9_\-]/', '_', DB::connection()->getDatabaseName());
+        $filename = "fastfact-r23-{$database}-{$timestamp}.zip";
+        $relativePath = self::BACKUP_DIRECTORY.'/'.$filename;
+        $absolutePath = Storage::disk(self::BACKUP_DISK)->path($relativePath);
+        $tmpDirectory = self::BACKUP_DIRECTORY.'/tmp-'.$timestamp.'-'.bin2hex(random_bytes(4));
+        $tmpSqlPath = $tmpDirectory.'/database.sql';
+        $tmpManifestPath = $tmpDirectory.'/manifest.json';
+
+        Storage::disk(self::BACKUP_DISK)->makeDirectory($tmpDirectory);
+
+        try {
+            $this->writeDatabaseDump(Storage::disk(self::BACKUP_DISK)->path($tmpSqlPath));
+
+            Storage::disk(self::BACKUP_DISK)->put($tmpManifestPath, json_encode([
+                'generated_at' => now(config('app.timezone'))->toIso8601String(),
+                'app' => [
+                    'name' => config('app.name'),
+                    'url' => config('app.url'),
+                ],
+                'database' => [
+                    'connection' => DB::connection()->getName(),
+                    'database' => DB::connection()->getDatabaseName(),
+                    'driver' => DB::connection()->getDriverName(),
+                ],
+                'included' => [
+                    'database.sql',
+                    'manifest.json',
+                    'storage/app/siat',
+                    'storage/app/private',
+                    'storage/app/public',
+                ],
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+            $zip = new ZipArchive;
+            abort_unless($zip->open($absolutePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true, 422, 'No se pudo crear el archivo ZIP de respaldo.');
+
+            $zip->addFile(Storage::disk(self::BACKUP_DISK)->path($tmpSqlPath), 'database.sql');
+            $zip->addFile(Storage::disk(self::BACKUP_DISK)->path($tmpManifestPath), 'manifest.json');
+            $this->addStorageDirectoryToZip($zip, 'siat', 'storage/app/siat');
+            $this->addStorageDirectoryToZip($zip, 'private', 'storage/app/private');
+            $this->addStorageDirectoryToZip($zip, 'public', 'storage/app/public', 'public');
+            $zip->close();
+
+            return $this->backupMetadata($relativePath);
+        } finally {
+            Storage::disk(self::BACKUP_DISK)->deleteDirectory($tmpDirectory);
+        }
+    }
+
+    public function backupPath(string $filename): string
+    {
+        $filename = basename($filename);
+
+        abort_unless(str_ends_with($filename, '.zip'), 404, 'Backup no encontrado.');
+
+        $path = self::BACKUP_DIRECTORY.'/'.$filename;
+
+        abort_unless(Storage::disk(self::BACKUP_DISK)->exists($path), 404, 'Backup no encontrado.');
+
+        return Storage::disk(self::BACKUP_DISK)->path($path);
     }
 
     private function tokens(?Configuracion $configuracion): array
@@ -269,13 +357,107 @@ class CentralizacionService
     private function databaseTables(): array
     {
         try {
-            return collect(DB::select('SHOW TABLES'))
-                ->map(fn (object $row) => (string) collect((array) $row)->first())
+            return collect(DB::select('SHOW FULL TABLES'))
+                ->map(function (object $row): ?string {
+                    $values = array_values((array) $row);
+
+                    return ($values[1] ?? null) === 'BASE TABLE' ? (string) ($values[0] ?? '') : null;
+                })
                 ->filter()
                 ->values()
                 ->all();
         } catch (Throwable) {
             return [];
         }
+    }
+
+    private function backupMetadata(string $path): array
+    {
+        $filename = basename($path);
+
+        return [
+            'filename' => $filename,
+            'path' => $path,
+            'size_bytes' => Storage::disk(self::BACKUP_DISK)->size($path),
+            'size_mb' => round(Storage::disk(self::BACKUP_DISK)->size($path) / 1024 / 1024, 2),
+            'created_at' => Carbon::createFromTimestamp(Storage::disk(self::BACKUP_DISK)->lastModified($path))
+                ->timezone(config('app.timezone'))
+                ->toIso8601String(),
+            'download_url' => url('/api/centralizacion/backups/'.$filename),
+        ];
+    }
+
+    private function writeDatabaseDump(string $absolutePath): void
+    {
+        $handle = fopen($absolutePath, 'wb');
+
+        abort_unless(is_resource($handle), 422, 'No se pudo preparar el archivo SQL de respaldo.');
+
+        try {
+            fwrite($handle, "-- FastFact R23 backup\n");
+            fwrite($handle, '-- Generated at: '.now(config('app.timezone'))->toIso8601String()."\n");
+            fwrite($handle, '-- Database: '.DB::connection()->getDatabaseName()."\n\n");
+            fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n");
+            fwrite($handle, "SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO';\n\n");
+
+            foreach ($this->databaseTables() as $table) {
+                $this->writeTableDump($handle, $table);
+            }
+
+            fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
+        } finally {
+            fclose($handle);
+        }
+    }
+
+    private function writeTableDump(mixed $handle, string $table): void
+    {
+        $quotedTable = $this->quoteIdentifier($table);
+        $createRows = DB::select("SHOW CREATE TABLE {$quotedTable}");
+        $createSql = (string) collect((array) ($createRows[0] ?? []))->last();
+
+        fwrite($handle, "\n-- --------------------------------------------------------\n");
+        fwrite($handle, "-- Table {$table}\n");
+        fwrite($handle, "DROP TABLE IF EXISTS {$quotedTable};\n");
+        fwrite($handle, $createSql.";\n\n");
+
+        $pdo = DB::connection()->getPdo();
+        $statement = $pdo->query("SELECT * FROM {$quotedTable}");
+
+        if (! $statement) {
+            return;
+        }
+
+        while ($row = $statement->fetch(\PDO::FETCH_ASSOC)) {
+            $columns = array_map(fn (string $column) => $this->quoteIdentifier($column), array_keys($row));
+            $values = array_map(fn (mixed $value) => $value === null ? 'NULL' : $pdo->quote((string) $value), array_values($row));
+
+            fwrite($handle, 'INSERT INTO '.$quotedTable.' ('.implode(', ', $columns).') VALUES ('.implode(', ', $values).");\n");
+        }
+
+        fwrite($handle, "\n");
+    }
+
+    private function addStorageDirectoryToZip(ZipArchive $zip, string $path, string $zipPrefix, string $disk = self::BACKUP_DISK): void
+    {
+        if ($path !== '' && ! Storage::disk($disk)->exists($path)) {
+            return;
+        }
+
+        foreach (Storage::disk($disk)->allFiles($path) as $file) {
+            $relative = trim($file, '/');
+            $localPath = Storage::disk($disk)->path($file);
+
+            if (! is_file($localPath)) {
+                continue;
+            }
+
+            $zip->addFile($localPath, $zipPrefix.'/'.($path === '' ? $relative : substr($relative, strlen(trim($path, '/')) + 1)));
+        }
+    }
+
+    private function quoteIdentifier(string $identifier): string
+    {
+        return '`'.str_replace('`', '``', $identifier).'`';
     }
 }

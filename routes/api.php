@@ -63,7 +63,10 @@ Route::middleware(['integration.auth'])->prefix('integracion')->group(function (
 
 Route::middleware(['integration.auth', 'superadmin'])->prefix('centralizacion')->group(function () {
     Route::get('estado', [CentralizacionController::class, 'estado'])->middleware('integration.ability:centralizacion.estado');
+    Route::get('backups', [CentralizacionController::class, 'backups'])->middleware('integration.ability:centralizacion.backups');
+    Route::post('backups', [CentralizacionController::class, 'generarBackup'])->middleware('integration.ability:centralizacion.backups');
     Route::get('backups/manifest', [CentralizacionController::class, 'respaldoManifest'])->middleware('integration.ability:centralizacion.backups');
+    Route::get('backups/{filename}', [CentralizacionController::class, 'descargarBackup'])->middleware('integration.ability:centralizacion.backups');
 });
 
 Route::middleware(['web', 'auth'])->prefix('configuracion')->group(function () {

@@ -47,6 +47,42 @@ Devuelve:
 - Rutas de archivos que deben respaldarse.
 - Exclusiones recomendadas.
 
+### Listar backups
+
+`GET /api/centralizacion/backups`
+
+Ability requerida:
+
+`centralizacion.backups`
+
+Devuelve los ZIP generados localmente en el disco `local`, carpeta `backups`.
+
+### Generar backup
+
+`POST /api/centralizacion/backups`
+
+Ability requerida:
+
+`centralizacion.backups`
+
+Genera un archivo ZIP con:
+
+- `database.sql`
+- `manifest.json`
+- `storage/app/siat`
+- `storage/app/private`
+- `storage/app/public`
+
+### Descargar backup
+
+`GET /api/centralizacion/backups/{filename}`
+
+Ability requerida:
+
+`centralizacion.backups`
+
+Descarga un ZIP generado previamente. El nombre de archivo se valida con `basename` para evitar lectura fuera de la carpeta de backups.
+
 ## Ejemplo curl
 
 ```bash
@@ -54,6 +90,11 @@ curl -H "Authorization: Bearer TOKEN" \
   https://empresa.proyectosr23w7.com/api/centralizacion/estado
 ```
 
+```bash
+curl -X POST -H "Authorization: Bearer TOKEN" \
+  https://empresa.proyectosr23w7.com/api/centralizacion/backups
+```
+
 ## Nota sobre respaldos
 
-En esta primera etapa el sistema no descarga automaticamente la base de datos ni archivos sensibles. El endpoint deja una via estable para que una app central pueda consultar que debe respaldarse y, en una segunda etapa, agregar generacion/descarga programada de respaldos con control de auditoria.
+La generacion de backup no depende de consola del servidor: el SQL se produce desde Laravel/PDO y el ZIP se genera con la extension `ZipArchive` de PHP. El archivo contiene informacion sensible y solo debe ser consumido por superadministradores o por una app central autorizada.

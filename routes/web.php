@@ -76,7 +76,10 @@ Route::middleware(['auth', 'permission:sistema.access', 'empresa.configurada'])-
 
 Route::middleware(['auth', 'superadmin'])->prefix('centralizacion')->group(function () {
     Route::get('estado', [CentralizacionController::class, 'estado'])->name('centralizacion.estado');
+    Route::get('backups', [CentralizacionController::class, 'backups'])->name('centralizacion.backups');
+    Route::post('backups', [CentralizacionController::class, 'generarBackup'])->name('centralizacion.backups.generar');
     Route::get('backups/manifest', [CentralizacionController::class, 'respaldoManifest'])->name('centralizacion.backups.manifest');
+    Route::get('backups/{filename}', [CentralizacionController::class, 'descargarBackup'])->name('centralizacion.backups.descargar');
 });
 
 require __DIR__.'/settings.php';
