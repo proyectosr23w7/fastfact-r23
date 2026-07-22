@@ -2,6 +2,8 @@ import { apiClient } from '@/src/services/apiClient';
 
 const baseUrl = '/api/inventario/articulos';
 
+type ImportResult = Record<string, unknown>;
+
 export const articuloService = {
     list: (filters: Record<string, string> = {}) => {
         const params = new URLSearchParams();
@@ -18,6 +20,8 @@ export const articuloService = {
         apiClient.get<Record<string, unknown>>(`${baseUrl}/${id}`),
     create: (payload: Record<string, unknown>) =>
         apiClient.post<Record<string, unknown>>(baseUrl, payload),
+    import: (rows: Record<string, unknown>[]) =>
+        apiClient.post<ImportResult>(`${baseUrl}/importar`, { rows }),
     update: (id: number, payload: Record<string, unknown>) =>
         apiClient.put<Record<string, unknown>>(`${baseUrl}/${id}`, payload),
     updateEstado: (id: number, estado: boolean) =>

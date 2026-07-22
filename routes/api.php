@@ -11,6 +11,7 @@ use App\Http\Controllers\Facturacion\CuisController;
 use App\Http\Controllers\Facturacion\EventoSignificativoController;
 use App\Http\Controllers\Facturacion\FacturaController;
 use App\Http\Controllers\Facturacion\SiatSyncController;
+use App\Http\Controllers\Importacion\ImportacionMasivaController;
 use App\Http\Controllers\Integracion\IntegrationController;
 use App\Http\Controllers\Inventario\ArticuloController;
 use App\Http\Controllers\Inventario\ArticuloPrecioController;
@@ -117,6 +118,8 @@ Route::middleware(['web', 'auth'])->prefix('seguridad')->group(function () {
 });
 
 Route::middleware(['web', 'auth'])->prefix('inventario')->group(function () {
+    Route::post('articulos/importar', [ImportacionMasivaController::class, 'articulos'])
+        ->middleware(['superadmin', 'permission:facturacion.productos.manage']);
     Route::apiResource('articulos', ArticuloController::class)
         ->middleware('permission:facturacion.productos.manage')
         ->parameters(['articulos' => 'articulo']);
@@ -144,6 +147,8 @@ Route::middleware(['web', 'auth'])->prefix('inventario')->group(function () {
 });
 
 Route::middleware(['web', 'auth'])->prefix('ventas')->group(function () {
+    Route::post('clientes/importar', [ImportacionMasivaController::class, 'clientes'])
+        ->middleware(['superadmin', 'permission:ventas.clientes.manage']);
     Route::get('clientes', [VentaClienteController::class, 'index'])->middleware('permission:ventas.clientes.view,ventas.clientes.manage');
     Route::post('clientes', [VentaClienteController::class, 'store'])->middleware('permission:ventas.clientes.create,ventas.clientes.manage');
     Route::get('clientes/{cliente}', [VentaClienteController::class, 'show'])->middleware('permission:ventas.clientes.view,ventas.clientes.manage');

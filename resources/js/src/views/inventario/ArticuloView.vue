@@ -18,7 +18,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ModulePageLayout from '@/layouts/modules/ModulePageLayout.vue';
+import ImportExcelDialog from '@/src/components/importacion/ImportExcelDialog.vue';
 import { useArticuloStore } from '@/src/stores/articuloStore';
+import { useAuthStore } from '@/src/stores/authStore';
 import {
     BadgeCheck,
     Boxes,
@@ -34,6 +36,7 @@ import {
     Search,
     ShieldCheck,
     Trash2,
+    Upload,
     X,
 } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
@@ -41,14 +44,19 @@ import { computed, onMounted, ref, watch } from 'vue';
 type Item = Record<string, unknown>;
 
 const store = useArticuloStore();
+const authStore = useAuthStore();
 const isDialogOpen = ref(false);
 const isDeleteOpen = ref(false);
+const importOpen = ref(false);
 const deleteTarget = ref<Item | null>(null);
 const selectedItem = ref<Item | null>(null);
 const currentPage = ref(1);
 const pageSize = ref(10);
 
 const isEditing = computed(() => store.state.editingId !== null);
+const isSuperadmin = computed(() =>
+    authStore.roles.value.some((role) => String(role.slug) === 'superadmin'),
+);
 const categorias = computed(
     () => (store.state.meta.categorias as Item[] | undefined) ?? [],
 );
@@ -100,7 +108,10 @@ const codigoBarrasHabilitado = computed(
     () => productConfig.value.codigo_barras_habilitado !== false,
 );
 const visibleTableColumns = computed(
-    () => 6 + (categoriasHabilitadas.value ? 1 : 0) + (marcasHabilitadas.value ? 1 : 0),
+    () =>
+        6 +
+        (categoriasHabilitadas.value ? 1 : 0) +
+        (marcasHabilitadas.value ? 1 : 0),
 );
 const searchPlaceholder = computed(() => {
     const base = codigoBarrasHabilitado.value
@@ -184,6 +195,13 @@ const clearFilters = async () => {
     await load();
 };
 
+const importArticulos = (rows: Record<string, unknown>[]) =>
+    store.importRows(rows);
+
+const afterImport = async () => {
+    await load();
+};
+
 const syncSelectedItem = () => {
     const selectedId = Number(selectedItem.value?.id ?? 0);
     selectedItem.value =
@@ -203,8 +221,14 @@ const siatHomologado = (item: Item) =>
     Boolean(item.homologacion_siat_completa ?? false);
 const estadoStatus = (item: Item) =>
     Boolean(item.estado ?? true)
-        ? { label: 'Activo', class: 'bg-green-50 text-green-700 ring-green-200' }
-        : { label: 'Inactivo', class: 'bg-slate-50 text-slate-600 ring-slate-200' };
+        ? {
+              label: 'Activo',
+              class: 'bg-green-50 text-green-700 ring-green-200',
+          }
+        : {
+              label: 'Inactivo',
+              class: 'bg-slate-50 text-slate-600 ring-slate-200',
+          };
 const numberValue = (value: unknown) => Number(value ?? 0);
 const formatCurrency = (value: unknown) =>
     `Bs ${numberValue(value).toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -251,6 +275,14 @@ onMounted(load);
     >
         <template #actions>
             <Button
+                v-if="isSuperadmin"
+                variant="outline"
+                class="min-h-11 gap-2 border-[#A8D2B7] px-5 text-[#126B3B]"
+                @click="importOpen = true"
+            >
+                <Upload class="size-4" aria-hidden="true" /> Importar
+            </Button>
+            <Button
                 class="company-action-primary min-h-11 gap-2 px-5"
                 @click="openCreate"
             >
@@ -259,7 +291,6 @@ onMounted(load);
         </template>
 
         <div class="space-y-4">
-
             <section
                 class="company-panel p-3 md:p-4"
                 aria-label="Filtros de productos"
@@ -279,7 +310,9 @@ onMounted(load);
                             :placeholder="searchPlaceholder"
                         />
                     </label>
-                    <label v-if="categoriasHabilitadas" class="inventory-filter-field"
+                    <label
+                        v-if="categoriasHabilitadas"
+                        class="inventory-filter-field"
                         ><span>Categoría</span
                         ><select
                             v-model="store.state.filters.categoria_id"
@@ -295,7 +328,9 @@ onMounted(load);
                             </option>
                         </select></label
                     >
-                    <label v-if="marcasHabilitadas" class="inventory-filter-field"
+                    <label
+                        v-if="marcasHabilitadas"
+                        class="inventory-filter-field"
                         ><span>Marca</span
                         ><select
                             v-model="store.state.filters.marca_id"
@@ -366,8 +401,18 @@ onMounted(load);
                                 <tr>
                                     <th class="px-4 py-3">Producto</th>
                                     <th class="px-3 py-3">Código</th>
-                                    <th v-if="categoriasHabilitadas" class="px-3 py-3">Categoría</th>
-                                    <th v-if="marcasHabilitadas" class="px-3 py-3">Marca</th>
+                                    <th
+                                        v-if="categoriasHabilitadas"
+                                        class="px-3 py-3"
+                                    >
+                                        Categoría
+                                    </th>
+                                    <th
+                                        v-if="marcasHabilitadas"
+                                        class="px-3 py-3"
+                                    >
+                                        Marca
+                                    </th>
                                     <th class="px-3 py-3">Unidad</th>
                                     <th class="px-3 py-3 text-right">
                                         Precio venta
@@ -455,10 +500,16 @@ onMounted(load);
                                     <td class="px-3 py-3 text-[#3e4c44]">
                                         {{ item.codigo_generico }}
                                     </td>
-                                    <td v-if="categoriasHabilitadas" class="px-3 py-3">
+                                    <td
+                                        v-if="categoriasHabilitadas"
+                                        class="px-3 py-3"
+                                    >
                                         {{ categoryName(item) }}
                                     </td>
-                                    <td v-if="marcasHabilitadas" class="px-3 py-3">
+                                    <td
+                                        v-if="marcasHabilitadas"
+                                        class="px-3 py-3"
+                                    >
                                         {{ brandName(item) }}
                                     </td>
                                     <td class="px-3 py-3">
@@ -473,7 +524,9 @@ onMounted(load);
                                         <span
                                             :class="estadoStatus(item).class"
                                             class="inline-flex rounded-md px-2 py-1 text-xs font-semibold ring-1 ring-inset"
-                                            >{{ estadoStatus(item).label }}</span
+                                            >{{
+                                                estadoStatus(item).label
+                                            }}</span
                                         >
                                     </td>
                                     <td class="px-4 py-3">
@@ -744,11 +797,17 @@ onMounted(load);
                             </div>
                         </dl>
                         <dl class="p-4 text-sm">
-                            <div v-if="categoriasHabilitadas" class="inventory-detail-row">
+                            <div
+                                v-if="categoriasHabilitadas"
+                                class="inventory-detail-row"
+                            >
                                 <dt>Categoría</dt>
                                 <dd>{{ categoryName(selectedItem) }}</dd>
                             </div>
-                            <div v-if="marcasHabilitadas" class="inventory-detail-row">
+                            <div
+                                v-if="marcasHabilitadas"
+                                class="inventory-detail-row"
+                            >
                                 <dt>Marca</dt>
                                 <dd>{{ brandName(selectedItem) }}</dd>
                             </div>
@@ -804,7 +863,9 @@ onMounted(load);
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt class="text-[#68756d]">Unidad de medida</dt>
+                                    <dt class="text-[#68756d]">
+                                        Unidad de medida
+                                    </dt>
                                     <dd class="font-medium">
                                         {{
                                             selectedItem.codigo_unidad_medida_siat
@@ -857,6 +918,27 @@ onMounted(load);
             </DialogContent>
         </Dialog>
 
+        <ImportExcelDialog
+            v-if="isSuperadmin"
+            v-model:open="importOpen"
+            title="Importar productos"
+            description="Carga productos desde Excel. Si ya existe el mismo codigo, se actualiza."
+            :columns="[
+                'codigo',
+                'nombre',
+                'precio',
+                'unidad_siat',
+                'actividad_siat',
+                'producto_sin',
+                'codigo_barras',
+                'categoria',
+                'marca',
+                'estado',
+            ]"
+            :importer="importArticulos"
+            @imported="afterImport"
+        />
+
         <Dialog v-model:open="isDialogOpen">
             <DialogContent
                 class="max-h-[94vh] max-w-6xl overflow-y-auto border-border/80 p-0"
@@ -902,7 +984,10 @@ onMounted(load);
                                     "
                                 />
                             </div>
-                            <div v-if="codigoBarrasHabilitado" class="company-field">
+                            <div
+                                v-if="codigoBarrasHabilitado"
+                                class="company-field"
+                            >
                                 <Label for="codigo_barras" class="company-label"
                                     >Código de barras</Label
                                 ><Input
@@ -939,7 +1024,10 @@ onMounted(load);
                                     "
                                 />
                             </div>
-                            <div v-if="busquedaAvanzadaHabilitada" class="company-field">
+                            <div
+                                v-if="busquedaAvanzadaHabilitada"
+                                class="company-field"
+                            >
                                 <Label for="tags" class="company-label"
                                     >Palabras clave</Label
                                 ><textarea
@@ -951,7 +1039,10 @@ onMounted(load);
                                     :message="store.state.errors.tags?.[0]"
                                 />
                             </div>
-                            <div v-if="busquedaAvanzadaHabilitada" class="company-field">
+                            <div
+                                v-if="busquedaAvanzadaHabilitada"
+                                class="company-field"
+                            >
                                 <Label for="alias" class="company-label"
                                     >Alias / sinonimos</Label
                                 ><textarea
@@ -963,7 +1054,10 @@ onMounted(load);
                                     :message="store.state.errors.alias?.[0]"
                                 />
                             </div>
-                            <div v-if="categoriasHabilitadas" class="company-field">
+                            <div
+                                v-if="categoriasHabilitadas"
+                                class="company-field"
+                            >
                                 <Label for="categoria_id" class="company-label"
                                     >Categoría</Label
                                 ><select
@@ -1171,9 +1265,7 @@ onMounted(load);
                                                 )
                                             "
                                         >
-                                            {{
-                                                actividad.codigo_clasificador
-                                            }}
+                                            {{ actividad.codigo_clasificador }}
                                             - {{ actividad.descripcion }}
                                         </option></select
                                     ><InputError
@@ -1212,9 +1304,7 @@ onMounted(load);
                                                 )
                                             "
                                         >
-                                            {{
-                                                unidadSiat.codigo_clasificador
-                                            }}
+                                            {{ unidadSiat.codigo_clasificador }}
                                             - {{ unidadSiat.descripcion }}
                                         </option></select
                                     ><InputError

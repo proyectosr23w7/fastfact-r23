@@ -2,8 +2,12 @@ import { apiClient } from '@/src/services/apiClient';
 
 const baseUrl = '/api/ventas/clientes';
 
+type ImportResult = Record<string, unknown>;
+
 export const clienteVentaService = {
-    list: (filters: Record<string, string | number | null | undefined> = {}) => {
+    list: (
+        filters: Record<string, string | number | null | undefined> = {},
+    ) => {
         const params = new URLSearchParams();
 
         Object.entries(filters).forEach(([key, value]) => {
@@ -18,9 +22,14 @@ export const clienteVentaService = {
             query ? `${baseUrl}?${query}` : baseUrl,
         );
     },
-    create: (payload: Record<string, unknown>) => apiClient.post<Record<string, unknown>>(baseUrl, payload),
-    show: (id: number | string) => apiClient.get<Record<string, unknown>>(`${baseUrl}/${id}`),
-    update: (id: number | string, payload: Record<string, unknown>) => apiClient.put<Record<string, unknown>>(`${baseUrl}/${id}`, payload),
+    create: (payload: Record<string, unknown>) =>
+        apiClient.post<Record<string, unknown>>(baseUrl, payload),
+    import: (rows: Record<string, unknown>[]) =>
+        apiClient.post<ImportResult>(`${baseUrl}/importar`, { rows }),
+    show: (id: number | string) =>
+        apiClient.get<Record<string, unknown>>(`${baseUrl}/${id}`),
+    update: (id: number | string, payload: Record<string, unknown>) =>
+        apiClient.put<Record<string, unknown>>(`${baseUrl}/${id}`, payload),
     updateEstado: (id: number | string, estado: boolean) =>
         apiClient.patch<Record<string, unknown>>(`${baseUrl}/${id}/estado`, {
             estado,

@@ -66,9 +66,8 @@ const parseAttributes = (value: Record<string, unknown>[]) =>
         }))
         .filter((item) => item.atributo && item.valor)
         .filter((item, index, items) => {
-            const normalized = `${item.atributo}|${item.valor}`.toLocaleLowerCase(
-                'es',
-            );
+            const normalized =
+                `${item.atributo}|${item.valor}`.toLocaleLowerCase('es');
             return (
                 items.findIndex(
                     (candidate) =>
@@ -195,12 +194,14 @@ export function useArticuloStore() {
                 codigo_barras: codigoBarrasHabilitado
                     ? state.form.codigo_barras || null
                     : null,
-                categoria_id: categoriasHabilitadas && state.form.categoria_id
-                    ? Number(state.form.categoria_id)
-                    : null,
-                marca_id: marcasHabilitadas && state.form.marca_id
-                    ? Number(state.form.marca_id)
-                    : null,
+                categoria_id:
+                    categoriasHabilitadas && state.form.categoria_id
+                        ? Number(state.form.categoria_id)
+                        : null,
+                marca_id:
+                    marcasHabilitadas && state.form.marca_id
+                        ? Number(state.form.marca_id)
+                        : null,
                 unidad_medida_id: state.form.unidad_medida_id
                     ? Number(state.form.unidad_medida_id)
                     : null,
@@ -270,6 +271,20 @@ export function useArticuloStore() {
         }
     };
 
+    const importRows = async (rows: Record<string, unknown>[]) => {
+        state.actionError = '';
+
+        try {
+            return await articuloService.import(rows);
+        } catch (error) {
+            state.actionError =
+                error instanceof Error
+                    ? error.message
+                    : 'No se pudo importar el archivo.';
+            throw error;
+        }
+    };
+
     const toggleEstado = async (item: Record<string, unknown>) => {
         await articuloService.updateEstado(
             Number(item.id),
@@ -312,6 +327,7 @@ export function useArticuloStore() {
         load,
         save,
         destroy,
+        importRows,
         resetForm,
         startCreate,
         startEdit,
