@@ -40,8 +40,7 @@ class FacturaService
         private readonly SiatEndpointResolver $endpointResolver,
         private readonly EventoSignificativoService $eventoSignificativoService,
         private readonly FacturaCorreoService $facturaCorreoService,
-    ) {
-    }
+    ) {}
 
     public function listar(array $filters = [], ?User $user = null): Collection
     {
@@ -207,7 +206,8 @@ class FacturaService
                 'emitir' => (bool) ($user?->hasPermission('facturacion.access') && $configuracion?->facturacionSiatActiva()),
                 'consultar' => (bool) $user?->hasPermission('facturacion.access'),
                 'reintentar' => false,
-                'anular' => (bool) $user?->hasPermission('facturacion.access'),
+                'anular' => (bool) $user?->hasPermission('facturacion.facturas.anular'),
+                'revertir_anulacion' => (bool) $user?->hasPermission('facturacion.facturas.revertir_anulacion'),
                 'descargar' => (bool) $user?->hasPermission('facturacion.access'),
             ],
             'estados_factura' => array_map(

@@ -1102,7 +1102,7 @@ onMounted(store.load);
                                                     /><DropdownMenuItem
                                                         v-if="
                                                             item.can_reverse_cancellation &&
-                                                            capabilities.anular
+                                                            capabilities.revertir_anulacion
                                                         "
                                                         @select="
                                                             executeRevertirAnulacion(
@@ -1116,7 +1116,7 @@ onMounted(store.load);
                                                     ><DropdownMenuSeparator
                                                         v-if="
                                                             item.can_reverse_cancellation &&
-                                                            capabilities.anular
+                                                            capabilities.revertir_anulacion
                                                         "
                                                     /><DropdownMenuItem
                                                         v-if="

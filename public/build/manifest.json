@@ -208,7 +208,7 @@
     ]
   },
   "resources/js/app.ts": {
-    "file": "assets/app-BY0ZRK8M.js",
+    "file": "assets/app-BTXo67N7.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -454,7 +454,7 @@
     ]
   },
   "resources/js/pages/settings/Appearance.vue": {
-    "file": "assets/Appearance-DK74gqqt.js",
+    "file": "assets/Appearance-DDfJ1DHF.js",
     "name": "Appearance",
     "src": "resources/js/pages/settings/Appearance.vue",
     "isDynamicEntry": true,
@@ -718,7 +718,7 @@
     ]
   },
   "resources/js/src/views/facturacion/FacturaView.vue": {
-    "file": "assets/FacturaView-CsdPdrhz.js",
+    "file": "assets/FacturaView-DKkGChKe.js",
     "name": "FacturaView",
     "src": "resources/js/src/views/facturacion/FacturaView.vue",
     "isDynamicEntry": true,
