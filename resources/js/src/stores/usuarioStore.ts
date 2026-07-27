@@ -8,6 +8,8 @@ const initialForm = () => ({
     name: '',
     email: '',
     password: '',
+    sucursal_id: '',
+    punto_venta_id: '',
     estado: true,
     role_ids: [] as number[],
 });
@@ -79,6 +81,10 @@ export function useUsuarioStore() {
             name: String(item.name ?? ''),
             email: String(item.email ?? ''),
             password: '',
+            sucursal_id: item.sucursal_id ? String(item.sucursal_id) : '',
+            punto_venta_id: item.punto_venta_id
+                ? String(item.punto_venta_id)
+                : '',
             estado: Boolean(item.estado ?? true),
             role_ids: ((item.roles as Item[] | undefined) ?? []).map((role) =>
                 Number(role.id),
@@ -94,6 +100,12 @@ export function useUsuarioStore() {
             const payload: Record<string, unknown> = {
                 name: state.form.name,
                 email: state.form.email,
+                sucursal_id: state.form.sucursal_id
+                    ? Number(state.form.sucursal_id)
+                    : null,
+                punto_venta_id: state.form.punto_venta_id
+                    ? Number(state.form.punto_venta_id)
+                    : null,
                 estado: state.form.estado,
                 role_ids: state.form.role_ids,
             };

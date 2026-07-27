@@ -8,9 +8,13 @@ use App\Http\Requests\Usuario\AssignRolesRequest;
 use App\Http\Requests\Usuario\StoreUsuarioRequest;
 use App\Http\Requests\Usuario\UpdateUsuarioEstadoRequest;
 use App\Http\Requests\Usuario\UpdateUsuarioRequest;
+use App\Http\Resources\Configuracion\PuntoVentaResource;
+use App\Http\Resources\Configuracion\SucursalResource;
 use App\Http\Resources\PermisoResource;
 use App\Http\Resources\RolResource;
 use App\Http\Resources\UsuarioResource;
+use App\Models\Configuracion\PuntoVenta;
+use App\Models\Configuracion\Sucursal;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -21,8 +25,7 @@ class UsuarioController extends Controller
 {
     public function __construct(
         private readonly UsuarioService $service,
-    ) {
-    }
+    ) {}
 
     public function index(): JsonResponse
     {
@@ -36,6 +39,17 @@ class UsuarioController extends Controller
                 )->resolve(),
                 'permissions' => PermisoResource::collection(
                     Permission::query()->where('estado', true)->orderBy('modulo')->orderBy('nombre')->get(),
+                )->resolve(),
+                'sucursales' => SucursalResource::collection(
+                    Sucursal::query()->where('estado', true)->orderBy('codigo')->get(),
+                )->resolve(),
+                'puntos_venta' => PuntoVentaResource::collection(
+                    PuntoVenta::query()
+                        ->with('sucursal:id,codigo,nombre')
+                        ->where('estado', true)
+                        ->orderBy('sucursal_id')
+                        ->orderBy('codigo')
+                        ->get(),
                 )->resolve(),
             ],
         ]);

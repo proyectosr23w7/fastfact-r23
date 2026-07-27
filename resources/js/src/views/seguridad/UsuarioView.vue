@@ -60,6 +60,19 @@ const roles = computed<Item[]>(
 const permissions = computed<Item[]>(
     () => (store.state.meta.permissions as Item[] | undefined) ?? [],
 );
+const sucursales = computed<Item[]>(
+    () => (store.state.meta.sucursales as Item[] | undefined) ?? [],
+);
+const puntosVenta = computed<Item[]>(
+    () => (store.state.meta.puntos_venta as Item[] | undefined) ?? [],
+);
+const puntosVentaForm = computed(() =>
+    puntosVenta.value.filter((puntoVenta) =>
+        store.state.form.sucursal_id
+            ? String(puntoVenta.sucursal_id) === store.state.form.sucursal_id
+            : true,
+    ),
+);
 const selectedUser = computed<Item | null>(() => store.state.selectedItem);
 
 const getRoles = (item: Item) => (item.roles as Item[] | undefined) ?? [];
@@ -70,6 +83,36 @@ const initials = (name: unknown) =>
         .slice(0, 2)
         .map((part) => part[0]?.toUpperCase())
         .join('');
+
+const userContextLabel = (item: Item) => {
+    const sucursal = item.sucursal as Item | null | undefined;
+    const puntoVenta = item.punto_venta as Item | null | undefined;
+
+    if (puntoVenta) {
+        return `${sucursal?.nombre ?? 'Sucursal'} / ${puntoVenta.nombre ?? `PV ${puntoVenta.codigo}`}`;
+    }
+
+    if (sucursal) {
+        return `${sucursal.nombre} / Todos`;
+    }
+
+    return 'Todas las sucursales';
+};
+
+const onSucursalChange = () => {
+    const selectedPunto = puntosVenta.value.find(
+        (puntoVenta) =>
+            String(puntoVenta.id) === store.state.form.punto_venta_id,
+    );
+
+    if (
+        selectedPunto &&
+        store.state.form.sucursal_id &&
+        String(selectedPunto.sucursal_id) !== store.state.form.sucursal_id
+    ) {
+        store.state.form.punto_venta_id = '';
+    }
+};
 
 const activeUsers = computed(
     () => store.state.items.filter((item) => Boolean(item.estado)).length,
@@ -441,7 +484,7 @@ onMounted(async () => {
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="w-full min-w-[820px] text-sm">
+                        <table class="w-full min-w-[920px] text-sm">
                             <thead
                                 class="bg-white text-left text-xs text-[#536158]"
                             >
@@ -454,6 +497,9 @@ onMounted(async () => {
                                     </th>
                                     <th class="px-4 py-3 font-semibold">
                                         Roles
+                                    </th>
+                                    <th class="px-4 py-3 font-semibold">
+                                        Contexto
                                     </th>
                                     <th class="px-4 py-3 font-semibold">
                                         Ultimo acceso
@@ -471,7 +517,7 @@ onMounted(async () => {
                             <tbody>
                                 <tr v-if="store.state.loading">
                                     <td
-                                        colspan="6"
+                                        colspan="7"
                                         class="px-4 py-12 text-center text-[#647068]"
                                     >
                                         <LoaderCircle
@@ -481,7 +527,7 @@ onMounted(async () => {
                                 </tr>
                                 <tr v-else-if="!paginatedUsers.length">
                                     <td
-                                        colspan="6"
+                                        colspan="7"
                                         class="px-4 py-12 text-center"
                                     >
                                         <CircleUserRound
@@ -537,6 +583,9 @@ onMounted(async () => {
                                                 >Sin roles</span
                                             >
                                         </div>
+                                    </td>
+                                    <td class="px-4 py-3 text-[#536158]">
+                                        {{ userContextLabel(item) }}
                                     </td>
                                     <td class="px-4 py-3 text-[#748078]">
                                         No disponible
@@ -890,6 +939,63 @@ onMounted(async () => {
                                     :message="store.state.errors.password?.[0]"
                                 />
                             </div>
+                            <div class="company-field">
+                                <Label for="sucursal_id" class="company-label"
+                                    >Sucursal</Label
+                                ><select
+                                    id="sucursal_id"
+                                    v-model="store.state.form.sucursal_id"
+                                    class="company-input"
+                                    @change="onSucursalChange"
+                                >
+                                    <option value="">Todas las sucursales</option>
+                                    <option
+                                        v-for="sucursal in sucursales"
+                                        :key="String(sucursal.id)"
+                                        :value="String(sucursal.id)"
+                                    >
+                                        {{ sucursal.codigo }} -
+                                        {{ sucursal.nombre }}
+                                    </option>
+                                </select>
+                                <InputError
+                                    :message="
+                                        store.state.errors.sucursal_id?.[0]
+                                    "
+                                />
+                            </div>
+                            <div class="company-field">
+                                <Label
+                                    for="punto_venta_id"
+                                    class="company-label"
+                                    >Punto de venta</Label
+                                ><select
+                                    id="punto_venta_id"
+                                    v-model="store.state.form.punto_venta_id"
+                                    class="company-input"
+                                >
+                                    <option value="">
+                                        {{
+                                            store.state.form.sucursal_id
+                                                ? 'Todos los puntos de la sucursal'
+                                                : 'Todos los puntos de venta'
+                                        }}
+                                    </option>
+                                    <option
+                                        v-for="puntoVenta in puntosVentaForm"
+                                        :key="String(puntoVenta.id)"
+                                        :value="String(puntoVenta.id)"
+                                    >
+                                        {{ puntoVenta.codigo }} -
+                                        {{ puntoVenta.nombre }}
+                                    </option>
+                                </select>
+                                <InputError
+                                    :message="
+                                        store.state.errors.punto_venta_id?.[0]
+                                    "
+                                />
+                            </div>
                         </div>
                         <fieldset>
                             <legend
@@ -1012,5 +1118,3 @@ onMounted(async () => {
         >
     </ModulePageLayout>
 </template>
-
-

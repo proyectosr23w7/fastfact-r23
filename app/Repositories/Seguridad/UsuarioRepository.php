@@ -13,6 +13,8 @@ class UsuarioRepository
             ->with([
                 'roles:id,nombre,slug',
                 'roles.permissions:id,nombre,slug,modulo,estado',
+                'sucursal:id,codigo,nombre',
+                'puntoVenta:id,sucursal_id,codigo,nombre',
             ])
             ->orderBy('name')
             ->get();
@@ -42,6 +44,8 @@ class UsuarioRepository
         return $user->refresh()->load([
             'roles:id,nombre,slug',
             'roles.permissions:id,nombre,slug,modulo,estado',
+            'sucursal:id,codigo,nombre',
+            'puntoVenta:id,sucursal_id,codigo,nombre',
         ]);
     }
 }

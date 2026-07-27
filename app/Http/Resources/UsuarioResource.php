@@ -13,6 +13,19 @@ class UsuarioResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'sucursal_id' => $this->sucursal_id,
+            'punto_venta_id' => $this->punto_venta_id,
+            'sucursal' => $this->whenLoaded('sucursal', fn () => $this->sucursal ? [
+                'id' => (int) $this->sucursal->id,
+                'codigo' => (int) $this->sucursal->codigo,
+                'nombre' => $this->sucursal->nombre,
+            ] : null),
+            'punto_venta' => $this->whenLoaded('puntoVenta', fn () => $this->puntoVenta ? [
+                'id' => (int) $this->puntoVenta->id,
+                'sucursal_id' => (int) $this->puntoVenta->sucursal_id,
+                'codigo' => (int) $this->puntoVenta->codigo,
+                'nombre' => $this->puntoVenta->nombre,
+            ] : null),
             'estado' => (bool) $this->estado,
             'roles' => RolResource::collection($this->whenLoaded('roles')),
             'permission_slugs' => $this->when(

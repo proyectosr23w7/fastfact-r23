@@ -3,6 +3,7 @@
 namespace App\Services\Seguridad;
 
 use App\Enums\RolSistemaEnum;
+use App\Models\Configuracion\PuntoVenta;
 use App\Models\User;
 use App\Repositories\Seguridad\UsuarioRepository;
 use Illuminate\Database\Eloquent\Collection;
@@ -14,8 +15,7 @@ class UsuarioService
 {
     public function __construct(
         private readonly UsuarioRepository $repository,
-    ) {
-    }
+    ) {}
 
     public function listar(): Collection
     {
@@ -27,6 +27,7 @@ class UsuarioService
         return DB::transaction(function () use ($data): User {
             $roleIds = Arr::pull($data, 'role_ids', []);
             $data['estado'] = $data['estado'] ?? true;
+            $data = $this->normalizeOperationalContext($data);
 
             $user = $this->repository->create($data);
 
@@ -46,6 +47,7 @@ class UsuarioService
             if (empty($data['password'])) {
                 unset($data['password']);
             }
+            $data = $this->normalizeOperationalContext($data);
 
             $user = $this->repository->update($user, $data);
 
@@ -111,6 +113,19 @@ class UsuarioService
         throw ValidationException::withMessages([
             'role_ids' => 'El usuario superadmin predeterminado debe conservar el rol superadmin.',
         ]);
+    }
+
+    private function normalizeOperationalContext(array $data): array
+    {
+        $puntoVentaId = (int) ($data['punto_venta_id'] ?? 0);
+
+        if ($puntoVentaId > 0) {
+            $data['sucursal_id'] = PuntoVenta::query()
+                ->whereKey($puntoVentaId)
+                ->value('sucursal_id');
+        }
+
+        return $data;
     }
 
     private function isDefaultSuperadmin(User $user): bool
