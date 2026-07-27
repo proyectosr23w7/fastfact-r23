@@ -10,6 +10,7 @@ import { type NavGroup, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import {
     BadgeDollarSign,
+    BarChart3,
     BookOpen,
     Building2,
     Cable,
@@ -124,6 +125,17 @@ const navGroups: NavGroup[] = [
                 href: '/facturacion/eventos-significativos',
                 icon: BookOpen,
                 permission: 'facturacion.siat.sync',
+            },
+        ],
+    },
+    {
+        title: 'Reportes',
+        items: [
+            {
+                title: 'Facturacion',
+                href: '/reportes/facturacion',
+                icon: BarChart3,
+                permission: 'reportes.access',
             },
         ],
     },

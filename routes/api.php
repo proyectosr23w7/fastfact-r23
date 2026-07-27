@@ -18,6 +18,7 @@ use App\Http\Controllers\Inventario\ArticuloPrecioController;
 use App\Http\Controllers\Inventario\CategoriaController;
 use App\Http\Controllers\Inventario\MarcaController;
 use App\Http\Controllers\Inventario\UnidadMedidaController;
+use App\Http\Controllers\Reportes\ReporteFacturacionController;
 use App\Http\Controllers\Seguridad\IntegrationApiTokenController;
 use App\Http\Controllers\Seguridad\PermisoController as SeguridadPermisoController;
 use App\Http\Controllers\Seguridad\RolController as SeguridadRolController;
@@ -190,4 +191,8 @@ Route::middleware(['web', 'auth'])->prefix('facturacion')->group(function () {
     Route::post('eventos-significativos/reportes', [EventoSignificativoController::class, 'report'])->middleware('permission:facturacion.siat.sync');
     Route::patch('eventos-significativos/{evento}/cerrar', [EventoSignificativoController::class, 'close'])->middleware('permission:facturacion.siat.sync');
     Route::post('eventos-significativos/{evento}/procesar-recuperacion', [EventoSignificativoController::class, 'processRecovery'])->middleware('permission:facturacion.siat.sync');
+});
+
+Route::middleware(['web', 'auth'])->prefix('reportes')->group(function () {
+    Route::get('facturacion', [ReporteFacturacionController::class, 'index'])->middleware('permission:reportes.access');
 });

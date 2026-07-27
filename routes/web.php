@@ -72,6 +72,10 @@ Route::middleware(['auth', 'permission:sistema.access', 'empresa.configurada'])-
     Route::get('facturacion/eventos-significativos', fn () => Inertia::render('facturacion/EventoSignificativoView'))
         ->middleware('permission:facturacion.siat.sync')
         ->name('facturacion.eventos.page');
+
+    Route::get('reportes/facturacion', fn () => Inertia::render('reportes/ReporteFacturacionView'))
+        ->middleware('permission:reportes.access')
+        ->name('reportes.facturacion.page');
 });
 
 Route::middleware(['auth', 'superadmin'])->prefix('centralizacion')->group(function () {

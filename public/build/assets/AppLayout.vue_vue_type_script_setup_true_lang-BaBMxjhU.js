@@ -1,0 +1,1 @@
+import{_ as e}from"./app-shell-izg3kU7e.js";import{d as s,a as t,w as o,r as c,o as m}from"./framework-AaAGvCCB.js";const p=s({__name:"AppLayout",props:{breadcrumbs:{default:()=>[]}},setup(r){return(a,n)=>(m(),t(e,{breadcrumbs:r.breadcrumbs},{default:o(()=>[c(a.$slots,"default")]),_:3},8,["breadcrumbs"]))}});export{p as _};
