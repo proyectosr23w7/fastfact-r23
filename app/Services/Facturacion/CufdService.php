@@ -3,9 +3,9 @@
 namespace App\Services\Facturacion;
 
 use App\Actions\Facturacion\ObtenerCuisVigenteAction;
+use App\Models\Configuracion\Configuracion;
 use App\Models\Cufd;
 use App\Models\User;
-use App\Models\Configuracion\Configuracion;
 use App\Repositories\Facturacion\CufdRepository;
 use App\Support\OperationalContextScope;
 use Carbon\Carbon;
@@ -18,8 +18,7 @@ class CufdService
         private readonly CufdRepository $repository,
         private readonly SiatClientService $client,
         private readonly ObtenerCuisVigenteAction $obtenerCuisVigente,
-    ) {
-    }
+    ) {}
 
     public function listar(array $filters = [], ?User $user = null): Collection
     {
@@ -142,6 +141,31 @@ class CufdService
 
             return false;
         }
+    }
+
+    public function obtenerVigenteORegistrar(int $sucursalId, int $puntoVentaId, int $userId, ?User $user = null): Cufd
+    {
+        $configuracion = Configuracion::current();
+
+        if (! $configuracion) {
+            abort(422, 'No existe una configuracion general registrada para generar CUFD.');
+        }
+
+        $ambiente = $configuracion->ambiente_facturacion ?: 'piloto';
+
+        $this->repository->desactivarVencidos($sucursalId, $puntoVentaId, $ambiente);
+        $this->repository->desactivarNoUsables($sucursalId, $puntoVentaId, $ambiente);
+
+        $vigente = $this->repository->vigente($sucursalId, $puntoVentaId, $ambiente);
+
+        if ($vigente) {
+            return $this->repository->refresh($vigente);
+        }
+
+        return $this->registrar([
+            'sucursal_id' => $sucursalId,
+            'punto_venta_id' => $puntoVentaId,
+        ], $userId, $user);
     }
 
     private function responseContainsValidCufd(array $response): bool

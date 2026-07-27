@@ -7,7 +7,6 @@ use App\Actions\Facturacion\FirmarXmlFacturaAction;
 use App\Actions\Facturacion\GenerarCufFacturaAction;
 use App\Actions\Facturacion\GenerarDatosFacturaDirectaAction;
 use App\Actions\Facturacion\GenerarXmlFacturaAction;
-use App\Actions\Facturacion\ObtenerCufdVigenteAction;
 use App\Actions\Facturacion\ObtenerCuisVigenteAction;
 use App\Actions\Facturacion\RegistrarRespuestaSiatAction;
 use App\Enums\FacturaEstadoEnum;
@@ -30,7 +29,8 @@ class FacturaDirectaService
     public function __construct(
         private readonly FacturaRepository $repository,
         private readonly ObtenerCuisVigenteAction $obtenerCuisVigente,
-        private readonly ObtenerCufdVigenteAction $obtenerCufdVigente,
+        private readonly CuisService $cuisService,
+        private readonly CufdService $cufdService,
         private readonly GenerarDatosFacturaDirectaAction $generarDatosFacturaDirecta,
         private readonly GenerarCufFacturaAction $generarCufFactura,
         private readonly GenerarXmlFacturaAction $generarXmlFactura,
@@ -57,6 +57,7 @@ class FacturaDirectaService
 
             OperationalContextScope::authorize($user, (int) $sucursal->id, (int) $puntoVenta->id);
 
+            $this->cuisService->generarSiNoExiste($sucursal->id, $puntoVenta->id, (int) $user->id);
             $cuis = ($this->obtenerCuisVigente)($sucursal->id, $puntoVenta->id, $ambiente);
             $eventoActivo = $this->eventoSignificativoService->eventoActivoPorContexto(
                 (int) $sucursal->id,
@@ -65,7 +66,10 @@ class FacturaDirectaService
             );
             $emisionOffline = $eventoActivo instanceof EventoSignificativo;
             $codigoEmision = $emisionOffline ? 2 : 1;
-            $cufd = $emisionOffline ? $eventoActivo->cufdEvento : ($this->obtenerCufdVigente)($sucursal->id, $puntoVenta->id, $ambiente);
+
+            $cufd = $emisionOffline
+                ? $eventoActivo->cufdEvento
+                : $this->cufdService->obtenerVigenteORegistrar($sucursal->id, $puntoVenta->id, (int) $user->id, $user);
             $cafc = $emisionOffline && (string) $eventoActivo->tipo_contingencia === 'manual'
                 ? $eventoActivo->cafc
                 : null;
