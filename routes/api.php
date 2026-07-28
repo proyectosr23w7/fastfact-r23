@@ -195,4 +195,6 @@ Route::middleware(['web', 'auth'])->prefix('facturacion')->group(function () {
 
 Route::middleware(['web', 'auth'])->prefix('reportes')->group(function () {
     Route::get('facturacion', [ReporteFacturacionController::class, 'index'])->middleware('permission:reportes.access');
+    Route::get('facturacion/excel', [ReporteFacturacionController::class, 'excel'])->middleware('permission:reportes.access');
+    Route::get('facturacion/pdf', [ReporteFacturacionController::class, 'pdf'])->middleware('permission:reportes.access');
 });

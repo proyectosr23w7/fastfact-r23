@@ -3,6 +3,7 @@
 namespace App\Services\Reportes;
 
 use App\Enums\FacturaEstadoEnum;
+use App\Helpers\BoliviaPdfHelper;
 use App\Models\Factura;
 use App\Models\FacturaDetalle;
 use App\Models\SinMetodoPago;
@@ -29,6 +30,216 @@ class ReporteFacturacionService
             'facturas_recientes' => $this->facturasRecientes(clone $baseQuery),
             'meta' => $this->meta($filters, $user),
         ];
+    }
+
+    public function exportarExcel(array $filters, ?User $user = null): array
+    {
+        $reporte = $this->generar($filters, $user);
+
+        return [
+            'content' => $this->buildExcelXml($reporte),
+            'filename' => 'reporte-facturacion-'.$reporte['meta']['filtros']['fecha_desde'].'-'.$reporte['meta']['filtros']['fecha_hasta'].'.xls',
+        ];
+    }
+
+    public function exportarPdf(array $filters, ?User $user = null): array
+    {
+        BoliviaPdfHelper::bootLibraries();
+
+        $reporte = $this->generar($filters, $user);
+        $filtros = $reporte['meta']['filtros'];
+        $pdf = new \FPDF('L', 'mm', 'Letter');
+        $pdf->SetMargins(10, 10, 10);
+        $pdf->AddPage();
+        $pdf->SetFont('Arial', 'B', 14);
+        $pdf->Cell(0, 8, BoliviaPdfHelper::text('Reporte de facturacion'), 0, 1, 'L');
+        $pdf->SetFont('Arial', '', 9);
+        $pdf->Cell(0, 5, BoliviaPdfHelper::text('Periodo: '.$filtros['fecha_desde'].' al '.$filtros['fecha_hasta'].' | Generado: '.now()->format('Y-m-d H:i:s')), 0, 1, 'L');
+        $pdf->Ln(3);
+
+        $this->pdfSummary($pdf, $reporte['resumen']);
+        $this->pdfTable($pdf, 'Metodos de pago', ['Metodo', 'Facturas', 'Total Bs'], collect($reporte['por_metodo_pago'])->map(fn ($row) => [
+            $row['descripcion'],
+            $this->number($row['cantidad']),
+            $this->money($row['total']),
+        ])->all(), [110, 35, 35]);
+        $this->pdfTable($pdf, 'Usuarios', ['Usuario', 'Facturas', 'Total Bs'], collect($reporte['por_usuario'])->map(fn ($row) => [
+            $row['usuario'],
+            $this->number($row['cantidad']),
+            $this->money($row['total']),
+        ])->all(), [110, 35, 35]);
+
+        $pdf->AddPage();
+        $this->pdfTable($pdf, 'Productos facturados', ['Codigo', 'Producto', 'Cantidad', 'Precio prom.', 'Total Bs'], collect($reporte['por_producto'])->map(fn ($row) => [
+            $row['codigo_producto'],
+            $row['descripcion'],
+            $this->number($row['cantidad'], 2),
+            $this->money($row['precio_promedio']),
+            $this->money($row['total']),
+        ])->all(), [32, 115, 28, 32, 32]);
+        $this->pdfTable($pdf, 'Facturas recientes', ['Nro.', 'Fecha', 'Cliente', 'Usuario', 'Estado', 'Total Bs'], collect($reporte['facturas_recientes'])->map(fn ($row) => [
+            $row['numero_factura'],
+            $row['fecha_emision'],
+            $row['cliente'],
+            $row['usuario'],
+            $row['estado_factura'],
+            $this->money($row['monto_total']),
+        ])->all(), [18, 38, 80, 52, 28, 28]);
+
+        return [
+            'content' => BoliviaPdfHelper::output($pdf),
+            'filename' => 'reporte-facturacion-'.$filtros['fecha_desde'].'-'.$filtros['fecha_hasta'].'.pdf',
+        ];
+    }
+
+    private function buildExcelXml(array $reporte): string
+    {
+        $filtros = $reporte['meta']['filtros'];
+        $worksheets = [
+            $this->excelWorksheet('Resumen', [
+                ['Indicador', 'Valor'],
+                ['Periodo', $filtros['fecha_desde'].' al '.$filtros['fecha_hasta']],
+                ['Facturas registradas', $reporte['resumen']['facturas_total']],
+                ['Facturas operativas', $reporte['resumen']['facturas_operativas']],
+                ['Total operativo Bs', $reporte['resumen']['monto_total']],
+                ['Monto sujeto a IVA Bs', $reporte['resumen']['monto_sujeto_iva']],
+                ['Descuentos Bs', $reporte['resumen']['descuentos']],
+                ['Anuladas', $reporte['resumen']['anuladas']],
+                ['Pendientes', $reporte['resumen']['pendientes']],
+                ['Observadas', $reporte['resumen']['observadas']],
+            ]),
+            $this->excelWorksheet('Metodos de pago', array_merge(
+                [['Codigo', 'Metodo', 'Facturas', 'Total Bs']],
+                array_map(fn ($row) => [$row['codigo'], $row['descripcion'], $row['cantidad'], $row['total']], $reporte['por_metodo_pago']),
+            )),
+            $this->excelWorksheet('Usuarios', array_merge(
+                [['Usuario', 'Facturas', 'Total Bs']],
+                array_map(fn ($row) => [$row['usuario'], $row['cantidad'], $row['total']], $reporte['por_usuario']),
+            )),
+            $this->excelWorksheet('Productos', array_merge(
+                [['Codigo', 'Producto', 'Cantidad', 'Precio promedio Bs', 'Total Bs']],
+                array_map(fn ($row) => [$row['codigo_producto'], $row['descripcion'], $row['cantidad'], $row['precio_promedio'], $row['total']], $reporte['por_producto']),
+            )),
+            $this->excelWorksheet('Facturas', array_merge(
+                [['Nro.', 'Fecha', 'Cliente', 'Usuario', 'Sucursal', 'Punto de venta', 'Estado', 'Metodo pago', 'Total Bs']],
+                array_map(fn ($row) => [
+                    $row['numero_factura'],
+                    $row['fecha_emision'],
+                    $row['cliente'],
+                    $row['usuario'],
+                    $row['sucursal'],
+                    $row['punto_venta'],
+                    $row['estado_factura'],
+                    $row['codigo_metodo_pago'],
+                    $row['monto_total'],
+                ], $reporte['facturas_recientes']),
+            )),
+        ];
+
+        return '<?xml version="1.0" encoding="UTF-8"?>'."\n"
+            .'<?mso-application progid="Excel.Sheet"?>'."\n"
+            .'<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'
+            .'<Styles><Style ss:ID="header"><Font ss:Bold="1"/><Interior ss:Color="#DFF3E6" ss:Pattern="Solid"/></Style></Styles>'
+            .implode('', $worksheets)
+            .'</Workbook>';
+    }
+
+    private function excelWorksheet(string $name, array $rows): string
+    {
+        $xml = '<Worksheet ss:Name="'.$this->xml($name).'"><Table>';
+
+        foreach ($rows as $index => $row) {
+            $xml .= '<Row>';
+
+            foreach ($row as $cell) {
+                $isNumeric = is_int($cell) || is_float($cell);
+                $style = $index === 0 ? ' ss:StyleID="header"' : '';
+                $type = $isNumeric ? 'Number' : 'String';
+                $value = $isNumeric ? (string) $cell : $this->xml((string) ($cell ?? ''));
+                $xml .= '<Cell'.$style.'><Data ss:Type="'.$type.'">'.$value.'</Data></Cell>';
+            }
+
+            $xml .= '</Row>';
+        }
+
+        return $xml.'</Table></Worksheet>';
+    }
+
+    private function xml(string $value): string
+    {
+        return htmlspecialchars($value, ENT_XML1 | ENT_COMPAT, 'UTF-8');
+    }
+
+    private function pdfSummary(\FPDF $pdf, array $resumen): void
+    {
+        $items = [
+            ['Facturas registradas', $this->number($resumen['facturas_total'])],
+            ['Facturas operativas', $this->number($resumen['facturas_operativas'])],
+            ['Total operativo Bs', $this->money($resumen['monto_total'])],
+            ['Monto sujeto IVA Bs', $this->money($resumen['monto_sujeto_iva'])],
+            ['Anuladas', $this->number($resumen['anuladas'])],
+            ['Pendientes', $this->number($resumen['pendientes'])],
+            ['Observadas', $this->number($resumen['observadas'])],
+        ];
+
+        $pdf->SetFont('Arial', 'B', 9);
+
+        foreach ($items as [$label, $value]) {
+            $pdf->Cell(55, 7, BoliviaPdfHelper::text($label), 1, 0, 'L');
+            $pdf->SetFont('Arial', '', 9);
+            $pdf->Cell(35, 7, BoliviaPdfHelper::text($value), 1, 1, 'R');
+            $pdf->SetFont('Arial', 'B', 9);
+        }
+
+        $pdf->Ln(5);
+    }
+
+    private function pdfTable(\FPDF $pdf, string $title, array $headers, array $rows, array $widths): void
+    {
+        if ($pdf->GetY() > 160) {
+            $pdf->AddPage();
+        }
+
+        $pdf->SetFont('Arial', 'B', 11);
+        $pdf->Cell(0, 7, BoliviaPdfHelper::text($title), 0, 1, 'L');
+        $pdf->SetFont('Arial', 'B', 8);
+
+        foreach ($headers as $index => $header) {
+            $pdf->Cell($widths[$index], 7, BoliviaPdfHelper::text((string) $header), 1, 0, 'L');
+        }
+
+        $pdf->Ln();
+        $pdf->SetFont('Arial', '', 8);
+
+        foreach (array_slice($rows, 0, 30) as $row) {
+            if ($pdf->GetY() > 190) {
+                $pdf->AddPage();
+                $pdf->SetFont('Arial', '', 8);
+            }
+
+            foreach ($row as $index => $cell) {
+                $align = $index >= count($row) - 2 ? 'R' : 'L';
+                $pdf->Cell($widths[$index], 6, BoliviaPdfHelper::text(mb_strimwidth((string) ($cell ?? ''), 0, 55, '...')), 1, 0, $align);
+            }
+
+            $pdf->Ln();
+        }
+
+        if ($rows === []) {
+            $pdf->Cell(array_sum($widths), 7, BoliviaPdfHelper::text('Sin datos para el periodo seleccionado.'), 1, 1, 'C');
+        }
+
+        $pdf->Ln(5);
+    }
+
+    private function money(mixed $value): string
+    {
+        return number_format((float) ($value ?? 0), 2, '.', ',');
+    }
+
+    private function number(mixed $value, int $decimals = 0): string
+    {
+        return number_format((float) ($value ?? 0), $decimals, '.', ',');
     }
 
     private function normalizarFiltros(array $filters, ?User $user): array

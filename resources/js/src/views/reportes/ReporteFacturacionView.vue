@@ -2,7 +2,14 @@
 import { Button } from '@/components/ui/button';
 import ModulePageLayout from '@/layouts/modules/ModulePageLayout.vue';
 import { reporteService } from '@/src/services/reporteService';
-import { AlertCircle, BarChart3, LoaderCircle, RefreshCcw } from 'lucide-vue-next';
+import {
+    AlertCircle,
+    BarChart3,
+    FileSpreadsheet,
+    FileText,
+    LoaderCircle,
+    RefreshCcw,
+} from 'lucide-vue-next';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 
 type Item = Record<string, any>;
@@ -79,6 +86,22 @@ const clearFilters = () => {
     filters.estado_factura = '';
     filters.codigo_metodo_pago = '';
     void loadReport();
+};
+
+const downloadReport = (format: 'excel' | 'pdf') => {
+    const params = new URLSearchParams();
+
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+            params.set(key, String(value));
+        }
+    });
+
+    window.open(
+        `/api/reportes/facturacion/${format}?${params.toString()}`,
+        '_blank',
+        'noopener,noreferrer',
+    );
 };
 
 watch(
@@ -168,6 +191,14 @@ onMounted(loadReport);
                 </div>
                 <div class="mt-4 flex flex-wrap justify-end gap-2">
                     <Button variant="outline" type="button" @click="clearFilters">Limpiar</Button>
+                    <Button variant="outline" type="button" :disabled="loading" @click="downloadReport('excel')">
+                        <FileSpreadsheet class="mr-2 size-4" />
+                        Excel
+                    </Button>
+                    <Button variant="outline" type="button" :disabled="loading" @click="downloadReport('pdf')">
+                        <FileText class="mr-2 size-4" />
+                        PDF
+                    </Button>
                     <Button class="company-action-primary" type="button" :disabled="loading" @click="loadReport">
                         <LoaderCircle v-if="loading" class="mr-2 size-4 animate-spin" />
                         <RefreshCcw v-else class="mr-2 size-4" />
