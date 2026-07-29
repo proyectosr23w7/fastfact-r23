@@ -85,11 +85,11 @@ class IntegrationController extends Controller
 
     public function registrarCliente(Request $request): JsonResponse
     {
-        $cliente = $this->clienteService->crearOResolver($this->validateCliente($request, allowExisting: true));
+        $cliente = $this->clienteService->crear($this->validateCliente($request));
 
         return response()->json([
             'success' => true,
-            'message' => 'Cliente disponible correctamente.',
+            'message' => 'Cliente registrado correctamente.',
             'data' => ClienteResource::make($cliente)->resolve(),
         ], 201);
     }
@@ -353,25 +353,20 @@ class IntegrationController extends Controller
         })->validate();
     }
 
-    private function validateCliente(Request $request, ?Cliente $cliente = null, bool $allowExisting = false): array
+    private function validateCliente(Request $request, ?Cliente $cliente = null): array
     {
-        $nitCiRules = [
-            'required',
-            'string',
-            'max:50',
-        ];
-
-        if (! $allowExisting) {
-            $nitCiRules[] = Rule::unique('clientes', 'nit_ci')
-                ->ignore($cliente?->id)
-                ->where(fn ($query) => $query
-                    ->where('tipo_documento_identidad', $request->input('tipo_documento_identidad'))
-                    ->where('complemento', $request->input('complemento')));
-        }
-
         return Validator::make($request->all(), [
             'razon_social' => ['required', 'string', 'max:200'],
-            'nit_ci' => $nitCiRules,
+            'nit_ci' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('clientes', 'nit_ci')
+                    ->ignore($cliente?->id)
+                    ->where(fn ($query) => $query
+                        ->where('tipo_documento_identidad', $request->input('tipo_documento_identidad'))
+                        ->where('complemento', $request->input('complemento'))),
+            ],
             'tipo_documento_identidad' => ['required', 'string', 'max:10'],
             'complemento' => ['nullable', 'string', 'max:20'],
             'telefono' => ['nullable', 'string', 'max:50'],

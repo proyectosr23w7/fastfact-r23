@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Venta;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreClienteRequest extends FormRequest
@@ -20,6 +21,10 @@ class StoreClienteRequest extends FormRequest
                 'required',
                 'string',
                 'max:50',
+                Rule::unique('clientes')->where(fn ($query) => $query
+                    ->where('tipo_documento_identidad', $this->input('tipo_documento_identidad'))
+                    ->where('complemento', $this->input('complemento'))
+                ),
             ],
             'tipo_documento_identidad' => ['required', 'string', 'max:10'],
             'complemento' => ['nullable', 'string', 'max:20'],
