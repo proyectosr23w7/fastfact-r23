@@ -11,8 +11,7 @@ class ClienteService
 {
     public function __construct(
         private readonly ClienteRepository $repository,
-    ) {
-    }
+    ) {}
 
     public function activos(): Collection
     {
@@ -32,9 +31,20 @@ class ClienteService
 
     public function crear(array $data): Cliente
     {
+        return $this->crearOResolver($data);
+    }
+
+    public function crearOResolver(array $data): Cliente
+    {
         $data['estado'] = $data['estado'] ?? true;
-        $data['codigo'] = $this->siguienteCodigo();
+        $data['codigo'] = $data['codigo'] ?? $this->siguienteCodigo();
         $data = $this->normalizarCliente($data);
+
+        $existente = $this->buscarPorDocumento($data);
+
+        if ($existente) {
+            return $this->repository->update($existente, $this->datosParaClienteExistente($data));
+        }
 
         return $this->repository->create($data);
     }
@@ -74,6 +84,62 @@ class ClienteService
             : null;
 
         return $data;
+    }
+
+    private function buscarPorDocumento(array $data): ?Cliente
+    {
+        $documento = trim((string) ($data['nit_ci'] ?? ''));
+        $tipoDocumento = trim((string) ($data['tipo_documento_identidad'] ?? ''));
+        $complemento = $this->normalizarComplemento(
+            $tipoDocumento,
+            $data['complemento'] ?? null,
+        );
+
+        if ($documento === '' || $tipoDocumento === '') {
+            return null;
+        }
+
+        return Cliente::query()
+            ->where('nit_ci', $documento)
+            ->where('tipo_documento_identidad', $tipoDocumento)
+            ->when(
+                $complemento === null,
+                fn ($query) => $query->whereNull('complemento'),
+                fn ($query) => $query->where('complemento', $complemento),
+            )
+            ->orderByDesc('estado')
+            ->orderBy('id')
+            ->first();
+    }
+
+    private function datosParaClienteExistente(array $data): array
+    {
+        $allowed = [
+            'nombre',
+            'razon_social',
+            'tipo_documento_identidad',
+            'complemento',
+            'estado',
+        ];
+
+        foreach (['telefono', 'correo', 'direccion'] as $field) {
+            if (filled($data[$field] ?? null)) {
+                $allowed[] = $field;
+            }
+        }
+
+        return array_intersect_key($data, array_flip($allowed));
+    }
+
+    private function normalizarComplemento(string $tipoDocumento, mixed $complemento): ?string
+    {
+        if ($tipoDocumento !== '1') {
+            return null;
+        }
+
+        $value = trim((string) ($complemento ?? ''));
+
+        return $value !== '' ? $value : null;
     }
 
     private function siguienteCodigo(): string
