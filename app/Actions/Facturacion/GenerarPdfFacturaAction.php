@@ -350,7 +350,9 @@ class GenerarPdfFacturaAction
     {
         $municipio = trim((string) ($factura->sucursal?->municipio ?? ''));
 
-        return $municipio !== '' ? mb_strtoupper($municipio) : 'LA PAZ';
+        $municipio = $municipio !== '' ? mb_strtoupper($municipio) : 'LA PAZ';
+
+        return $municipio.' - BOLIVIA';
     }
 
     private function extractLeyendaFromXml(string $xml): string
