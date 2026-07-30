@@ -53,7 +53,7 @@ class GenerarDatosFacturaDirectaAction
             'cabecera' => [
                 'nitEmisor' => preg_replace('/\D+/', '', (string) $empresa->nit) ?: '',
                 'razonSocialEmisor' => (string) ($empresa->razon_social ?: $empresa->nombre_empresa),
-                'municipio' => mb_strtoupper((string) ($extra['municipio'] ?? $sucursal->nombre ?? 'LA PAZ')),
+                'municipio' => mb_strtoupper((string) ($extra['municipio'] ?? $sucursal->municipio ?? 'LA PAZ')),
                 'telefono' => $empresa->telefono ?: null,
                 'numeroFactura' => (int) ($extra['numero_factura'] ?? 0),
                 'cuf' => null,

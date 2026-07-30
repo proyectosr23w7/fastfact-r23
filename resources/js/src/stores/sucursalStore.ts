@@ -5,6 +5,7 @@ export const useSucursalStore = () =>
     createCrudStore(sucursalService, () => ({
         codigo: 0,
         nombre: '',
+        municipio: 'LA PAZ',
         direccion: '',
         telefono: '',
         estado: true,

@@ -13,6 +13,7 @@ class SucursalResource extends JsonResource
             'id' => (int) $this->id,
             'codigo' => (int) $this->codigo,
             'nombre' => $this->nombre,
+            'municipio' => $this->municipio,
             'direccion' => $this->direccion,
             'telefono' => $this->telefono,
             'estado' => (bool) $this->estado,

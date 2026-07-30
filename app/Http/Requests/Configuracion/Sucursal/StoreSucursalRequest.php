@@ -15,6 +15,7 @@ class StoreSucursalRequest extends FormRequest
     {
         return [
             'codigo' => ['required', 'integer', 'min:0'],
+            'municipio' => ['required', 'string', 'max:100'],
             'direccion' => ['nullable', 'string', 'max:255'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'estado' => ['sometimes', 'boolean'],

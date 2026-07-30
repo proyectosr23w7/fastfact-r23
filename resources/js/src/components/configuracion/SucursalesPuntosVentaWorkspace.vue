@@ -38,6 +38,7 @@ type Sucursal = {
     id: number;
     codigo: number;
     nombre: string;
+    municipio: string | null;
     direccion: string | null;
     telefono: string | null;
     estado: boolean;
@@ -103,6 +104,7 @@ const confirmAction = ref<ConfirmAction | null>(null);
 
 const sucursalForm = reactive({
     codigo: 1,
+    municipio: 'LA PAZ',
     direccion: '',
     telefono: '',
     estado: true,
@@ -171,6 +173,7 @@ const filteredSucursales = computed(() => {
         const branchMatchesSearch = [
             sucursal.codigo,
             sucursal.nombre,
+            sucursal.municipio,
             sucursal.direccion,
             sucursal.telefono,
         ].some((value) => normalize(value).includes(query));
@@ -310,6 +313,7 @@ const resetSucursalForm = () => {
     editingSucursalId.value = null;
     sucursalErrors.value = {};
     sucursalForm.codigo = 1;
+    sucursalForm.municipio = 'LA PAZ';
     sucursalForm.direccion = '';
     sucursalForm.telefono = '';
     sucursalForm.estado = true;
@@ -329,6 +333,7 @@ const openEditSucursal = (sucursal: Sucursal) => {
     editingSucursalId.value = sucursal.id;
     sucursalErrors.value = {};
     sucursalForm.codigo = Number(sucursal.codigo);
+    sucursalForm.municipio = sucursal.municipio ?? 'LA PAZ';
     sucursalForm.direccion = sucursal.direccion ?? '';
     sucursalForm.telefono = sucursal.telefono ?? '';
     sucursalForm.estado = Boolean(sucursal.estado);
@@ -342,6 +347,7 @@ const saveSucursal = async () => {
     try {
         const payload = {
             codigo: Number(sucursalForm.codigo),
+            municipio: sucursalForm.municipio,
             direccion: sucursalForm.direccion,
             telefono: sucursalForm.telefono,
             estado: sucursalForm.estado,
@@ -456,6 +462,7 @@ const requestToggleSucursal = (sucursal: Sucursal) => {
         run: async () => {
             await sucursalService.update(sucursal.id, {
                 codigo: Number(sucursal.codigo),
+                municipio: sucursal.municipio ?? 'LA PAZ',
                 direccion: sucursal.direccion ?? '',
                 telefono: sucursal.telefono ?? '',
                 estado: nextState,
@@ -777,7 +784,7 @@ onMounted(() => load());
 
                     <template v-else>
                         <div class="overflow-x-auto">
-                            <table class="w-full min-w-[860px] text-sm">
+                            <table class="w-full min-w-[940px] text-sm">
                                 <thead
                                     class="border-b border-border bg-muted/45 text-left"
                                 >
@@ -792,6 +799,9 @@ onMounted(() => load());
                                         </th>
                                         <th class="px-3 py-3 font-semibold">
                                             Sucursal
+                                        </th>
+                                        <th class="px-3 py-3 font-semibold">
+                                            Municipio fiscal
                                         </th>
                                         <th class="px-3 py-3 font-semibold">
                                             Direccion
@@ -862,6 +872,12 @@ onMounted(() => load());
                                             </td>
                                             <td class="px-3 py-4 font-semibold">
                                                 {{ sucursal.nombre }}
+                                            </td>
+                                            <td class="px-3 py-4 font-medium">
+                                                {{
+                                                    sucursal.municipio ||
+                                                    'Sin municipio'
+                                                }}
                                             </td>
                                             <td
                                                 class="max-w-56 px-3 py-4 text-muted-foreground"
@@ -936,7 +952,7 @@ onMounted(() => load());
                                             "
                                             class="border-b border-border bg-muted/20"
                                         >
-                                            <td colspan="8" class="p-3">
+                                            <td colspan="9" class="p-3">
                                                 <div
                                                     class="rounded-xl border border-border bg-card p-3 shadow-sm"
                                                 >
@@ -1313,6 +1329,17 @@ onMounted(() => load());
                             class="space-y-3 border-y border-border py-4 text-sm"
                         >
                             <div class="flex items-start justify-between gap-4">
+                                <dt class="font-semibold">
+                                    Municipio fiscal
+                                </dt>
+                                <dd class="text-right text-muted-foreground">
+                                    {{
+                                        selectedSucursal.municipio ||
+                                        'Sin municipio registrado'
+                                    }}
+                                </dd>
+                            </div>
+                            <div class="flex items-start justify-between gap-4">
                                 <dt class="font-semibold">Direccion</dt>
                                 <dd class="text-right text-muted-foreground">
                                     {{
@@ -1545,6 +1572,28 @@ onMounted(() => load());
                             <p class="text-xs text-muted-foreground">
                                 Casa Matriz conserva siempre el codigo 0.
                             </p>
+                        </div>
+                        <div class="company-field md:col-span-2">
+                            <Label
+                                for="sucursal-municipio"
+                                class="company-label"
+                                >Municipio fiscal</Label
+                            >
+                            <Input
+                                id="sucursal-municipio"
+                                v-model="sucursalForm.municipio"
+                                class="company-input"
+                                maxlength="100"
+                                placeholder="Ej. LA PAZ"
+                                required
+                            />
+                            <p class="text-xs text-muted-foreground">
+                                Este valor se envia en el XML fiscal como
+                                municipio de la sucursal.
+                            </p>
+                            <InputError
+                                :message="sucursalErrors.municipio?.[0]"
+                            />
                         </div>
                         <div class="company-field md:col-span-2">
                             <Label

@@ -90,8 +90,8 @@
       "_icons-Df7_b0GA.js"
     ]
   },
-  "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-C9CoeZGd.js": {
-    "file": "assets/SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-C9CoeZGd.js",
+  "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-C68dZhf-.js": {
+    "file": "assets/SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-C68dZhf-.js",
     "name": "SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang",
     "imports": [
       "_framework-AaAGvCCB.js",
@@ -208,7 +208,7 @@
     ]
   },
   "resources/js/app.ts": {
-    "file": "assets/app-B9F0m4L1.js",
+    "file": "assets/app-1lDCs4fR.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -270,7 +270,7 @@
       "resources/js/pages/settings/TwoFactor.vue"
     ],
     "css": [
-      "assets/app-BZbK1pkI.css"
+      "assets/app-B1acC2bj.css"
     ]
   },
   "resources/js/pages/Dashboard.vue": {
@@ -455,7 +455,7 @@
     ]
   },
   "resources/js/pages/settings/Appearance.vue": {
-    "file": "assets/Appearance-BZo-La2f.js",
+    "file": "assets/Appearance-CS3bG3xN.js",
     "name": "Appearance",
     "src": "resources/js/pages/settings/Appearance.vue",
     "isDynamicEntry": true,
@@ -564,12 +564,12 @@
     ]
   },
   "resources/js/src/views/configuracion/PuntoVentaView.vue": {
-    "file": "assets/PuntoVentaView-CKs44svr.js",
+    "file": "assets/PuntoVentaView-zkCorAY4.js",
     "name": "PuntoVentaView",
     "src": "resources/js/src/views/configuracion/PuntoVentaView.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-C9CoeZGd.js",
+      "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-C68dZhf-.js",
       "_framework-AaAGvCCB.js",
       "_InputError.vue_vue_type_script_setup_true_lang-8uFoA-6N.js",
       "_ui-kit-VBzyJ7WH.js",
@@ -583,12 +583,12 @@
     ]
   },
   "resources/js/src/views/configuracion/SucursalView.vue": {
-    "file": "assets/SucursalView-CS94QFxW.js",
+    "file": "assets/SucursalView-MREU_GQC.js",
     "name": "SucursalView",
     "src": "resources/js/src/views/configuracion/SucursalView.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-C9CoeZGd.js",
+      "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-C68dZhf-.js",
       "_framework-AaAGvCCB.js",
       "_InputError.vue_vue_type_script_setup_true_lang-8uFoA-6N.js",
       "_ui-kit-VBzyJ7WH.js",
