@@ -49,7 +49,8 @@ class GenerarPdfFacturaAction
         $subtotal = $this->resolveSubtotal($items);
         $leyenda = $this->resolveLeyendaConsumidor($factura);
         $leyendaModalidad = $this->resolveLeyendaRepresentacionGrafica($factura);
-        $height = max(220, 170 + ($items->count() * 14));
+        $municipio = $this->resolveMunicipio($factura);
+        $height = max(224, 174 + ($items->count() * 14));
         $pdf = new \FPDF('P', 'mm', [80, $height]);
         $pdf->SetMargins(5, 5, 5);
         $pdf->AddPage();
@@ -63,6 +64,7 @@ class GenerarPdfFacturaAction
         $pdf->Cell(0, 4, BoliviaPdfHelper::text('Punto de Venta '.($factura->puntoVenta?->codigo ?? 0)), 0, 1, 'C');
         $pdf->MultiCell(0, 4, BoliviaPdfHelper::text($factura->sucursal?->direccion ?: $empresa?->direccion ?: '-'), 0, 'C');
         $pdf->Cell(0, 4, BoliviaPdfHelper::text('Telefono: '.($factura->sucursal?->telefono ?: $empresa?->telefono ?: '-')), 0, 1, 'C');
+        $pdf->Cell(0, 4, BoliviaPdfHelper::text($municipio), 0, 1, 'C');
         $pdf->Ln(1);
         $this->drawSeparator($pdf);
 
@@ -136,6 +138,7 @@ class GenerarPdfFacturaAction
         $documentoId = trim((string) ($factura->cliente?->nit_ci ?: '-').' '.(string) ($factura->cliente?->complemento ?: ''));
         $nombreRazonSocial = (string) ($factura->cliente?->razon_social ?: $factura->cliente?->nombre ?: '-');
         $codigoCliente = (string) ($factura->cliente?->codigo ?: $factura->cliente?->nit_ci ?: $factura->cliente_id);
+        $municipio = $this->resolveMunicipio($factura);
         $leyenda = (string) ($factura->leyenda ?: 'Ley N° 453: Puedes acceder a la reclamacion cuando tus derechos han sido vulnerados.');
         $leyendaModalidad = $factura->ambiente_facturacion === 'produccion'
             ? '"Este documento es la Representacion Grafica de un Documento Fiscal Digital emitido en una modalidad de facturacion en linea"'
@@ -176,7 +179,7 @@ class GenerarPdfFacturaAction
         $pdf->SetY($y + 5);
         $pdf->MultiCell(70, 5, BoliviaPdfHelper::text($factura->sucursal?->direccion ?: $empresa?->direccion ?: '-'), 0, 'C');
         $pdf->Cell(70, 5, BoliviaPdfHelper::text('Teléfono: '.($factura->sucursal?->telefono ?: $empresa?->telefono ?: '-')), 0, 1, 'C');
-        $pdf->Cell(70, 5, BoliviaPdfHelper::text($factura->sucursal?->ciudad ?? $empresa?->ciudad ?? 'Bolivia'), 0, 1, 'C');
+        $pdf->Cell(70, 5, BoliviaPdfHelper::text($municipio), 0, 1, 'C');
 
         if ($factura->ambiente_facturacion === 'piloto') {
             $pdf->SetTextColor(215, 215, 215);
@@ -341,6 +344,13 @@ class GenerarPdfFacturaAction
         return (int) ($factura->codigo_emision ?? 1) === 2
             ? self::LEYENDA_REPRESENTACION_FUERA_LINEA
             : self::LEYENDA_REPRESENTACION_EN_LINEA;
+    }
+
+    private function resolveMunicipio(Factura $factura): string
+    {
+        $municipio = trim((string) ($factura->sucursal?->municipio ?? ''));
+
+        return $municipio !== '' ? mb_strtoupper($municipio) : 'LA PAZ';
     }
 
     private function extractLeyendaFromXml(string $xml): string
