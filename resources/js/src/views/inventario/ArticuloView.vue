@@ -20,7 +20,7 @@ import { Label } from '@/components/ui/label';
 import ModulePageLayout from '@/layouts/modules/ModulePageLayout.vue';
 import ImportExcelDialog from '@/src/components/importacion/ImportExcelDialog.vue';
 import { useArticuloStore } from '@/src/stores/articuloStore';
-import { useAuthStore } from '@/src/stores/authStore';
+import { usePermissionStore } from '@/src/stores/permissionStore';
 import {
     BadgeCheck,
     Boxes,
@@ -44,7 +44,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 type Item = Record<string, unknown>;
 
 const store = useArticuloStore();
-const authStore = useAuthStore();
+const permissionStore = usePermissionStore();
 const isDialogOpen = ref(false);
 const isDeleteOpen = ref(false);
 const importOpen = ref(false);
@@ -59,8 +59,8 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 
 const isEditing = computed(() => store.state.editingId !== null);
-const isSuperadmin = computed(() =>
-    authStore.roles.value.some((role) => String(role.slug) === 'superadmin'),
+const canImportProducts = computed(() =>
+    permissionStore.hasPermission('facturacion.productos.import'),
 );
 const categorias = computed(
     () => (store.state.meta.categorias as Item[] | undefined) ?? [],
@@ -315,7 +315,7 @@ onMounted(load);
     >
         <template #actions>
             <Button
-                v-if="isSuperadmin"
+                v-if="canImportProducts"
                 variant="outline"
                 class="min-h-11 gap-2 border-[#A8D2B7] px-5 text-[#126B3B]"
                 @click="importOpen = true"
@@ -959,7 +959,7 @@ onMounted(load);
         </Dialog>
 
         <ImportExcelDialog
-            v-if="isSuperadmin"
+            v-if="canImportProducts"
             v-model:open="importOpen"
             title="Importar productos"
             description="Carga productos desde Excel. Si ya existe el mismo codigo, se actualiza."

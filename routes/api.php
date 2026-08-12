@@ -120,7 +120,7 @@ Route::middleware(['web', 'auth'])->prefix('seguridad')->group(function () {
 
 Route::middleware(['web', 'auth'])->prefix('inventario')->group(function () {
     Route::post('articulos/importar', [ImportacionMasivaController::class, 'articulos'])
-        ->middleware(['superadmin', 'permission:facturacion.productos.manage']);
+        ->middleware('permission:facturacion.productos.import');
     Route::apiResource('articulos', ArticuloController::class)
         ->middleware('permission:facturacion.productos.manage')
         ->parameters(['articulos' => 'articulo']);
