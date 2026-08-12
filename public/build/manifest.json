@@ -47,8 +47,8 @@
       "_framework-AaAGvCCB.js"
     ]
   },
-  "_ImportExcelDialog.vue_vue_type_script_setup_true_lang-CGJQL0t3.js": {
-    "file": "assets/ImportExcelDialog.vue_vue_type_script_setup_true_lang-CGJQL0t3.js",
+  "_ImportExcelDialog.vue_vue_type_script_setup_true_lang-CLuA-H__.js": {
+    "file": "assets/ImportExcelDialog.vue_vue_type_script_setup_true_lang-CLuA-H__.js",
     "name": "ImportExcelDialog.vue_vue_type_script_setup_true_lang",
     "imports": [
       "_ui-kit-VBzyJ7WH.js",
@@ -208,7 +208,7 @@
     ]
   },
   "resources/js/app.ts": {
-    "file": "assets/app-1lDCs4fR.js",
+    "file": "assets/app-Wz4UvHJV.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -455,7 +455,7 @@
     ]
   },
   "resources/js/pages/settings/Appearance.vue": {
-    "file": "assets/Appearance-CS3bG3xN.js",
+    "file": "assets/Appearance-cCU58dL1.js",
     "name": "Appearance",
     "src": "resources/js/pages/settings/Appearance.vue",
     "isDynamicEntry": true,
@@ -622,7 +622,7 @@
     ]
   },
   "resources/js/src/views/facturacion/ClienteView.vue": {
-    "file": "assets/ClienteView-Ckd3S2X2.js",
+    "file": "assets/ClienteView-BnZLrVgC.js",
     "name": "ClienteView",
     "src": "resources/js/src/views/facturacion/ClienteView.vue",
     "isDynamicEntry": true,
@@ -631,7 +631,7 @@
       "_InputError.vue_vue_type_script_setup_true_lang-8uFoA-6N.js",
       "_ui-kit-VBzyJ7WH.js",
       "_ModulePageLayout.vue_vue_type_script_setup_true_lang-4uN8JK9W.js",
-      "_ImportExcelDialog.vue_vue_type_script_setup_true_lang-CGJQL0t3.js",
+      "_ImportExcelDialog.vue_vue_type_script_setup_true_lang-CLuA-H__.js",
       "_apiClient-CNUX18Uj.js",
       "_clienteVentaService-B3VDAGX5.js",
       "_app-shell-izg3kU7e.js",
@@ -757,7 +757,7 @@
     ]
   },
   "resources/js/src/views/inventario/ArticuloView.vue": {
-    "file": "assets/ArticuloView-BoQY_83w.js",
+    "file": "assets/ArticuloView-B1I9td0U.js",
     "name": "ArticuloView",
     "src": "resources/js/src/views/inventario/ArticuloView.vue",
     "isDynamicEntry": true,
@@ -766,7 +766,7 @@
       "_InputError.vue_vue_type_script_setup_true_lang-8uFoA-6N.js",
       "_ui-kit-VBzyJ7WH.js",
       "_ModulePageLayout.vue_vue_type_script_setup_true_lang-4uN8JK9W.js",
-      "_ImportExcelDialog.vue_vue_type_script_setup_true_lang-CGJQL0t3.js",
+      "_ImportExcelDialog.vue_vue_type_script_setup_true_lang-CLuA-H__.js",
       "_apiClient-CNUX18Uj.js",
       "_app-shell-izg3kU7e.js",
       "_icons-Df7_b0GA.js",
@@ -775,7 +775,7 @@
       "_AppLayout.vue_vue_type_script_setup_true_lang-BaBMxjhU.js"
     ],
     "css": [
-      "assets/ArticuloView-mhSf33GW.css"
+      "assets/ArticuloView-BA3h2VK1.css"
     ]
   },
   "resources/js/src/views/inventario/CategoriaView.vue": {

@@ -39,7 +39,7 @@ import {
     Upload,
     X,
 } from 'lucide-vue-next';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 
 type Item = Record<string, unknown>;
 
@@ -48,6 +48,11 @@ const authStore = useAuthStore();
 const isDialogOpen = ref(false);
 const isDeleteOpen = ref(false);
 const importOpen = ref(false);
+const importDefaults = reactive({
+    codigo_actividad_economica: '',
+    codigo_producto_sin: '',
+    codigo_unidad_medida_siat: '',
+});
 const deleteTarget = ref<Item | null>(null);
 const selectedItem = ref<Item | null>(null);
 const currentPage = ref(1);
@@ -134,6 +139,18 @@ const productosSiatFiltrados = computed(() => {
             String(producto.codigo_actividad ?? '') === codigoActividad,
     );
 });
+const productosSiatImportFiltrados = computed(() => {
+    const codigoActividad = String(
+        importDefaults.codigo_actividad_economica ?? '',
+    );
+
+    if (!codigoActividad) return [];
+
+    return siatProductos.value.filter(
+        (producto) =>
+            String(producto.codigo_actividad ?? '') === codigoActividad,
+    );
+});
 const pageCount = computed(() =>
     Math.max(1, Math.ceil(store.state.items.length / pageSize.value)),
 );
@@ -196,7 +213,13 @@ const clearFilters = async () => {
 };
 
 const importArticulos = (rows: Record<string, unknown>[]) =>
-    store.importRows(rows);
+    store.importRows(rows, {
+        codigo_actividad_economica:
+            importDefaults.codigo_actividad_economica || null,
+        codigo_producto_sin: importDefaults.codigo_producto_sin || null,
+        codigo_unidad_medida_siat:
+            importDefaults.codigo_unidad_medida_siat || null,
+    });
 
 const afterImport = async () => {
     await load();
@@ -257,6 +280,23 @@ watch(
                     String(codigoActividad ?? ''),
         );
         if (!productoPertenece) store.state.form.codigo_producto_sin = '';
+    },
+);
+
+watch(
+    () => importDefaults.codigo_actividad_economica,
+    (codigoActividad) => {
+        const productoActual = String(importDefaults.codigo_producto_sin ?? '');
+        if (!productoActual) return;
+
+        const productoPertenece = siatProductos.value.some(
+            (producto) =>
+                String(producto.codigo_producto ?? '') === productoActual &&
+                String(producto.codigo_actividad ?? '') ===
+                    String(codigoActividad ?? ''),
+        );
+
+        if (!productoPertenece) importDefaults.codigo_producto_sin = '';
     },
 );
 
@@ -937,7 +977,47 @@ onMounted(load);
             ]"
             :importer="importArticulos"
             @imported="afterImport"
-        />
+        >
+            <template #options>
+                <section class="space-y-3 rounded-lg border border-[#dfe7e2] bg-white p-3">
+                    <div>
+                        <p class="font-semibold text-[#27352d]">Homologacion masiva SIAT</p>
+                        <p class="mt-1 text-sm text-[#536158]">Estos valores se aplican a las filas que no traigan homologacion en el Excel.</p>
+                    </div>
+                    <div class="grid gap-3 md:grid-cols-3">
+                        <label class="company-field">
+                            <span class="company-label">Actividad economica</span>
+                            <select v-model="importDefaults.codigo_actividad_economica" class="company-select">
+                                <option value="">Sin asignar</option>
+                                <option v-for="actividad in siatActividades" :key="String(actividad.codigo_clasificador)" :value="String(actividad.codigo_clasificador)">
+                                    {{ actividad.codigo_clasificador }} - {{ actividad.descripcion }}
+                                </option>
+                            </select>
+                        </label>
+                        <label class="company-field">
+                            <span class="company-label">Categoria SIAT</span>
+                            <select v-model="importDefaults.codigo_producto_sin" class="company-select" :disabled="!importDefaults.codigo_actividad_economica">
+                                <option value="">
+                                    {{ importDefaults.codigo_actividad_economica ? 'Seleccione una categoria' : 'Seleccione primero actividad' }}
+                                </option>
+                                <option v-for="producto in productosSiatImportFiltrados" :key="String(producto.codigo_producto)" :value="String(producto.codigo_producto)">
+                                    {{ producto.codigo_producto }} - {{ producto.descripcion }}
+                                </option>
+                            </select>
+                        </label>
+                        <label class="company-field">
+                            <span class="company-label">Tipo de unidad</span>
+                            <select v-model="importDefaults.codigo_unidad_medida_siat" class="company-select">
+                                <option value="">Sin asignar</option>
+                                <option v-for="unidadSiat in siatUnidades" :key="String(unidadSiat.codigo_clasificador)" :value="String(unidadSiat.codigo_clasificador)">
+                                    {{ unidadSiat.codigo_clasificador }} - {{ unidadSiat.descripcion }}
+                                </option>
+                            </select>
+                        </label>
+                    </div>
+                </section>
+            </template>
+        </ImportExcelDialog>
 
         <Dialog v-model:open="isDialogOpen">
             <DialogContent

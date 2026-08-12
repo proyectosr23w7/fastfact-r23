@@ -271,11 +271,14 @@ export function useArticuloStore() {
         }
     };
 
-    const importRows = async (rows: Record<string, unknown>[]) => {
+    const importRows = async (
+        rows: Record<string, unknown>[],
+        defaults: Record<string, unknown> = {},
+    ) => {
         state.actionError = '';
 
         try {
-            return await articuloService.import(rows);
+            return await articuloService.import(rows, defaults);
         } catch (error) {
             state.actionError =
                 error instanceof Error

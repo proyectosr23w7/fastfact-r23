@@ -32,12 +32,16 @@ class ImportacionMasivaController extends Controller
         $data = $request->validate([
             'rows' => ['required', 'array', 'min:1', 'max:2000'],
             'rows.*' => ['required', 'array'],
+            'defaults' => ['sometimes', 'array'],
+            'defaults.codigo_actividad_economica' => ['nullable', 'string'],
+            'defaults.codigo_producto_sin' => ['nullable', 'string'],
+            'defaults.codigo_unidad_medida_siat' => ['nullable', 'string'],
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Importacion de productos procesada.',
-            'data' => $this->service->articulos($data['rows']),
+            'data' => $this->service->articulos($data['rows'], $data['defaults'] ?? []),
         ]);
     }
 }

@@ -113,6 +113,8 @@ const importFile = async () => {
                     @change="onFileChange"
                 />
 
+                <slot name="options" />
+
                 <div
                     v-if="error"
                     class="flex gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"

@@ -6,6 +6,7 @@ use App\Models\Articulo;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Marca;
+use App\Models\SinProductoServicio;
 use App\Services\Inventario\ArticuloService;
 use App\Services\Ventas\ClienteService;
 use Illuminate\Support\Facades\DB;
@@ -45,10 +46,12 @@ class ImportacionMasivaService
         });
     }
 
-    public function articulos(array $rows): array
+    public function articulos(array $rows, array $defaults = []): array
     {
-        return $this->importar($rows, function (array $row): string {
-            $data = $this->articuloData($row);
+        $defaults = $this->articuloDefaults($defaults);
+
+        return $this->importar($rows, function (array $row) use ($defaults): string {
+            $data = $this->articuloData($row, $defaults);
             $articulo = Articulo::query()
                 ->where('codigo_generico', $data['codigo_generico'])
                 ->first();
@@ -122,11 +125,17 @@ class ImportacionMasivaService
         ];
     }
 
-    private function articuloData(array $row): array
+    private function articuloData(array $row, array $defaults = []): array
     {
         $categoriaId = $this->categoriaId($row['categoria_id'] ?? null, $row['categoria'] ?? $row['categoria_nombre'] ?? null);
         $marcaId = $this->marcaId($row['marca_id'] ?? null, $row['marca'] ?? $row['marca_nombre'] ?? null);
         $precio = $this->decimal($row['precio_base'] ?? $row['precio'] ?? 0);
+        $codigoActividad = $this->nullableString($row['codigo_actividad_economica'] ?? $row['actividad_siat'] ?? null)
+            ?? $defaults['codigo_actividad_economica'];
+        $codigoProductoSin = $this->nullableString($row['codigo_producto_sin'] ?? $row['producto_sin'] ?? null)
+            ?? $defaults['codigo_producto_sin'];
+        $codigoUnidadSiat = $this->nullableString($row['codigo_unidad_medida_siat'] ?? $row['unidad_siat'] ?? null)
+            ?? $defaults['codigo_unidad_medida_siat'];
 
         return [
             'codigo_generico' => $this->string($row['codigo_generico'] ?? $row['codigo'] ?? ''),
@@ -135,9 +144,9 @@ class ImportacionMasivaService
             'descripcion' => $this->nullableString($row['descripcion'] ?? null),
             'categoria_id' => $categoriaId,
             'marca_id' => $marcaId,
-            'codigo_actividad_economica' => $this->nullableString($row['codigo_actividad_economica'] ?? $row['actividad_siat'] ?? null),
-            'codigo_producto_sin' => $this->nullableString($row['codigo_producto_sin'] ?? $row['producto_sin'] ?? null),
-            'codigo_unidad_medida_siat' => $this->string($row['codigo_unidad_medida_siat'] ?? $row['unidad_siat'] ?? ''),
+            'codigo_actividad_economica' => $codigoActividad,
+            'codigo_producto_sin' => $codigoProductoSin,
+            'codigo_unidad_medida_siat' => (string) ($codigoUnidadSiat ?? ''),
             'stock_minimo' => $this->decimal($row['stock_minimo'] ?? 0),
             'precio_base' => $precio,
             'estado' => $this->boolean($row['estado'] ?? true),
@@ -152,6 +161,15 @@ class ImportacionMasivaService
                     'estado' => true,
                 ],
             ],
+        ];
+    }
+
+    private function articuloDefaults(array $defaults): array
+    {
+        return [
+            'codigo_actividad_economica' => $this->nullableString($defaults['codigo_actividad_economica'] ?? null),
+            'codigo_producto_sin' => $this->nullableString($defaults['codigo_producto_sin'] ?? null),
+            'codigo_unidad_medida_siat' => $this->nullableString($defaults['codigo_unidad_medida_siat'] ?? null),
         ];
     }
 
@@ -202,6 +220,17 @@ class ImportacionMasivaService
         ])->after(function ($validator) use ($data): void {
             if (blank($data['codigo_actividad_economica']) !== blank($data['codigo_producto_sin'])) {
                 $validator->errors()->add('codigo_producto_sin', 'Actividad economica y producto SIN deben enviarse juntos.');
+            }
+
+            if (filled($data['codigo_actividad_economica']) && filled($data['codigo_producto_sin'])) {
+                $producto = SinProductoServicio::query()
+                    ->where('estado', true)
+                    ->where('codigo_producto', $data['codigo_producto_sin'])
+                    ->first();
+
+                if ($producto && (string) $producto->codigo_actividad !== (string) $data['codigo_actividad_economica']) {
+                    $validator->errors()->add('codigo_producto_sin', 'El producto SIN seleccionado no pertenece a la actividad economica elegida.');
+                }
             }
         })->validate();
     }
