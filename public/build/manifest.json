@@ -208,7 +208,7 @@
     ]
   },
   "resources/js/app.ts": {
-    "file": "assets/app-BG4FfklP.js",
+    "file": "assets/app-tGmYg9dH.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -455,7 +455,7 @@
     ]
   },
   "resources/js/pages/settings/Appearance.vue": {
-    "file": "assets/Appearance-Bf_KtpE5.js",
+    "file": "assets/Appearance-YsvZX0LZ.js",
     "name": "Appearance",
     "src": "resources/js/pages/settings/Appearance.vue",
     "isDynamicEntry": true,
@@ -622,7 +622,7 @@
     ]
   },
   "resources/js/src/views/facturacion/ClienteView.vue": {
-    "file": "assets/ClienteView-BnZLrVgC.js",
+    "file": "assets/ClienteView-Dba9LkC4.js",
     "name": "ClienteView",
     "src": "resources/js/src/views/facturacion/ClienteView.vue",
     "isDynamicEntry": true,

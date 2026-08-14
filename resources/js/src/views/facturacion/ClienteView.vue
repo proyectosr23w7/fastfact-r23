@@ -10,6 +10,8 @@ import { clienteVentaService } from '@/src/services/clienteVentaService';
 import { useAuthStore } from '@/src/stores/authStore';
 import {
     CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
     Pencil,
     Plus,
     Search,
@@ -17,7 +19,7 @@ import {
     UsersRound,
     XCircle,
 } from 'lucide-vue-next';
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 
 type Item = Record<string, unknown>;
 
@@ -29,6 +31,8 @@ const saving = ref(false);
 const importOpen = ref(false);
 const search = ref('');
 const estado = ref('todos');
+const currentPage = ref(1);
+const rowsPerPage = ref(10);
 const editingId = ref<number | null>(null);
 const errors = ref<Record<string, string[]>>({});
 const notice = ref('');
@@ -56,6 +60,20 @@ const kpis = computed(() => ({
     activos: items.value.filter((item) => Boolean(item.estado)).length,
     inactivos: items.value.filter((item) => !Boolean(item.estado)).length,
 }));
+const totalPages = computed(() =>
+    Math.max(1, Math.ceil(items.value.length / rowsPerPage.value)),
+);
+const paginatedItems = computed(() => {
+    const start = (currentPage.value - 1) * rowsPerPage.value;
+
+    return items.value.slice(start, start + rowsPerPage.value);
+});
+const visibleFrom = computed(() =>
+    items.value.length ? (currentPage.value - 1) * rowsPerPage.value + 1 : 0,
+);
+const visibleTo = computed(() =>
+    Math.min(currentPage.value * rowsPerPage.value, items.value.length),
+);
 
 const resetForm = () => {
     editingId.value = null;
@@ -71,6 +89,7 @@ const resetForm = () => {
 
 const load = async () => {
     loading.value = true;
+    currentPage.value = 1;
     notice.value = '';
     loadError.value = '';
 
@@ -90,6 +109,14 @@ const load = async () => {
     } finally {
         loading.value = false;
     }
+};
+
+const previousPage = () => {
+    currentPage.value = Math.max(1, currentPage.value - 1);
+};
+
+const nextPage = () => {
+    currentPage.value = Math.min(totalPages.value, currentPage.value + 1);
 };
 
 const edit = (item: Item) => {
@@ -147,6 +174,10 @@ const importClientes = (rows: Record<string, unknown>[]) =>
 const afterImport = async () => {
     await load();
 };
+
+watch(rowsPerPage, () => {
+    currentPage.value = 1;
+});
 
 onMounted(load);
 </script>
@@ -273,7 +304,7 @@ onMounted(load);
                                 </td>
                             </tr>
                             <tr
-                                v-for="item in items"
+                                v-for="item in paginatedItems"
                                 v-else
                                 :key="String(item.id)"
                                 class="hover:bg-[#f9fbfa]"
@@ -349,6 +380,51 @@ onMounted(load);
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <div
+                    class="flex flex-col gap-3 border-t border-[#dfe7e2] px-4 py-3 text-sm text-[#536158] sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <div class="flex items-center gap-2">
+                        <span>Filas</span>
+                        <select v-model.number="rowsPerPage" class="company-select h-9 w-20">
+                            <option :value="10">10</option>
+                            <option :value="25">25</option>
+                            <option :value="50">50</option>
+                            <option :value="100">100</option>
+                        </select>
+                        <span>
+                            Mostrando {{ visibleFrom }}-{{ visibleTo }} de
+                            {{ items.length }}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            class="h-9 px-3"
+                            :disabled="currentPage <= 1 || loading"
+                            @click="previousPage"
+                        >
+                            <ChevronLeft class="size-4" />
+                            Anterior
+                        </Button>
+                        <span class="min-w-20 text-center">
+                            {{ currentPage }} / {{ totalPages }}
+                        </span>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            class="h-9 px-3"
+                            :disabled="currentPage >= totalPages || loading"
+                            @click="nextPage"
+                        >
+                            Siguiente
+                            <ChevronRight class="size-4" />
+                        </Button>
+                    </div>
                 </div>
             </section>
 
