@@ -80,6 +80,11 @@ class ClienteService
     {
         $nextId = (int) Cliente::query()->max('id') + 1;
 
-        return 'CLI-'.str_pad((string) $nextId, 4, '0', STR_PAD_LEFT);
+        do {
+            $codigo = 'CLI-'.str_pad((string) $nextId, 4, '0', STR_PAD_LEFT);
+            $nextId++;
+        } while (Cliente::query()->where('codigo', $codigo)->exists());
+
+        return $codigo;
     }
 }

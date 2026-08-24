@@ -38,6 +38,7 @@ class FacturaController extends Controller
                 'sucursal_id' => $request->integer('sucursal_id') ?: null,
                 'punto_venta_id' => $request->integer('punto_venta_id') ?: null,
                 'estado_factura' => $request->string('estado_factura')->toString(),
+                'per_page' => $request->integer('per_page') ?: null,
             ], $request->user()))->resolve(),
             'meta' => $this->service->meta($request->user(), [
                 'search' => $request->string('search')->toString(),
@@ -46,6 +47,7 @@ class FacturaController extends Controller
                 'cliente_id' => $request->integer('cliente_id') ?: null,
                 'sucursal_id' => $request->integer('sucursal_id') ?: null,
                 'punto_venta_id' => $request->integer('punto_venta_id') ?: null,
+                'meta_context' => $request->string('meta_context')->toString(),
             ]),
         ]);
     }

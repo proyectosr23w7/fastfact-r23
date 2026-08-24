@@ -125,6 +125,8 @@ class FacturaService
     {
         $configuracion = Configuracion::current();
         $ambiente = (string) ($configuracion?->ambiente_facturacion ?: 'piloto');
+        $metaContext = (string) ($filters['meta_context'] ?? 'listado');
+        $includeBillingMeta = $metaContext === 'emision';
         $scopedFilters = OperationalContextScope::mergeFilters($filters, $user);
         $sucursalId = (int) ($scopedFilters['sucursal_id'] ?? 0);
         $puntoVentaId = (int) ($scopedFilters['punto_venta_id'] ?? 0);
@@ -214,7 +216,7 @@ class FacturaService
                 fn (FacturaEstadoEnum $estado) => ['label' => ucfirst($estado->value), 'value' => $estado->value],
                 FacturaEstadoEnum::cases(),
             ),
-            'clientes' => \App\Models\Cliente::query()
+            'clientes' => $includeBillingMeta ? \App\Models\Cliente::query()
                 ->where('estado', true)
                 ->orderBy('nombre')
                 ->get([
@@ -229,8 +231,8 @@ class FacturaService
                     'correo',
                     'direccion',
                     'estado',
-                ]),
-            'articulos' => Articulo::query()
+                ]) : [],
+            'articulos' => $includeBillingMeta ? Articulo::query()
                 ->with([
                     'unidadMedida:id,nombre,abreviatura',
                     'precios' => fn ($query) => $query->where('estado', true)->orderBy('cantidad_minima'),
@@ -264,22 +266,22 @@ class FacturaService
                     ])->values(),
                     'stocks' => [],
                 ])
-                ->values(),
+                ->values() : [],
             'sucursales' => OperationalContextScope::sucursalesQuery($user)->get(['id', 'codigo', 'nombre']),
             'puntos_venta' => OperationalContextScope::puntosVentaQuery($user)->get(['id', 'sucursal_id', 'codigo', 'nombre']),
             'usuarios' => User::query()->where('estado', true)->orderBy('name')->get(['id', 'name', 'email']),
             'motivos_anulacion' => SinMotivoAnulacion::query()->where('estado', true)->orderBy('descripcion')->get(['id', 'codigo_clasificador', 'descripcion']),
             'documentos_identidad' => SinDocumentoIdentidad::query()->where('estado', true)->orderBy('descripcion')->get(['id', 'codigo_clasificador', 'descripcion']),
-            'productos_servicios' => SinProductoServicio::query()
+            'productos_servicios' => $includeBillingMeta ? SinProductoServicio::query()
                 ->where('estado', true)
                 ->orderBy('descripcion')
                 ->limit(300)
-                ->get(['id', 'codigo_actividad', 'codigo_producto', 'descripcion']),
-            'unidades_medida' => SinUnidadMedida::query()
+                ->get(['id', 'codigo_actividad', 'codigo_producto', 'descripcion']) : [],
+            'unidades_medida' => $includeBillingMeta ? SinUnidadMedida::query()
                 ->where('estado', true)
                 ->where('habilitado_uso', true)
                 ->orderBy('descripcion')
-                ->get(['id', 'codigo_clasificador', 'descripcion']),
+                ->get(['id', 'codigo_clasificador', 'descripcion']) : [],
             'metodos_pago' => $this->metodosPago(),
             'metodos_pago_siat' => $this->metodosPago(),
             'facturacion_activa' => (bool) $configuracion?->facturacionSiatActiva(),
@@ -289,7 +291,7 @@ class FacturaService
                 ['label' => 'Factura', 'value' => 'factura'],
             ],
             'siat' => $this->endpointResolver->profile(),
-            'eventos_significativos_facturables' => $this->eventoSignificativoService
+            'eventos_significativos_facturables' => $includeBillingMeta ? $this->eventoSignificativoService
                 ->eventosFacturablesPorContexto([], $user)
                 ->map(fn ($evento) => [
                     'id' => $evento->id,
@@ -304,7 +306,7 @@ class FacturaService
                     'cafc_id' => $evento->cafc_id,
                     'cafc_codigo' => $evento->cafc?->codigo,
                 ])
-                ->values(),
+                ->values() : [],
         ];
     }
 

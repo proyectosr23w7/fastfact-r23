@@ -46,6 +46,7 @@ class FacturaRepository
             )
             ->orderByDesc('fecha_emision')
             ->orderByDesc('id')
+            ->limit($this->perPage($filters))
             ->get();
     }
 
@@ -239,5 +240,16 @@ class FacturaRepository
                 filled($filters['punto_venta_id'] ?? null),
                 fn (Builder $query) => $query->where('punto_venta_id', $filters['punto_venta_id']),
             );
+    }
+
+    private function perPage(array $filters): int
+    {
+        $perPage = (int) ($filters['per_page'] ?? 300);
+
+        if ($perPage <= 0) {
+            $perPage = 300;
+        }
+
+        return min($perPage, 500);
     }
 }

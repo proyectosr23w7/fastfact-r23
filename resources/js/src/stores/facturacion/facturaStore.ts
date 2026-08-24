@@ -185,9 +185,11 @@ export function useFacturaStore() {
         state.generalError = '';
 
         try {
-            const response = await facturacionService.listFacturas(
-                state.filters,
-            );
+            const response = await facturacionService.listFacturas({
+                ...state.filters,
+                meta_context: 'listado',
+                per_page: 300,
+            });
             state.items = response.data;
             state.meta = response.meta ?? {};
         } catch (error) {

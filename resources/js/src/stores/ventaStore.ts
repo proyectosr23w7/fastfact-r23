@@ -406,7 +406,10 @@ export function useVentaStore() {
         state.generalError = '';
 
         try {
-            const response = await facturacionService.listFacturas({});
+            const response = await facturacionService.listFacturas({
+                meta_context: 'emision',
+                per_page: 1,
+            });
             state.items = [];
             state.meta = response.meta ?? {};
 
