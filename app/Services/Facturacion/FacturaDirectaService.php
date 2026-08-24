@@ -39,6 +39,7 @@ class FacturaDirectaService
         private readonly RegistrarRespuestaSiatAction $registrarRespuestaSiat,
         private readonly FacturaCorreoService $facturaCorreoService,
         private readonly EventoSignificativoService $eventoSignificativoService,
+        private readonly SiatClientService $siatClient,
     ) {}
 
     public function emitir(array $data, User $user): Factura
@@ -76,6 +77,10 @@ class FacturaDirectaService
 
             if (! $cuis) {
                 abort(422, 'Debe existir un CUIS vigente para emitir la factura.');
+            }
+
+            if (! $emisionOffline) {
+                $this->validarNitClienteSiCorresponde($cliente, $sucursal, $puntoVenta);
             }
 
             if (! $cufd) {
@@ -244,5 +249,35 @@ class FacturaDirectaService
                 'anulaciones.user',
             ]);
         });
+    }
+
+    private function validarNitClienteSiCorresponde(Cliente $cliente, Sucursal $sucursal, PuntoVenta $puntoVenta): void
+    {
+        if ((string) $cliente->tipo_documento_identidad !== '5') {
+            return;
+        }
+
+        $numeroDocumento = preg_replace('/\D+/', '', (string) $cliente->nit_ci);
+
+        if ($numeroDocumento === '' || preg_match('/^0+$/', $numeroDocumento) === 1) {
+            abort(422, 'El cliente tiene tipo de documento NIT, pero el numero no es valido.');
+        }
+
+        $response = $this->siatClient->verificarNit([
+            'sucursal_id' => $sucursal->id,
+            'punto_venta_id' => $puntoVenta->id,
+        ], $numeroDocumento);
+
+        if (($response['success'] ?? false) === true) {
+            return;
+        }
+
+        $message = trim((string) ($response['message'] ?? ''));
+        $suffix = $message !== '' ? " Detalle SIAT: {$message}" : '';
+
+        abort(
+            422,
+            "El numero {$numeroDocumento} esta registrado como NIT, pero SIAT no lo reconoce como NIT valido. Verifica el documento o cambia el tipo de documento del cliente a CI si corresponde.{$suffix}",
+        );
     }
 }

@@ -122,6 +122,30 @@ class SiatClientService
         );
     }
 
+    public function verificarNit(array $context, string|int $nitParaVerificacion): array
+    {
+        $prepared = $this->buildOperationalContext($context, requireCuis: true);
+
+        if (! ($prepared['success'] ?? false)) {
+            return $prepared;
+        }
+
+        $endpoint = $this->endpointResolver->resolve('codigos', $prepared['configuracion']);
+        $payload = array_merge($this->buildCodigoPayload($prepared), [
+            'cuis' => (string) $prepared['cuis'],
+            'nitParaVerificacion' => (int) preg_replace('/\D+/', '', (string) $nitParaVerificacion),
+        ]);
+
+        return $this->normalizeSiatResponse(
+            $this->callWithFallback(
+                $endpoint,
+                $this->operations('siat.soap_methods.codigos.verificar_nit'),
+                $payload,
+                $prepared['auth'],
+            ),
+        );
+    }
+
     public function emitirFactura(array $payload): array
     {
         $factura = Factura::query()->with(['cliente', 'sucursal', 'puntoVenta', 'cuis', 'cufd'])->find($payload['factura_id'] ?? null);
@@ -877,6 +901,12 @@ class SiatClientService
             'cufd', 'solicitudcufd' => [
                 ['label' => 'wrapper_solicitud_cufd', 'payload' => ['SolicitudCufd' => $payload]],
                 ['label' => 'wrapper_solicitud_cufd_lower', 'payload' => ['solicitudCufd' => $payload]],
+                ['label' => 'plain_payload', 'payload' => $payload],
+            ],
+            'verificarnit' => [
+                ['label' => 'wrapper_verificar_nit', 'payload' => ['SolicitudVerificarNit' => $payload]],
+                ['label' => 'wrapper_verificar_nit_lower', 'payload' => ['solicitudVerificarNit' => $payload]],
+                ['label' => 'soapparam_verificar_nit', 'payload' => [new SoapParam($payloadObject, 'SolicitudVerificarNit')]],
                 ['label' => 'plain_payload', 'payload' => $payload],
             ],
             'sincronizaractividades',

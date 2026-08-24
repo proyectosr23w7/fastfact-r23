@@ -60,6 +60,7 @@ return [
             'verificar_comunicacion' => 'verificarComunicacion',
             'solicitud_cuis' => ['cuis', 'solicitudCuis'],
             'solicitud_cufd' => ['cufd', 'solicitudCufd'],
+            'verificar_nit' => ['verificarNit', 'verificarnit'],
         ],
         'sincronizacion' => [
             // Los nombres se dejan centralizados y ajustables porque SIAT versiona y publica
