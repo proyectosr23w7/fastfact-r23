@@ -121,7 +121,7 @@ class GenerarPdfFacturaAction
         $pdf->MultiCell(0, 4, BoliviaPdfHelper::text((string) ($factura->cuf ?: '-')), 0, 'C');
         $this->drawSeparator($pdf);
 
-        $this->keyValueBlock($pdf, 'Nombre/Razon Social', (string) ($factura->cliente?->razon_social ?: $factura->cliente?->nombre ?: '-'));
+        $this->keyValueBlock($pdf, 'Razon Social', (string) ($factura->cliente?->razon_social ?: $factura->cliente?->nombre ?: '-'));
         $this->keyValueLine($pdf, 'NIT/CI/CEX', trim((string) ($factura->cliente?->nit_ci ?: '-').' '.(string) ($factura->cliente?->complemento ?: '')));
         $this->keyValueLine($pdf, 'Cod. Cliente', (string) ($factura->cliente?->codigo ?: $factura->cliente?->nit_ci ?: $factura->cliente_id));
         $this->keyValueLine($pdf, 'Fecha', optional($factura->fecha_emision)?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?: '-');
@@ -255,7 +255,7 @@ class GenerarPdfFacturaAction
         $pdf->Cell(40, 5, BoliviaPdfHelper::text($documentoId), 0, 1, 'L');
 
         $pdf->SetFont('Arial', 'B', 9);
-        $pdf->Cell(40, 5, BoliviaPdfHelper::text('Nombre/Razón Social:'), 0, 0, 'L');
+        $pdf->Cell(40, 5, BoliviaPdfHelper::text('Razón Social:'), 0, 0, 'L');
         $pdf->SetFont('Arial', '', 9);
         $pdf->Cell(60, 5, BoliviaPdfHelper::text($nombreRazonSocial), 0, 0, 'L');
         $pdf->Cell(30, 5, '', 0, 0, 'C');
