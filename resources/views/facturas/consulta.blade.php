@@ -37,7 +37,7 @@
     <div class="total">Total: Bs. {{ number_format((float) $factura->monto_total, 2, '.', '') }}</div>
 
     <div class="actions">
-        <a href="{{ URL::signedRoute('facturas.publicas.pdf', ['factura' => $factura]) }}">Ver factura PDF</a>
+        <a href="{{ URL::signedRoute('facturas.publicas.pdf', ['factura' => $factura]) }}">Ver factura en rollo</a>
         <a href="{{ URL::signedRoute('facturas.publicas.xml', ['factura' => $factura]) }}">Ver XML fiscal</a>
     </div>
 </main>

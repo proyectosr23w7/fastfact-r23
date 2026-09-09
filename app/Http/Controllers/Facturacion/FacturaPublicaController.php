@@ -25,7 +25,7 @@ class FacturaPublicaController extends Controller
 
     public function pdf(Factura $factura): Response
     {
-        return $this->service->downloadPdf($factura, 'carta');
+        return $this->service->downloadPdf($factura, 'ticket');
     }
 
     public function xml(Factura $factura): Response
