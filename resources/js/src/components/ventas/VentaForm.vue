@@ -499,6 +499,31 @@ watch(
     },
 );
 
+const inferClientDocumentType = (documento: unknown) => {
+    const value = String(documento ?? '').trim();
+    if (!/^\d+$/.test(value)) return '';
+
+    if (value.length >= 6 && value.length <= 8) return '1';
+    if (value.length >= 9 && value.length <= 11) return '5';
+
+    return '';
+};
+
+const applyClientDocumentTypeSuggestion = () => {
+    const inferred = inferClientDocumentType(props.clientForm.nit_ci);
+    if (!inferred) return;
+
+    props.clientForm.tipo_documento_identidad = inferred;
+};
+
+watch(
+    () => props.clientForm.nit_ci,
+    () => {
+        if (!isClientDialogOpen.value || props.clientEditingId) return;
+        applyClientDocumentTypeSuggestion();
+    },
+);
+
 const numericFourDigits = (
     key: 'numero_tarjeta_inicio' | 'numero_tarjeta_fin',
     value: string,
@@ -511,6 +536,7 @@ const openClientDialog = async (documento = '') => {
     lockedClientDocument.value = documento.trim();
     await nextTick();
     props.clientForm.nit_ci = lockedClientDocument.value;
+    applyClientDocumentTypeSuggestion();
     isClientDialogOpen.value = true;
 };
 

@@ -65,4 +65,9 @@ class Articulo extends Model
         return $this->hasMany(ArticuloPrecio::class);
     }
 
+    public function facturaDetalles(): HasMany
+    {
+        return $this->hasMany(FacturaDetalle::class);
+    }
+
 }

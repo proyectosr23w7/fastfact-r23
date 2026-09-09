@@ -9,6 +9,7 @@ use App\Models\Marca;
 use App\Models\SinProductoServicio;
 use App\Services\Inventario\ArticuloService;
 use App\Services\Ventas\ClienteService;
+use App\Support\DocumentoIdentidad;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -111,11 +112,14 @@ class ImportacionMasivaService
 
     private function clienteData(array $row): array
     {
-        $tipoDocumento = $this->string($row['tipo_documento_identidad'] ?? $row['tipo_documento'] ?? '');
+        $documento = $this->string($row['nit_ci'] ?? $row['documento'] ?? '');
+        $tipoDocumento = $this->string($row['tipo_documento_identidad'] ?? $row['tipo_documento'] ?? '')
+            ?: DocumentoIdentidad::inferirTipo($documento)
+            ?: '';
 
         return [
             'razon_social' => $this->string($row['razon_social'] ?? $row['nombre'] ?? ''),
-            'nit_ci' => $this->string($row['nit_ci'] ?? $row['documento'] ?? ''),
+            'nit_ci' => $documento,
             'tipo_documento_identidad' => $tipoDocumento,
             'complemento' => $tipoDocumento === '1' ? $this->nullableString($row['complemento'] ?? null) : null,
             'telefono' => $this->nullableString($row['telefono'] ?? $row['celular'] ?? null),

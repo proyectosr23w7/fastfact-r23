@@ -237,7 +237,9 @@ class FacturaService
                     'unidadMedida:id,nombre,abreviatura',
                     'precios' => fn ($query) => $query->where('estado', true)->orderBy('cantidad_minima'),
                 ])
+                ->withCount('facturaDetalles as facturas_count')
                 ->where('estado', true)
+                ->orderByDesc('facturas_count')
                 ->orderBy('nombre')
                 ->limit(500)
                 ->get()
@@ -252,6 +254,8 @@ class FacturaService
                     'codigo_unidad_medida_siat' => $articulo->codigo_unidad_medida_siat,
                     'precio_base' => (float) $articulo->precio_base,
                     'stock_actual' => (float) $articulo->stock_actual,
+                    'facturas_count' => (int) ($articulo->facturas_count ?? 0),
+                    'ventas_count' => (int) ($articulo->facturas_count ?? 0),
                     'unidad_medida' => $articulo->unidadMedida ? [
                         'id' => $articulo->unidadMedida->id,
                         'nombre' => $articulo->unidadMedida->nombre,

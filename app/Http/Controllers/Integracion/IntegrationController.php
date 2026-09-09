@@ -19,6 +19,7 @@ use App\Services\Facturacion\FacturaDirectaService;
 use App\Services\Facturacion\FacturaService;
 use App\Services\Inventario\ArticuloService;
 use App\Services\Ventas\ClienteService;
+use App\Support\DocumentoIdentidad;
 use App\Support\OperationalContextScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -355,6 +356,14 @@ class IntegrationController extends Controller
 
     private function validateCliente(Request $request, ?Cliente $cliente = null): array
     {
+        if (! filled($request->input('tipo_documento_identidad'))) {
+            $tipoDocumento = DocumentoIdentidad::inferirTipo($request->input('nit_ci'));
+
+            if ($tipoDocumento !== null) {
+                $request->merge(['tipo_documento_identidad' => $tipoDocumento]);
+            }
+        }
+
         return Validator::make($request->all(), [
             'razon_social' => ['required', 'string', 'max:200'],
             'nit_ci' => [

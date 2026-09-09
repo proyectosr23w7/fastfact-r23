@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Venta;
 
+use App\Support\DocumentoIdentidad;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -11,6 +12,19 @@ class StoreClienteRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (filled($this->input('tipo_documento_identidad'))) {
+            return;
+        }
+
+        $tipoDocumento = DocumentoIdentidad::inferirTipo($this->input('nit_ci'));
+
+        if ($tipoDocumento !== null) {
+            $this->merge(['tipo_documento_identidad' => $tipoDocumento]);
+        }
     }
 
     public function rules(): array
