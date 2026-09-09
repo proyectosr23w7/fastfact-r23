@@ -153,6 +153,8 @@ class FacturaResource extends JsonResource
             return null;
         }
 
-        return BoliviaPdfHelper::emisorQrUrl($this->resource, $nitEmisor);
+        $tamano = in_array($this->puntoVenta?->tipo_impresion, ['media_carta', 'carta'], true) ? 2 : 1;
+
+        return BoliviaPdfHelper::emisorQrUrl($this->resource, $nitEmisor, $tamano);
     }
 }

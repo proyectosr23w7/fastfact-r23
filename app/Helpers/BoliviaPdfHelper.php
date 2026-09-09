@@ -58,7 +58,7 @@ class BoliviaPdfHelper
         return strtoupper(trim($formatter->format($whole).' '.str_pad((string) $decimal, 2, '0', STR_PAD_LEFT).'/100 BOLIVIANOS'));
     }
 
-    public static function emisorQrUrl(Factura $factura, string $nitEmisor): string
+    public static function emisorQrUrl(Factura $factura, string $nitEmisor, int $tamano = 1): string
     {
         $base = (string) config('siat.qr_urls.'.($factura->ambiente_facturacion ?: 'piloto'), config('siat.qr_urls.piloto'));
 
@@ -66,7 +66,7 @@ class BoliviaPdfHelper
             'nit' => preg_replace('/\D+/', '', $nitEmisor),
             'cuf' => (string) $factura->cuf,
             'numero' => (string) $factura->numero_factura,
-            't' => 2,
+            't' => $tamano === 2 ? 2 : 1,
         ]);
     }
 

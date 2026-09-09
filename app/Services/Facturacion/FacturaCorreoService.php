@@ -189,7 +189,9 @@ class FacturaCorreoService
 
     private function sendFacturaEmitida(Factura $factura, string $correo, ?Empresa $empresa, string $contexto = 'emitida'): void
     {
-        $pdf = ($this->generarPdfFactura)($factura);
+        // El comprobante compacto es solo para entrega impresa. El correo debe
+        // conservar siempre la representacion grafica completa de la factura.
+        $pdf = ($this->generarPdfFactura)($factura, 'carta');
         $xmlFilename = 'factura-'.$factura->numero_factura.'.xml';
 
         Mail::to($correo)->send(

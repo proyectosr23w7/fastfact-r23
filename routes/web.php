@@ -2,12 +2,19 @@
 
 use App\Http\Controllers\Centralizacion\CentralizacionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Facturacion\FacturaPublicaController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
     return redirect()->route(auth()->check() ? 'dashboard' : 'login');
 })->name('home');
+
+Route::middleware(['signed', 'throttle:60,1'])->prefix('consulta/facturas')->group(function () {
+    Route::get('{factura}', [FacturaPublicaController::class, 'show'])->name('facturas.publicas.show');
+    Route::get('{factura}/pdf', [FacturaPublicaController::class, 'pdf'])->name('facturas.publicas.pdf');
+    Route::get('{factura}/xml', [FacturaPublicaController::class, 'xml'])->name('facturas.publicas.xml');
+});
 
 Route::get('dashboard', DashboardController::class)
     ->middleware(['auth', 'verified', 'permission:sistema.access', 'empresa.configurada'])

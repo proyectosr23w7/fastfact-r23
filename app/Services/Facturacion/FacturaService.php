@@ -328,10 +328,10 @@ class FacturaService
         ]);
     }
 
-    public function downloadPdf(Factura $factura): Response
+    public function downloadPdf(Factura $factura, ?string $formato = null): Response
     {
         $factura = $this->repository->refresh($factura);
-        $pdf = ($this->generarPdfFactura)($factura);
+        $pdf = ($this->generarPdfFactura)($factura, $formato);
 
         return response($pdf['content'], 200, [
             'Content-Type' => 'application/pdf',

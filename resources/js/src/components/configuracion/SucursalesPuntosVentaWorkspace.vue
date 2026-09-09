@@ -51,7 +51,7 @@ type PuntoVenta = {
     codigo: number;
     nombre: string;
     descripcion: string | null;
-    tipo_impresion: 'carta' | 'media_carta' | 'ticket';
+    tipo_impresion: 'carta' | 'media_carta' | 'ticket' | 'comprobante';
     estado: boolean;
     cuis_vigente?: {
         codigo: string;
@@ -131,8 +131,12 @@ const puntosBySucursal = (sucursalId: number) =>
     );
 
 const formatImpresion = (tipo: PuntoVenta['tipo_impresion']) =>
-    ({ ticket: 'Rollo', media_carta: 'Media carta', carta: 'Carta' })[tipo] ??
-    tipo;
+    ({
+        ticket: 'Ticket (rollo 80 mm)',
+        comprobante: 'Comprobante compacto (80 mm)',
+        media_carta: 'Media carta (216 × 140 mm)',
+        carta: 'Carta (216 × 279 mm)',
+    })[tipo] ?? tipo;
 
 const formatDate = (value: unknown) => {
     if (!value) return 'Sin fecha';
@@ -721,9 +725,14 @@ onMounted(() => load());
                         class="company-select h-11"
                     >
                         <option value="todos">Todos</option>
-                        <option value="ticket">Rollo</option>
-                        <option value="media_carta">Media carta</option>
-                        <option value="carta">Carta</option>
+                        <option value="ticket">Ticket (rollo 80 mm)</option>
+                        <option value="comprobante">
+                            Comprobante compacto (80 mm)
+                        </option>
+                        <option value="media_carta">
+                            Media carta (216 × 140 mm)
+                        </option>
+                        <option value="carta">Carta (216 × 279 mm)</option>
                     </select>
                 </label>
                 <Button
@@ -1329,9 +1338,7 @@ onMounted(() => load());
                             class="space-y-3 border-y border-border py-4 text-sm"
                         >
                             <div class="flex items-start justify-between gap-4">
-                                <dt class="font-semibold">
-                                    Municipio fiscal
-                                </dt>
+                                <dt class="font-semibold">Municipio fiscal</dt>
                                 <dd class="text-right text-muted-foreground">
                                     {{
                                         selectedSucursal.municipio ||
@@ -1776,9 +1783,18 @@ onMounted(() => load());
                                 class="company-select"
                                 required
                             >
-                                <option value="ticket">Rollo</option>
-                                <option value="media_carta">Media carta</option>
-                                <option value="carta">Carta</option>
+                                <option value="ticket">
+                                    Ticket (rollo 80 mm)
+                                </option>
+                                <option value="comprobante">
+                                    Comprobante compacto (80 mm)
+                                </option>
+                                <option value="media_carta">
+                                    Media carta (216 × 140 mm)
+                                </option>
+                                <option value="carta">
+                                    Carta (216 × 279 mm)
+                                </option>
                             </select>
                             <InputError
                                 :message="puntoErrors.tipo_impresion?.[0]"

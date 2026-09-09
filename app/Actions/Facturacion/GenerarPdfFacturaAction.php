@@ -5,6 +5,7 @@ namespace App\Actions\Facturacion;
 use App\Helpers\BoliviaPdfHelper;
 use App\Models\Configuracion\Empresa;
 use App\Models\Factura;
+use Illuminate\Support\Facades\URL;
 
 class GenerarPdfFacturaAction
 {
@@ -14,7 +15,7 @@ class GenerarPdfFacturaAction
 
     private const LEYENDA_CONSUMIDOR_FALLBACK = 'Ley N 453: Puedes acceder a la reclamacion cuando tus derechos han sido vulnerados.';
 
-    public function __invoke(Factura $factura): array
+    public function __invoke(Factura $factura, ?string $formato = null): array
     {
         BoliviaPdfHelper::bootLibraries();
 
@@ -27,20 +28,60 @@ class GenerarPdfFacturaAction
         ]);
 
         $empresa = Empresa::query()->first();
-        $tipoImpresion = (string) ($factura->puntoVenta?->tipo_impresion ?? 'ticket');
+        $tipoImpresion = $formato ?? (string) ($factura->puntoVenta?->tipo_impresion ?? 'ticket');
 
-        if ($tipoImpresion === 'carta') {
-            $tipoImpresion = 'media_carta';
-        }
-
-        $pdf = $tipoImpresion === 'media_carta'
-            ? $this->buildMediaCarta($factura, $empresa)
-            : $this->buildTicket($factura, $empresa);
+        $pdf = match ($tipoImpresion) {
+            'carta' => $this->buildHoja($factura, $empresa, 'carta'),
+            'media_carta' => $this->buildHoja($factura, $empresa, 'media_carta'),
+            'comprobante' => $this->buildComprobante($factura, $empresa),
+            default => $this->buildTicket($factura, $empresa),
+        };
 
         return [
             'content' => BoliviaPdfHelper::output($pdf),
             'filename' => 'factura-'.$factura->numero_factura.'.pdf',
         ];
+    }
+
+    private function buildComprobante(Factura $factura, ?Empresa $empresa): \FPDF
+    {
+        $consultaUrl = URL::signedRoute('facturas.publicas.show', ['factura' => $factura]);
+        $pdf = new \FPDF('P', 'mm', [80, 118]);
+        $pdf->SetMargins(5, 5, 5);
+        $pdf->SetAutoPageBreak(false);
+        $pdf->AddPage();
+
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->MultiCell(0, 5, BoliviaPdfHelper::text($empresa?->razon_social ?: $empresa?->nombre_empresa ?: 'EMPRESA'), 0, 'C');
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->Cell(0, 4, BoliviaPdfHelper::text('NIT: '.($empresa?->nit ?: '-')), 0, 1, 'C');
+        $pdf->Ln(1);
+        $this->drawSeparator($pdf);
+
+        $pdf->SetFont('Arial', 'B', 11);
+        $pdf->Cell(0, 6, BoliviaPdfHelper::text('COMPROBANTE DE TRANSACCION'), 0, 1, 'C');
+        $this->keyValueLine($pdf, 'Factura N°', (string) ($factura->numero_factura ?: '-'));
+        $this->keyValueLine($pdf, 'Fecha', optional($factura->fecha_emision)?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?: '-');
+        $this->keyValueLine($pdf, 'Cliente', (string) ($factura->cliente?->razon_social ?: $factura->cliente?->nombre ?: '-'));
+
+        $pdf->Ln(1);
+        $pdf->SetFont('Arial', 'B', 15);
+        $pdf->Cell(0, 8, BoliviaPdfHelper::text('TOTAL Bs. '.BoliviaPdfHelper::money((float) $factura->monto_total)), 0, 1, 'C');
+        $pdf->SetFont('Arial', 'B', 7);
+        $pdf->Cell(0, 4, BoliviaPdfHelper::text('CUF'), 0, 1, 'C');
+        $pdf->SetFont('Arial', '', 6);
+        $pdf->MultiCell(0, 3, BoliviaPdfHelper::text((string) ($factura->cuf ?: '-')), 0, 'C');
+
+        $qrPath = BoliviaPdfHelper::createQrTempFile($consultaUrl);
+        $y = $pdf->GetY() + 2;
+        $pdf->Image($qrPath, 25, $y, 30, 30);
+        @unlink($qrPath);
+
+        $pdf->SetY($y + 32);
+        $pdf->SetFont('Arial', '', 6.5);
+        $pdf->MultiCell(0, 3, BoliviaPdfHelper::text('Escanee el QR para consultar y descargar la representacion grafica completa y el XML fiscal.'), 0, 'C');
+
+        return $pdf;
     }
 
     private function buildTicket(Factura $factura, ?Empresa $empresa): \FPDF
@@ -50,9 +91,13 @@ class GenerarPdfFacturaAction
         $leyenda = $this->resolveLeyendaConsumidor($factura);
         $leyendaModalidad = $this->resolveLeyendaRepresentacionGrafica($factura);
         $municipio = $this->resolveMunicipio($factura);
-        $height = max(224, 174 + ($items->count() * 14));
+        // El rollo debe terminar poco despues del QR, sin simular una hoja de
+        // tamano fijo. La base cubre cabecera, totales, leyendas, QR y margen
+        // de corte; cada detalle amplia el papel segun el contenido habitual.
+        $height = 190 + ($items->count() * 14);
         $pdf = new \FPDF('P', 'mm', [80, $height]);
         $pdf->SetMargins(5, 5, 5);
+        $pdf->SetAutoPageBreak(false);
         $pdf->AddPage();
 
         $pdf->SetFont('Arial', 'B', 12);
@@ -119,7 +164,7 @@ class GenerarPdfFacturaAction
         $pdf->MultiCell(0, 3.5, BoliviaPdfHelper::text($leyenda), 0, 'C');
         $pdf->MultiCell(0, 3.5, BoliviaPdfHelper::text($leyendaModalidad), 0, 'C');
 
-        $qrPath = BoliviaPdfHelper::createQrTempFile(BoliviaPdfHelper::emisorQrUrl($factura, (string) ($empresa?->nit ?: '')));
+        $qrPath = BoliviaPdfHelper::createQrTempFile(BoliviaPdfHelper::emisorQrUrl($factura, (string) ($empresa?->nit ?: ''), 1));
         $y = $pdf->GetY() + 3;
         $pdf->Image($qrPath, 25, $y, 30, 30);
         @unlink($qrPath);
@@ -127,7 +172,7 @@ class GenerarPdfFacturaAction
         return $pdf;
     }
 
-    private function buildMediaCarta(Factura $factura, ?Empresa $empresa): \FPDF
+    private function buildHoja(Factura $factura, ?Empresa $empresa, string $formato): \FPDF
     {
         $items = $this->resolveItems($factura);
         $subtotal = $this->resolveSubtotal($items);
@@ -147,7 +192,10 @@ class GenerarPdfFacturaAction
         $leyenda = $this->resolveLeyendaConsumidor($factura);
         $leyendaModalidad = $this->resolveLeyendaRepresentacionGrafica($factura);
 
-        $pdf = new \FPDF('P', 'mm', 'Letter');
+        // Media carta conserva el ancho de carta para el detalle tabular y usa
+        // exactamente la mitad de su alto. Carta utiliza la hoja completa.
+        $tamanoPagina = $formato === 'media_carta' ? [215.9, 139.7] : 'Letter';
+        $pdf = new \FPDF('P', 'mm', $tamanoPagina);
         $pdf->AddPage();
 
         $pdf->SetFont('Arial', 'B', 9);
@@ -293,7 +341,7 @@ class GenerarPdfFacturaAction
         $pdf->Cell(170, 4, BoliviaPdfHelper::text($leyenda), 0, 1, 'C');
         $pdf->MultiCell(170, 4, BoliviaPdfHelper::text($leyendaModalidad), 0, 'C');
 
-        $qrPath = BoliviaPdfHelper::createQrTempFile(BoliviaPdfHelper::emisorQrUrl($factura, (string) ($empresa?->nit ?: '')));
+        $qrPath = BoliviaPdfHelper::createQrTempFile(BoliviaPdfHelper::emisorQrUrl($factura, (string) ($empresa?->nit ?: ''), 2));
         $pdf->Image($qrPath, 180, $y, 25);
         @unlink($qrPath);
 
