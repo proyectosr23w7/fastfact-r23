@@ -173,7 +173,9 @@ const submit = async (mode: SubmitMode) => {
         );
         if (mode === 'confirm_print') {
             const pdfUrl = String(
-                (response.data as Record<string, unknown>)?.pdf_download_url ??
+                (response.data as Record<string, unknown>)?.pdf_print_url ??
+                    (response.data as Record<string, unknown>)
+                        ?.pdf_download_url ??
                     '',
             );
             if (pdfUrl) window.open(pdfUrl, '_blank', 'noopener,noreferrer');
@@ -234,7 +236,8 @@ onMounted(async () => {
                             Nueva factura directa
                         </h1>
                         <p class="mt-1 text-sm text-[#66736a]">
-                            Carga cliente, productos y metodo de pago para emitir.
+                            Carga cliente, productos y metodo de pago para
+                            emitir.
                         </p>
                     </div>
                     <span

@@ -21,8 +21,7 @@ class FacturaController extends Controller
         private readonly FacturaService $service,
         private readonly FacturaDirectaService $facturaDirectaService,
         private readonly FacturaCorreoService $facturaCorreoService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -157,6 +156,15 @@ class FacturaController extends Controller
     }
 
     public function downloadPdf(Request $request, Factura $factura): Response
+    {
+        $this->service->autorizarAcceso($factura, $request->user());
+        $factura->loadMissing('puntoVenta');
+        $formato = $factura->puntoVenta?->tipo_impresion === 'comprobante' ? 'ticket' : null;
+
+        return $this->service->downloadPdf($factura, $formato);
+    }
+
+    public function printPdf(Request $request, Factura $factura): Response
     {
         $this->service->autorizarAcceso($factura, $request->user());
 

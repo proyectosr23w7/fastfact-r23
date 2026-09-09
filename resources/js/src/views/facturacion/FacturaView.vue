@@ -399,7 +399,7 @@ const downloadFile = (url?: string | null) => {
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
 };
 const printFactura = (item: Factura) => {
-    downloadFile(String(item.pdf_download_url ?? ''));
+    downloadFile(String(item.pdf_print_url ?? item.pdf_download_url ?? ''));
 };
 const openSiatConsult = (item: Factura) => {
     const url = String(item.consulta_siat_url ?? '');

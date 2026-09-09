@@ -40,6 +40,7 @@ class FacturaResource extends JsonResource
             'es_contingencia_manual' => (int) $this->codigo_emision === 2 && $this->cafc_id !== null,
             'xml_download_url' => $this->id ? url("/api/facturacion/facturas/{$this->id}/descargar/xml") : null,
             'pdf_download_url' => $this->id ? url("/api/facturacion/facturas/{$this->id}/descargar/pdf") : null,
+            'pdf_print_url' => $this->id ? url("/api/facturacion/facturas/{$this->id}/imprimir") : null,
             'consulta_siat_url' => $this->consultaSiatUrl(),
             'can_consult' => (int) $this->codigo_emision === 1
                 && filled($this->cuf)

@@ -185,6 +185,7 @@ Route::middleware(['web', 'auth'])->prefix('facturacion')->group(function () {
     Route::post('facturas/{factura}/consultar', [FacturaController::class, 'consultar'])->middleware('permission:facturacion.siat.sync');
     Route::get('facturas/{factura}/descargar/xml', [FacturaController::class, 'downloadXml'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');
     Route::get('facturas/{factura}/descargar/pdf', [FacturaController::class, 'downloadPdf'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');
+    Route::get('facturas/{factura}/imprimir', [FacturaController::class, 'printPdf'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');
 
     Route::get('eventos-significativos', [EventoSignificativoController::class, 'index'])->middleware('permission:facturacion.siat.sync');
     Route::post('eventos-significativos', [EventoSignificativoController::class, 'store'])->middleware('permission:facturacion.siat.sync');

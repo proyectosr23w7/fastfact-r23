@@ -2,8 +2,8 @@
 
 namespace App\Repositories\Facturacion;
 
-use App\Models\Factura;
 use App\Models\Cafc;
+use App\Models\Factura;
 use App\Models\User;
 use App\Support\OperationalContextScope;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,7 +19,7 @@ class FacturaRepository
                 'cliente:id,nombre,razon_social,nit_ci',
                 'detalles',
                 'sucursal:id,codigo,nombre',
-                'puntoVenta:id,sucursal_id,codigo,nombre',
+                'puntoVenta:id,sucursal_id,codigo,nombre,tipo_impresion',
                 'user:id,name,email',
                 'cuis:id,codigo,sucursal_id,punto_venta_id,fecha_vigencia',
                 'cufd:id,codigo,codigo_control,sucursal_id,punto_venta_id,fecha_vigencia',
