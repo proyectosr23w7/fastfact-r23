@@ -18,6 +18,7 @@ class RegistrarRespuestaSiatAction
         $estado = match (true) {
             ($response['success'] ?? false) === true => FacturaEstadoEnum::EMITIDA->value,
             ($response['code'] ?? null) === 'ADAPTER_PENDING' => FacturaEstadoEnum::OBSERVADA->value,
+            $this->isTransientTransportError($response) => FacturaEstadoEnum::OBSERVADA->value,
             default => FacturaEstadoEnum::RECHAZADA->value,
         };
 
@@ -47,5 +48,28 @@ class RegistrarRespuestaSiatAction
         ]);
 
         return mb_substr(implode(' | ', $parts), 0, 1000);
+    }
+
+    private function isTransientTransportError(array $response): bool
+    {
+        $code = (string) ($response['code'] ?? '');
+
+        if (! in_array($code, ['SOAP_FAULT', 'SOAP_CLIENT_ERROR'], true)) {
+            return false;
+        }
+
+        $message = mb_strtolower((string) ($response['message'] ?? ''));
+        $lastResponse = (string) ($response['debug']['last_response'] ?? '');
+        $lastResponseHeaders = (string) ($response['debug']['last_response_headers'] ?? '');
+
+        if ($lastResponse === '' && $lastResponseHeaders === '') {
+            return true;
+        }
+
+        return str_contains($message, 'error fetching http headers')
+            || str_contains($message, 'timeout')
+            || str_contains($message, 'timed out')
+            || str_contains($message, 'could not connect')
+            || str_contains($message, 'failed to open stream');
     }
 }
