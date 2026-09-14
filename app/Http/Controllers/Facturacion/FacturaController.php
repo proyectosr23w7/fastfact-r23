@@ -129,7 +129,7 @@ class FacturaController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Factura marcada como validada en SIAT correctamente.',
+            'message' => 'Factura verificada en SIAT y regularizada correctamente.',
             'data' => FacturaResource::make($factura)->resolve(),
         ]);
     }

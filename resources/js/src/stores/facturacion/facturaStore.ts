@@ -479,7 +479,7 @@ export function useFacturaStore() {
             await load();
             state.generalSuccess =
                 response.message ??
-                'Factura marcada como validada en SIAT correctamente.';
+                'Factura verificada en SIAT y regularizada correctamente.';
             return true;
         } catch (error) {
             if (error instanceof ApiError && error.status === 422) {
@@ -490,7 +490,7 @@ export function useFacturaStore() {
             state.generalError =
                 error instanceof ApiError
                     ? error.message
-                    : 'No se pudo marcar la factura como validada.';
+                    : 'No se pudo verificar la factura en SIAT.';
             return false;
         } finally {
             state.processing = false;

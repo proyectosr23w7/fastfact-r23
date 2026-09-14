@@ -141,25 +141,56 @@ class FacturaService
                 abort(422, 'La factura no tiene CUF para validar contra la plataforma SIAT.');
             }
 
+            $response = ($this->consultarEstadoFactura)($factura);
+
+            if (! $this->siatConfirmaFacturaValidada($response)) {
+                $detalle = trim((string) ($response['message'] ?? 'SIAT no confirmo que la factura este validada.'));
+
+                abort(422, $detalle !== ''
+                    ? "SIAT no confirmo que la factura este validada. Detalle: {$detalle}"
+                    : 'SIAT no confirmo que la factura este validada.');
+            }
+
             $datosRespuesta = $factura->datos_respuesta_siat ?? [];
-            $datosRespuesta['manual_validation'] = [
+            $datosRespuesta['siat_status_verification'] = [
                 'estado_anterior' => $estadoActual,
                 'codigo_estado_anterior' => $factura->codigo_estado,
                 'descripcion_estado_anterior' => $factura->descripcion_estado,
                 'regularizada_por_user_id' => $user->id,
                 'regularizada_por' => $user->email,
                 'regularizada_en' => now()->toDateTimeString(),
-                'motivo' => 'Factura marcada como validada tras verificacion manual en plataforma SIAT.',
+                'operacion' => 'verificacionEstadoFactura',
+                'respuesta_siat' => $response,
+                'motivo' => 'Factura regularizada tras confirmacion directa de estado validado por SIAT.',
             ];
 
             return $this->repository->update($factura, [
                 'estado_factura' => FacturaEstadoEnum::EMITIDA->value,
                 'estado_sincronizacion' => 'sincronizada',
-                'codigo_estado' => 'SIAT_VALIDADA_MANUAL',
-                'descripcion_estado' => 'Factura regularizada manualmente: SIAT la muestra validada pese a no haberse recibido correctamente la respuesta del servicio.',
+                'codigo_estado' => (string) ($response['code'] ?? 'SIAT_VALIDADA_VERIFICADA'),
+                'descripcion_estado' => 'Factura verificada con SIAT y regularizada como validada en el sistema.',
                 'datos_respuesta_siat' => $datosRespuesta,
             ]);
         });
+    }
+
+    private function siatConfirmaFacturaValidada(array $response): bool
+    {
+        $codigo = (string) ($response['code'] ?? '');
+
+        if ($codigo === '908') {
+            return true;
+        }
+
+        $mensaje = mb_strtoupper((string) ($response['message'] ?? ''));
+
+        if (str_contains($mensaje, 'VALIDADA') || str_contains($mensaje, 'VALIDADO')) {
+            return true;
+        }
+
+        $rawText = mb_strtoupper(json_encode($response['raw'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '');
+
+        return str_contains($rawText, 'VALIDADA') || str_contains($rawText, 'VALIDADO');
     }
 
     public function meta(?User $user = null, array $filters = []): array

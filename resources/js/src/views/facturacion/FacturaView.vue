@@ -381,7 +381,7 @@ const executeMarcarValidadaSiat = async (item: Factura) => {
     const numero = String(item.numero_factura ?? item.id ?? '');
     if (
         !window.confirm(
-            `Confirma que verificaste en la plataforma SIAT que la factura ${numero} esta validada. Esta accion la marcara como emitida en el sistema sin reenviarla. Deseas continuar?`,
+            `Se consultara SIAT para verificar si la factura ${numero} esta validada. Solo si SIAT confirma el estado, el sistema la regularizara como emitida sin reenviarla. Deseas continuar?`,
         )
     ) {
         return;
@@ -1093,7 +1093,7 @@ onMounted(store.load);
                                                         "
                                                         ><CheckCircle2
                                                             class="size-4"
-                                                        />Marcar validada
+                                                        />Verificar validacion
                                                         SIAT</DropdownMenuItem
                                                     ><DropdownMenuSeparator
                                                         v-if="
