@@ -5,7 +5,6 @@ namespace App\Actions\Facturacion;
 use App\Helpers\BoliviaPdfHelper;
 use App\Models\Configuracion\Empresa;
 use App\Models\Factura;
-use Illuminate\Support\Facades\URL;
 
 class GenerarPdfFacturaAction
 {
@@ -45,7 +44,7 @@ class GenerarPdfFacturaAction
 
     private function buildComprobante(Factura $factura, ?Empresa $empresa): \FPDF
     {
-        $consultaUrl = URL::signedRoute('facturas.publicas.show', ['factura' => $factura]);
+        $consultaUrl = BoliviaPdfHelper::emisorQrUrl($factura, (string) ($empresa?->nit ?: ''), 1);
         $pdf = new \FPDF('P', 'mm', [80, 118]);
         $pdf->SetMargins(5, 5, 5);
         $pdf->SetAutoPageBreak(false);
@@ -79,7 +78,7 @@ class GenerarPdfFacturaAction
 
         $pdf->SetY($y + 32);
         $pdf->SetFont('Arial', '', 6.5);
-        $pdf->MultiCell(0, 3, BoliviaPdfHelper::text('Escanee el QR para consultar y descargar la representacion grafica completa y el XML fiscal.'), 0, 'C');
+        $pdf->MultiCell(0, 3, BoliviaPdfHelper::text('Escanee el QR para consultar la factura en la plataforma de Impuestos Nacionales.'), 0, 'C');
 
         return $pdf;
     }
