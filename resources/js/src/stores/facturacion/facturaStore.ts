@@ -466,6 +466,37 @@ export function useFacturaStore() {
         }
     };
 
+    const marcarValidadaSiat = async (item: Record<string, unknown>) => {
+        state.processing = true;
+        state.errors = {};
+        state.generalError = '';
+        state.generalSuccess = '';
+
+        try {
+            const response = await facturacionService.marcarFacturaValidadaSiat(
+                Number(item.id),
+            );
+            await load();
+            state.generalSuccess =
+                response.message ??
+                'Factura marcada como validada en SIAT correctamente.';
+            return true;
+        } catch (error) {
+            if (error instanceof ApiError && error.status === 422) {
+                state.errors = error.errors;
+                state.generalError = error.message;
+                return false;
+            }
+            state.generalError =
+                error instanceof ApiError
+                    ? error.message
+                    : 'No se pudo marcar la factura como validada.';
+            return false;
+        } finally {
+            state.processing = false;
+        }
+    };
+
     const reenviarCorreo = async (item: Record<string, unknown>) => {
         state.processing = true;
         state.errors = {};
@@ -528,6 +559,7 @@ export function useFacturaStore() {
         consultar,
         anular,
         revertirAnulacion,
+        marcarValidadaSiat,
         reenviarCorreo,
         resetEmitForm,
         resetAnularForm,

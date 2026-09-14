@@ -121,6 +121,47 @@ class FacturaService
         });
     }
 
+    public function marcarValidadaManual(Factura $factura, User $user): Factura
+    {
+        return DB::transaction(function () use ($factura, $user): Factura {
+            $factura = $this->repository->findForProcess($factura);
+            $estadoActual = is_string($factura->estado_factura)
+                ? $factura->estado_factura
+                : $factura->estado_factura?->value;
+
+            if (! in_array($estadoActual, [
+                FacturaEstadoEnum::OBSERVADA->value,
+                FacturaEstadoEnum::RECHAZADA->value,
+                FacturaEstadoEnum::PENDIENTE->value,
+            ], true)) {
+                abort(422, 'Solo se pueden regularizar facturas pendientes, observadas o rechazadas.');
+            }
+
+            if (blank($factura->cuf)) {
+                abort(422, 'La factura no tiene CUF para validar contra la plataforma SIAT.');
+            }
+
+            $datosRespuesta = $factura->datos_respuesta_siat ?? [];
+            $datosRespuesta['manual_validation'] = [
+                'estado_anterior' => $estadoActual,
+                'codigo_estado_anterior' => $factura->codigo_estado,
+                'descripcion_estado_anterior' => $factura->descripcion_estado,
+                'regularizada_por_user_id' => $user->id,
+                'regularizada_por' => $user->email,
+                'regularizada_en' => now()->toDateTimeString(),
+                'motivo' => 'Factura marcada como validada tras verificacion manual en plataforma SIAT.',
+            ];
+
+            return $this->repository->update($factura, [
+                'estado_factura' => FacturaEstadoEnum::EMITIDA->value,
+                'estado_sincronizacion' => 'sincronizada',
+                'codigo_estado' => 'SIAT_VALIDADA_MANUAL',
+                'descripcion_estado' => 'Factura regularizada manualmente: SIAT la muestra validada pese a no haberse recibido correctamente la respuesta del servicio.',
+                'datos_respuesta_siat' => $datosRespuesta,
+            ]);
+        });
+    }
+
     public function meta(?User $user = null, array $filters = []): array
     {
         $configuracion = Configuracion::current();

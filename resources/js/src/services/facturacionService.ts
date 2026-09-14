@@ -53,6 +53,11 @@ export const facturacionService = {
             `/api/facturacion/facturas/${id}/revertir-anulacion`,
             {},
         ),
+    marcarFacturaValidadaSiat: (id: number) =>
+        apiClient.patch<Record<string, unknown>>(
+            `/api/facturacion/facturas/${id}/marcar-validada-siat`,
+            {},
+        ),
     reenviarCorreoFactura: (id: number, payload: Record<string, unknown>) =>
         apiClient.post<Record<string, unknown>>(
             `/api/facturacion/facturas/${id}/reenviar-correo`,

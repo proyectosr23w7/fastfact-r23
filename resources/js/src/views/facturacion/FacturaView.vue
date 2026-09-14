@@ -371,6 +371,24 @@ const executeRevertirAnulacion = async (item: Factura) => {
 
     await store.revertirAnulacion(item);
 };
+const canMarcarValidadaSiat = (item: Factura) =>
+    isSuperadmin.value &&
+    Boolean(item.cuf) &&
+    ['pendiente', 'observada', 'rechazada'].includes(
+        String(item.estado_factura ?? ''),
+    );
+const executeMarcarValidadaSiat = async (item: Factura) => {
+    const numero = String(item.numero_factura ?? item.id ?? '');
+    if (
+        !window.confirm(
+            `Confirma que verificaste en la plataforma SIAT que la factura ${numero} esta validada. Esta accion la marcara como emitida en el sistema sin reenviarla. Deseas continuar?`,
+        )
+    ) {
+        return;
+    }
+
+    await store.marcarValidadaSiat(item);
+};
 const applyFilters = () => store.load();
 const clearFilters = async () => {
     store.resetFilters();
@@ -1062,6 +1080,21 @@ onMounted(store.load);
                                                             class="size-4"
                                                         />Reenviar
                                                         correo</DropdownMenuItem
+                                                    ><DropdownMenuItem
+                                                        v-if="
+                                                            canMarcarValidadaSiat(
+                                                                item,
+                                                            )
+                                                        "
+                                                        @select="
+                                                            executeMarcarValidadaSiat(
+                                                                item,
+                                                            )
+                                                        "
+                                                        ><CheckCircle2
+                                                            class="size-4"
+                                                        />Marcar validada
+                                                        SIAT</DropdownMenuItem
                                                     ><DropdownMenuSeparator
                                                         v-if="
                                                             capabilities.descargar

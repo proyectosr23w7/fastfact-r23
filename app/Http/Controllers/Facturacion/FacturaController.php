@@ -122,6 +122,18 @@ class FacturaController extends Controller
         ]);
     }
 
+    public function marcarValidadaManual(Request $request, Factura $factura): JsonResponse
+    {
+        $this->service->autorizarAcceso($factura, $request->user());
+        $factura = $this->service->marcarValidadaManual($factura, $request->user());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Factura marcada como validada en SIAT correctamente.',
+            'data' => FacturaResource::make($factura)->resolve(),
+        ]);
+    }
+
     public function reenviarCorreo(Request $request, Factura $factura): JsonResponse
     {
         $this->service->autorizarAcceso($factura, $request->user());
