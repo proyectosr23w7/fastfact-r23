@@ -144,7 +144,7 @@ class FacturaService
             $response = ($this->consultarEstadoFactura)($factura);
 
             if (! $this->siatConfirmaFacturaValidada($response)) {
-                $detalle = trim((string) ($response['message'] ?? 'SIAT no confirmo que la factura este validada.'));
+                $detalle = $this->detalleRespuestaVerificacionSiat($response);
 
                 abort(422, $detalle !== ''
                     ? "SIAT no confirmo que la factura este validada. Detalle: {$detalle}"
@@ -177,20 +177,67 @@ class FacturaService
     private function siatConfirmaFacturaValidada(array $response): bool
     {
         $codigo = (string) ($response['code'] ?? '');
+        $textoRespuesta = $this->textoRespuestaSiat($response);
 
         if ($codigo === '908') {
             return true;
         }
 
-        $mensaje = mb_strtoupper((string) ($response['message'] ?? ''));
-
-        if (str_contains($mensaje, 'VALIDADA') || str_contains($mensaje, 'VALIDADO')) {
+        if (str_contains($textoRespuesta, 'VALIDADA') || str_contains($textoRespuesta, 'VALIDADO')) {
             return true;
         }
 
-        $rawText = mb_strtoupper(json_encode($response['raw'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '');
+        if (! (bool) ($response['success'] ?? false)) {
+            return false;
+        }
 
-        return str_contains($rawText, 'VALIDADA') || str_contains($rawText, 'VALIDADO');
+        if ($this->respuestaSiatTieneObservacionNegativa($codigo, $textoRespuesta)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function respuestaSiatTieneObservacionNegativa(string $codigo, string $textoRespuesta): bool
+    {
+        if ($codigo !== '' && in_array($codigo, ['901', '904'], true)) {
+            return true;
+        }
+
+        foreach ([
+            'NO EXISTE',
+            'RECHAZAD',
+            'OBSERVAD',
+            'PENDIENTE',
+            'ANULAD',
+            'INVALID',
+            'ERROR',
+        ] as $indicador) {
+            if (str_contains($textoRespuesta, $indicador)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function textoRespuestaSiat(array $response): string
+    {
+        $rawText = json_encode($response['raw'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
+
+        return mb_strtoupper(trim(implode(' ', [
+            (string) ($response['code'] ?? ''),
+            (string) ($response['message'] ?? ''),
+            $rawText,
+        ])));
+    }
+
+    private function detalleRespuestaVerificacionSiat(array $response): string
+    {
+        $codigo = trim((string) ($response['code'] ?? ''));
+        $mensaje = trim((string) ($response['message'] ?? 'SIAT no confirmo que la factura este validada.'));
+
+        return trim($codigo !== '' ? "{$mensaje} (codigo {$codigo})" : $mensaje);
     }
 
     public function meta(?User $user = null, array $filters = []): array
