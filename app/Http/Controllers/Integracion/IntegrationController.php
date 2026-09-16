@@ -417,7 +417,7 @@ class IntegrationController extends Controller
             'detalles.*.descripcion' => ['required', 'string', 'max:500'],
             'detalles.*.cantidad' => ['required', 'numeric', 'gt:0'],
             'detalles.*.unidad_medida' => ['required', 'integer'],
-            'detalles.*.precio_unitario' => ['required', 'numeric', 'gte:0'],
+            'detalles.*.precio_unitario' => ['required', 'numeric', 'gt:0'],
             'detalles.*.monto_descuento' => ['nullable', 'numeric', 'gte:0'],
             'detalles.*.numero_serie' => ['nullable', 'string', 'max:100'],
             'detalles.*.numero_imei' => ['nullable', 'string', 'max:100'],

@@ -193,7 +193,7 @@ class GenerarDatosFacturaDirectaAction
                 abort(422, 'El detalle '.($index + 1).' no tiene homologacion SIAT completa.');
             }
 
-            if ($cantidad <= 0 || $precioUnitario < 0 || $descuento < 0) {
+            if ($cantidad <= 0 || $precioUnitario <= 0 || $descuento < 0) {
                 abort(422, 'El detalle '.($index + 1).' tiene importes o cantidades invalidas.');
             }
 
@@ -202,8 +202,8 @@ class GenerarDatosFacturaDirectaAction
 
             $subtotal = round(($cantidad * $precioUnitario) - $descuento, 5);
 
-            if ($subtotal < 0) {
-                abort(422, 'El detalle '.($index + 1).' tiene subtotal negativo.');
+            if ($subtotal <= 0) {
+                abort(422, 'El detalle '.($index + 1).' debe tener un subtotal mayor a 0 antes de emitir la factura.');
             }
 
             return [

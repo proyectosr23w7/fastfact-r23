@@ -180,6 +180,23 @@ export function useFacturaStore() {
         state.errors = {};
     };
 
+    const invalidEmitDetailMessage = () => {
+        for (const [index, detalle] of state.emitForm.detalles.entries()) {
+            const cantidad = Number(detalle.cantidad || 0);
+            const precio = Number(detalle.precio_unitario || 0);
+            const descuento = Number(detalle.monto_descuento || 0);
+            const subtotal = round2(cantidad * precio - descuento);
+            const descripcion = String(detalle.descripcion || '').trim();
+            const label = descripcion || `detalle ${index + 1}`;
+
+            if (subtotal <= 0) {
+                return `El producto "${label}" debe tener un subtotal mayor a 0 antes de emitir la factura.`;
+            }
+        }
+
+        return '';
+    };
+
     const load = async () => {
         state.loading = true;
         state.generalError = '';
@@ -284,6 +301,12 @@ export function useFacturaStore() {
             state.emitForm.detalles.forEach((_, index) =>
                 recalculateEmitDetail(index),
             );
+            const invalidDetail = invalidEmitDetailMessage();
+
+            if (invalidDetail) {
+                state.generalError = invalidDetail;
+                return false;
+            }
 
             const numeroTarjeta =
                 state.emitForm.numero_tarjeta_inicio &&

@@ -123,6 +123,28 @@ const buildDetalles = () =>
             numero_imei: null,
         };
     });
+const assertDetallesFacturables = () => {
+    for (const [index, item] of store.state.form.detalle.entries()) {
+        const articulo = articuloById(item.articulo_id);
+        const cantidad = Number(item.cantidad || 0);
+        const precio = Number(item.precio_unitario || 0);
+        const descuento = Number(item.descuento || 0);
+        const subtotal =
+            Math.round((cantidad * precio - descuento) * 100) / 100;
+        const label = String(
+            articulo?.descripcion ||
+                articulo?.nombre ||
+                item.descripcion ||
+                `item ${index + 1}`,
+        ).trim();
+
+        if (subtotal <= 0) {
+            throw new Error(
+                `El producto "${label}" debe tener un subtotal mayor a 0 antes de emitir la factura.`,
+            );
+        }
+    }
+};
 const persistSelectedClientEmail = async () => {
     const cliente = selectedCliente.value;
     if (!cliente) return;
@@ -154,6 +176,7 @@ const submit = async (mode: SubmitMode) => {
     try {
         await persistSelectedClientEmail();
         store.recalculateTotals();
+        assertDetallesFacturables();
         const response = await facturacionService.emitirFacturaDirecta({
             cliente_id: Number(store.state.form.cliente_id),
             sucursal_id: Number(store.state.form.sucursal_id),

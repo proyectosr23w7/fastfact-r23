@@ -38,7 +38,7 @@ class EmitirFacturaDirectaRequest extends FormRequest
             'detalles.*.descripcion' => ['required', 'string', 'max:500'],
             'detalles.*.cantidad' => ['required', 'numeric', 'gt:0'],
             'detalles.*.unidad_medida' => ['required', 'integer'],
-            'detalles.*.precio_unitario' => ['required', 'numeric', 'gte:0'],
+            'detalles.*.precio_unitario' => ['required', 'numeric', 'gt:0'],
             'detalles.*.monto_descuento' => ['nullable', 'numeric', 'gte:0'],
             'detalles.*.numero_serie' => ['nullable', 'string', 'max:100'],
             'detalles.*.numero_imei' => ['nullable', 'string', 'max:100'],
@@ -72,6 +72,20 @@ class EmitirFacturaDirectaRequest extends FormRequest
 
                     if (! $pertenece) {
                         $validator->errors()->add('punto_venta_id', 'El punto de venta no pertenece a la sucursal seleccionada.');
+                    }
+                }
+
+                foreach ((array) $this->input('detalles', []) as $index => $detalle) {
+                    $cantidad = (float) ($detalle['cantidad'] ?? 0);
+                    $precioUnitario = (float) ($detalle['precio_unitario'] ?? 0);
+                    $descuento = (float) ($detalle['monto_descuento'] ?? 0);
+                    $subtotal = round(($cantidad * $precioUnitario) - $descuento, 5);
+
+                    if ($subtotal <= 0) {
+                        $validator->errors()->add(
+                            "detalles.{$index}.precio_unitario",
+                            'El producto debe tener un subtotal mayor a 0 antes de emitir la factura.',
+                        );
                     }
                 }
 
