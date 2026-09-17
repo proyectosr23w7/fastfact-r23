@@ -52,6 +52,7 @@ class StoreConfiguracionRequest extends FormRequest
             'metodo_costos' => ['required', new Enum(MetodoCostosEnum::class)],
             'multiples_precios' => ['sometimes', 'boolean'],
             'precios_por_cantidad' => ['sometimes', 'boolean'],
+            'mostrar_descuento_detalle_factura' => ['sometimes', 'boolean'],
             'productos_categorias_habilitadas' => ['sometimes', 'boolean'],
             'productos_marcas_habilitadas' => ['sometimes', 'boolean'],
             'productos_busqueda_avanzada_habilitada' => ['sometimes', 'boolean'],

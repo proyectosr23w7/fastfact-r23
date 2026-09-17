@@ -4,6 +4,7 @@ namespace App\Http\Requests\Facturacion;
 
 use App\Helpers\SiatMetodoPagoHelper;
 use App\Models\Cliente;
+use App\Models\Configuracion\Configuracion;
 use App\Models\Configuracion\PuntoVenta;
 use App\Models\SinMetodoPago;
 use Illuminate\Foundation\Http\FormRequest;
@@ -44,6 +45,29 @@ class EmitirFacturaDirectaRequest extends FormRequest
             'detalles.*.numero_imei' => ['nullable', 'string', 'max:100'],
             'detalles.*.metadata' => ['nullable', 'array'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $configuracion = Configuracion::current();
+
+        if (($configuracion?->mostrar_descuento_detalle_factura ?? true) !== false) {
+            return;
+        }
+
+        $detalles = collect((array) $this->input('detalles', []))
+            ->map(function ($detalle) {
+                if (! is_array($detalle)) {
+                    return $detalle;
+                }
+
+                $detalle['monto_descuento'] = 0;
+
+                return $detalle;
+            })
+            ->all();
+
+        $this->merge(['detalles' => $detalles]);
     }
 
     public function after(): array

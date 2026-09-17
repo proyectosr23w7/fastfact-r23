@@ -409,6 +409,7 @@ class FacturaService
             'metodos_pago_siat' => $this->metodosPago(),
             'facturacion_activa' => (bool) $configuracion?->facturacionSiatActiva(),
             'facturacion_obligatoria_ventas' => true,
+            'mostrar_descuento_detalle_factura' => (bool) ($configuracion?->mostrar_descuento_detalle_factura ?? true),
             'confirmacion_rapida_ventas' => false,
             'tipos_documento_venta' => [
                 ['label' => 'Factura', 'value' => 'factura'],

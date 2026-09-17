@@ -126,6 +126,7 @@ const editableFields = [
     'firma_digital_password',
     'multiples_precios',
     'precios_por_cantidad',
+    'mostrar_descuento_detalle_factura',
     'productos_categorias_habilitadas',
     'productos_marcas_habilitadas',
     'productos_busqueda_avanzada_habilitada',
@@ -147,6 +148,7 @@ const fieldLabels: Record<(typeof editableFields)[number], string> = {
     firma_digital_password: 'Contraseña de firma digital',
     multiples_precios: 'Múltiples precios',
     precios_por_cantidad: 'Precios por cantidad',
+    mostrar_descuento_detalle_factura: 'Descuentos por producto en facturación',
     productos_categorias_habilitadas: 'Categorías de productos',
     productos_marcas_habilitadas: 'Marcas de productos',
     productos_busqueda_avanzada_habilitada: 'Búsqueda avanzada de productos',
@@ -158,6 +160,7 @@ const fieldSections: Record<string, SectionKey> = {
     estado: 'general',
     multiples_precios: 'productos',
     precios_por_cantidad: 'productos',
+    mostrar_descuento_detalle_factura: 'facturacion',
     productos_categorias_habilitadas: 'productos',
     productos_marcas_habilitadas: 'productos',
     productos_busqueda_avanzada_habilitada: 'productos',
@@ -924,6 +927,67 @@ onBeforeUnmount(() => {
                                         />
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-[#dce5df] bg-white shadow-sm">
+                            <header class="border-b border-[#e4ebe6] px-5 py-4">
+                                <div class="flex items-center gap-2">
+                                    <ReceiptText class="h-5 w-5 text-[#168447]" />
+                                    <h3 class="font-semibold text-[#101713]">
+                                        Opciones de emisión
+                                    </h3>
+                                </div>
+                                <p class="mt-1 text-sm text-[#68776d]">
+                                    Ajusta los campos visibles al emitir facturas desde la interfaz web.
+                                </p>
+                            </header>
+                            <div class="p-5">
+                                <button
+                                    type="button"
+                                    class="flex w-full items-start justify-between gap-4 rounded-xl border p-4 text-left transition"
+                                    :class="
+                                        store.state.form
+                                            .mostrar_descuento_detalle_factura
+                                            ? 'border-[#9dd5ad] bg-[#eaf7ef]'
+                                            : 'border-[#dce5df] bg-white hover:bg-[#f5f8f6]'
+                                    "
+                                    @click="toggle('mostrar_descuento_detalle_factura')"
+                                >
+                                    <span>
+                                        <span class="block text-sm font-semibold text-[#19221d]">
+                                            Mostrar descuento por producto
+                                        </span>
+                                        <span class="mt-1 block text-xs leading-5 text-[#68776d]">
+                                            Cuando está desactivado, la pantalla de facturación oculta la casilla de descuento en cada producto y emite con descuento 0. La API de integración no se modifica.
+                                        </span>
+                                    </span>
+                                    <span
+                                        class="mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition"
+                                        :class="
+                                            store.state.form
+                                                .mostrar_descuento_detalle_factura
+                                                ? 'bg-[#168447]'
+                                                : 'bg-[#cbd7cf]'
+                                        "
+                                    >
+                                        <span
+                                            class="h-5 w-5 rounded-full bg-white shadow transition"
+                                            :class="
+                                                store.state.form
+                                                    .mostrar_descuento_detalle_factura
+                                                    ? 'translate-x-5'
+                                                    : 'translate-x-0.5'
+                                            "
+                                        />
+                                    </span>
+                                </button>
+                                <InputError
+                                    :message="
+                                        store.state.errors
+                                            .mostrar_descuento_detalle_factura?.[0]
+                                    "
+                                />
                             </div>
                         </div>
 

@@ -139,7 +139,13 @@ export function useFacturaStore() {
 
         const cantidad = Number(item.cantidad || 0);
         const precio = Number(item.precio_unitario || 0);
-        const descuento = Number(item.monto_descuento || 0);
+        const descuento =
+            state.meta.mostrar_descuento_detalle_factura === false
+                ? 0
+                : Number(item.monto_descuento || 0);
+        if (state.meta.mostrar_descuento_detalle_factura === false) {
+            item.monto_descuento = 0;
+        }
         item.subtotal = round2(Math.max(cantidad * precio - descuento, 0));
         recalculateEmitTotal();
     };
@@ -184,7 +190,10 @@ export function useFacturaStore() {
         for (const [index, detalle] of state.emitForm.detalles.entries()) {
             const cantidad = Number(detalle.cantidad || 0);
             const precio = Number(detalle.precio_unitario || 0);
-            const descuento = Number(detalle.monto_descuento || 0);
+            const descuento =
+                state.meta.mostrar_descuento_detalle_factura === false
+                    ? 0
+                    : Number(detalle.monto_descuento || 0);
             const subtotal = round2(cantidad * precio - descuento);
             const descripcion = String(detalle.descripcion || '').trim();
             const label = descripcion || `detalle ${index + 1}`;
@@ -343,7 +352,10 @@ export function useFacturaStore() {
                     cantidad: Number(detalle.cantidad || 0),
                     unidad_medida: Number(detalle.unidad_medida),
                     precio_unitario: Number(detalle.precio_unitario || 0),
-                    monto_descuento: Number(detalle.monto_descuento || 0),
+                    monto_descuento:
+                        state.meta.mostrar_descuento_detalle_factura === false
+                            ? 0
+                            : Number(detalle.monto_descuento || 0),
                     numero_serie: detalle.numero_serie || null,
                     numero_imei: detalle.numero_imei || null,
                 })),

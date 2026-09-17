@@ -10,6 +10,7 @@ const props = defineProps<{
     articulos: Record<string, unknown>[];
     errors: Record<string, string[]>;
     readOnly?: boolean;
+    mostrarDescuentoDetalle?: boolean;
     stockResolver?: (articuloId: string) => number;
 }>();
 
@@ -89,17 +90,24 @@ const focusNextField = (id: string) => {
 
 const subtotalBruto = (item: Record<string, unknown>) =>
     Number(item.cantidad ?? 0) * Number(item.precio_unitario ?? 0);
+
+const mostrarDescuentoDetalle = () => props.mostrarDescuentoDetalle !== false;
 </script>
 
 <template>
     <div class="bg-white">
         <div
-            class="hidden border-b border-[#E4ECE7] bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#68766D] lg:grid lg:grid-cols-[minmax(240px,1fr)_104px_96px_96px_112px_32px] lg:gap-3"
+            class="hidden border-b border-[#E4ECE7] bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#68766D] lg:grid lg:gap-3"
+            :class="
+                mostrarDescuentoDetalle()
+                    ? 'lg:grid-cols-[minmax(240px,1fr)_104px_96px_96px_112px_32px]'
+                    : 'lg:grid-cols-[minmax(240px,1fr)_104px_96px_112px_32px]'
+            "
         >
             <span>Producto / servicio</span>
             <span class="text-center">Cant.</span>
             <span class="text-right">Precio</span>
-            <span class="text-right">Desc.</span>
+            <span v-if="mostrarDescuentoDetalle()" class="text-right">Desc.</span>
             <span class="text-right">Subtotal</span>
             <span />
         </div>
@@ -111,7 +119,12 @@ const subtotalBruto = (item: Record<string, unknown>) =>
                 class="border-b border-[#EDF2EE] px-4 py-3 transition hover:bg-[#FAFCFB]"
             >
                 <div
-                    class="grid gap-3 lg:grid-cols-[minmax(240px,1fr)_104px_96px_96px_112px_32px] lg:items-center"
+                    class="grid gap-3 lg:items-center"
+                    :class="
+                        mostrarDescuentoDetalle()
+                            ? 'lg:grid-cols-[minmax(240px,1fr)_104px_96px_96px_112px_32px]'
+                            : 'lg:grid-cols-[minmax(240px,1fr)_104px_96px_112px_32px]'
+                    "
                 >
                     <div class="min-w-0">
                         <div class="flex items-start gap-3">
@@ -301,7 +314,11 @@ const subtotalBruto = (item: Record<string, unknown>) =>
                             class="h-10 text-right"
                             @update:model-value="emit('recalc', index)"
                             @keydown.enter.prevent="
-                                focusNextField(`venta-descuento-${index}`)
+                                focusNextField(
+                                    mostrarDescuentoDetalle()
+                                        ? `venta-descuento-${index}`
+                                        : `venta-cantidad-${index + 1}`,
+                                )
                             "
                         />
                         <InputError
@@ -313,7 +330,7 @@ const subtotalBruto = (item: Record<string, unknown>) =>
                         />
                     </div>
 
-                    <div>
+                    <div v-if="mostrarDescuentoDetalle()">
                         <span
                             class="mb-1 block text-xs font-semibold text-[#68766D] lg:hidden"
                         >
@@ -351,8 +368,13 @@ const subtotalBruto = (item: Record<string, unknown>) =>
                             Bs {{ Number(item.total ?? 0).toFixed(2) }}
                         </div>
                         <div class="text-[10px] text-[#68766D]">
-                            {{ Number(subtotalBruto(item)).toFixed(2) }} -
-                            {{ Number(item.descuento ?? 0).toFixed(2) }}
+                            <template v-if="mostrarDescuentoDetalle()">
+                                {{ Number(subtotalBruto(item)).toFixed(2) }} -
+                                {{ Number(item.descuento ?? 0).toFixed(2) }}
+                            </template>
+                            <template v-else>
+                                {{ Number(subtotalBruto(item)).toFixed(2) }}
+                            </template>
                         </div>
                     </div>
 

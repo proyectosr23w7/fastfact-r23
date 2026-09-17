@@ -45,6 +45,9 @@ const selectedCliente = computed(
                 String(store.state.form.cliente_id ?? ''),
         ) ?? null,
 );
+const mostrarDescuentoDetalle = computed(
+    () => store.state.meta.mostrar_descuento_detalle_factura !== false,
+);
 const setNotice = (notice: FlowNotice | null) => {
     flowNotice.value = notice;
 };
@@ -118,7 +121,9 @@ const buildDetalles = () =>
             cantidad: Number(item.cantidad || 0),
             unidad_medida: Number(unidadSiat),
             precio_unitario: Number(item.precio_unitario || 0),
-            monto_descuento: Number(item.descuento || 0),
+            monto_descuento: mostrarDescuentoDetalle.value
+                ? Number(item.descuento || 0)
+                : 0,
             numero_serie: null,
             numero_imei: null,
         };
@@ -128,7 +133,9 @@ const assertDetallesFacturables = () => {
         const articulo = articuloById(item.articulo_id);
         const cantidad = Number(item.cantidad || 0);
         const precio = Number(item.precio_unitario || 0);
-        const descuento = Number(item.descuento || 0);
+        const descuento = mostrarDescuentoDetalle.value
+            ? Number(item.descuento || 0)
+            : 0;
         const subtotal =
             Math.round((cantidad * precio - descuento) * 100) / 100;
         const label = String(

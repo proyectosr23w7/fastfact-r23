@@ -124,6 +124,9 @@ const facturacionActiva = computed(() =>
 const facturacionObligatoriaVentas = computed(() =>
     Boolean(props.meta.facturacion_obligatoria_ventas ?? false),
 );
+const mostrarDescuentoDetalle = computed(
+    () => props.meta.mostrar_descuento_detalle_factura !== false,
+);
 const tiposDocumento = computed(() =>
     (
         (props.meta.tipos_documento_venta as
@@ -823,6 +826,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                         :detail="form.detalle as Record<string, unknown>[]"
                         :articulos="articulos"
                         :errors="errors"
+                        :mostrar-descuento-detalle="mostrarDescuentoDetalle"
                         :stock-resolver="stockResolver"
                         @add="addProductRow"
                         @remove="emit('removeRow', $event)"

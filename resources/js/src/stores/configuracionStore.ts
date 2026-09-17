@@ -24,6 +24,7 @@ export interface ConfiguracionForm {
     metodo_costos: string;
     multiples_precios: boolean;
     precios_por_cantidad: boolean;
+    mostrar_descuento_detalle_factura: boolean;
     productos_categorias_habilitadas: boolean;
     productos_marcas_habilitadas: boolean;
     productos_busqueda_avanzada_habilitada: boolean;
@@ -55,6 +56,7 @@ const initialForm = (): ConfiguracionForm => ({
     metodo_costos: 'promedio_ponderado',
     multiples_precios: false,
     precios_por_cantidad: false,
+    mostrar_descuento_detalle_factura: true,
     productos_categorias_habilitadas: true,
     productos_marcas_habilitadas: false,
     productos_busqueda_avanzada_habilitada: false,

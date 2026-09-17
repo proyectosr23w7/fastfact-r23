@@ -314,6 +314,8 @@ export function useVentaStore() {
     const recalculateDetail = (index: number) => {
         const item = state.form.detalle[index];
         const cantidad = Number(item.cantidad || 0);
+        const mostrarDescuentoDetalle =
+            state.meta.mostrar_descuento_detalle_factura !== false;
 
         if (
             String(item.articulo_id ?? '') !== '' &&
@@ -323,6 +325,10 @@ export function useVentaStore() {
                 String(item.articulo_id),
                 cantidad,
             );
+        }
+
+        if (!mostrarDescuentoDetalle) {
+            item.descuento = 0;
         }
 
         item.subtotal = round2(cantidad * Number(item.precio_unitario || 0));
@@ -580,7 +586,10 @@ export function useVentaStore() {
                     articulo_id: Number(item.articulo_id),
                     cantidad: Number(item.cantidad),
                     precio_unitario: Number(item.precio_unitario),
-                    descuento: Number(item.descuento || 0),
+                    descuento:
+                        state.meta.mostrar_descuento_detalle_factura === false
+                            ? 0
+                            : Number(item.descuento || 0),
                 })),
             };
 
