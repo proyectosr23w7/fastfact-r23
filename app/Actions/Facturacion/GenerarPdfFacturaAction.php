@@ -109,9 +109,11 @@ class GenerarPdfFacturaAction
         $pdf->Cell(0, 3.2, BoliviaPdfHelper::text('NIT/CI: '.trim((string) ($factura->cliente?->nit_ci ?: '-').' '.(string) ($factura->cliente?->complemento ?: ''))), 0, 1, 'L');
         $pdf->SetFont('Arial', 'B', 9);
         $pdf->Cell(0, 4, BoliviaPdfHelper::text('Total Bs. '.BoliviaPdfHelper::money((float) $factura->monto_total)), 0, 1, 'L');
+        $pdf->SetFont('Arial', '', 4.8);
+        $pdf->MultiCell(0, 2.2, BoliviaPdfHelper::text('CUF: '.($factura->cuf ?: '-')), 0, 'L');
 
         $qrPath = BoliviaPdfHelper::createQrTempFile($consultaUrl);
-        $pdf->Image($qrPath, 22, 39, 41, 41);
+        $pdf->Image($qrPath, 24, 43, 37, 37);
         @unlink($qrPath);
 
         $pdf->SetY(80);
