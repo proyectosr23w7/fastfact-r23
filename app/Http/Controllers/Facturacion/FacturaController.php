@@ -170,16 +170,21 @@ class FacturaController extends Controller
     public function downloadPdf(Request $request, Factura $factura): Response
     {
         $this->service->autorizarAcceso($factura, $request->user());
-        $factura->loadMissing('puntoVenta');
-        $formato = $factura->puntoVenta?->tipo_impresion === 'comprobante' ? 'ticket' : null;
 
-        return $this->service->downloadPdf($factura, $formato);
+        return $this->service->downloadPdf($factura, $this->resolveFormatoPdf($factura));
     }
 
     public function printPdf(Request $request, Factura $factura): Response
     {
         $this->service->autorizarAcceso($factura, $request->user());
 
-        return $this->service->downloadPdf($factura);
+        return $this->service->downloadPdf($factura, $this->resolveFormatoPdf($factura));
+    }
+
+    private function resolveFormatoPdf(Factura $factura): ?string
+    {
+        $factura->loadMissing('puntoVenta');
+
+        return $factura->puntoVenta?->tipo_impresion === 'comprobante' ? 'ticket' : null;
     }
 }
