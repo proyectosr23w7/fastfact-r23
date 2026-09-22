@@ -382,7 +382,12 @@ class ImportLegacyProductionData extends Command
 
         foreach (DB::connection('legacy_import')->table('productos')->orderBy('id_producto')->get() as $producto) {
             $unidadId = $this->ensureUnit((string) $producto->id_medida);
-            $codigo = (string) $producto->codigo;
+            $codigoOriginal = trim((string) $producto->codigo);
+            $codigo = $codigoOriginal;
+
+            if (DB::table('articulos')->where('codigo_generico', $codigo)->exists()) {
+                $codigo = $codigoOriginal.'-LEG-'.$producto->id_producto;
+            }
 
             DB::table('articulos')->updateOrInsert(
                 ['codigo_generico' => $codigo],
@@ -408,7 +413,7 @@ class ImportLegacyProductionData extends Command
 
             $articuloId = (int) DB::table('articulos')->where('codigo_generico', $codigo)->value('id');
             $this->productoMap[(int) $producto->id_producto] = $articuloId;
-            $this->productoMap[$codigo] = $articuloId;
+            $this->productoMap[$codigoOriginal] ??= $articuloId;
 
             DB::table('articulo_precios')->updateOrInsert(
                 ['articulo_id' => $articuloId, 'cantidad_minima' => 1, 'tipo_precio' => 'general'],
@@ -477,40 +482,12 @@ class ImportLegacyProductionData extends Command
             $estado = (int) $factura->anulacion === 1 ? 'anulada' : 'emitida';
             $detalles = $this->extractInvoiceDetails((string) $factura->productos);
 
-            $ventaId = DB::table('venta_cabeceras')->insertGetId([
-                'numero_venta' => 'LEG-FAC-'.str_pad((string) $factura->id_factura, 10, '0', STR_PAD_LEFT),
-                'cliente_id' => $clienteId,
-                'sucursal_id' => $sucursalId,
-                'punto_venta_id' => $puntoVentaId,
-                'user_id' => $this->adminId,
-                'fecha_venta' => Carbon::parse($fecha)->toDateString(),
-                'subtotal' => (float) $factura->montoTotalSujetoIVA,
-                'descuento' => (float) $factura->descuentoAdicional,
-                'impuesto' => round(((float) $factura->montoTotalSujetoIVA) * 0.13, 2),
-                'iva' => round(((float) $factura->montoTotalSujetoIVA) * 0.13, 2),
-                'it' => round(((float) $factura->montoTotal) * 0.03, 2),
-                'total' => (float) $factura->montoTotal,
-                'observacion' => 'Venta migrada desde factura historica '.$factura->numeroFactura.'.',
-                'tipo_documento_venta' => 'factura',
-                'requiere_factura' => true,
-                'estado' => 'confirmada',
-                'cuf' => (string) $factura->cuf,
-                'cufd' => (string) $factura->cufd,
-                'codigo_recepcion' => (string) $factura->codigoRecepcion,
-                'numero_factura' => (string) $factura->numeroFactura,
-                'codigo_excepcion' => $this->xmlValue((string) $factura->productos, 'codigoExcepcion'),
-                'estado_facturacion' => $estado,
-                'created_at' => $fecha,
-                'updated_at' => now(),
-            ]);
-
             $cuisId = (int) DB::table('cuis')->where('codigo', (string) $factura->cuis)->value('id') ?: null;
             $cufdId = (int) DB::table('cufd')->where('codigo', (string) $factura->cufd)->latest('id')->value('id') ?: null;
 
             $facturaId = DB::table('facturas')->insertGetId([
                 'origen' => 'legacy',
                 'referencia_externa' => (string) $factura->id_factura,
-                'venta_id' => $ventaId,
                 'cliente_id' => $clienteId,
                 'sucursal_id' => $sucursalId,
                 'punto_venta_id' => $puntoVentaId,
@@ -526,7 +503,8 @@ class ImportLegacyProductionData extends Command
                 'ambiente_facturacion' => $this->targetAmbiente,
                 'codigo_emision' => (int) $factura->tipoEmision,
                 'xml_fiscal' => (string) $factura->productos,
-                'pdf_path' => (string) $factura->raiz,
+                // La ruta del servidor anterior no es valida en la nueva instalacion.
+                'pdf_path' => null,
                 'hash_xml' => hash('sha256', (string) $factura->productos),
                 'fecha_emision' => $fecha,
                 'monto_total' => (float) $factura->montoTotal,
@@ -539,7 +517,10 @@ class ImportLegacyProductionData extends Command
                 'estado_sincronizacion' => 'sincronizada',
                 'codigo_excepcion' => $this->xmlValue((string) $factura->productos, 'codigoExcepcion'),
                 'datos_respuesta_siat' => json_encode(['codigoRecepcion' => (string) $factura->codigoRecepcion]),
-                'metadata' => json_encode(['legacy_id' => $factura->id_factura]),
+                'metadata' => json_encode([
+                    'legacy_id' => $factura->id_factura,
+                    'legacy_pdf_path' => (string) $factura->raiz,
+                ]),
                 'created_at' => $fecha,
                 'updated_at' => now(),
             ]);
@@ -563,21 +544,6 @@ class ImportLegacyProductionData extends Command
                     'created_at' => $fecha,
                     'updated_at' => now(),
                 ]);
-
-                if ($articuloId) {
-                    DB::table('venta_detalles')->insert([
-                        'venta_id' => $ventaId,
-                        'articulo_id' => $articuloId,
-                        'cantidad' => $detalle['cantidad'],
-                        'precio_unitario' => $detalle['precio_unitario'],
-                        'descuento' => $detalle['descuento'],
-                        'impuesto' => round(((float) $detalle['subtotal']) * 0.13, 2),
-                        'subtotal' => $detalle['subtotal'],
-                        'total' => $detalle['subtotal'],
-                        'created_at' => $fecha,
-                        'updated_at' => now(),
-                    ]);
-                }
             }
         }
     }

@@ -18,6 +18,16 @@ return new class extends Migration
                 // Algunas bases antiguas no tienen la restriccion con el nombre convencional.
             }
 
+            if (DB::connection()->getDriverName() === 'sqlite') {
+                try {
+                    Schema::table('facturas', function (Blueprint $table): void {
+                        $table->dropUnique('facturas_venta_id_unique');
+                    });
+                } catch (Throwable) {
+                    // El indice puede no existir en instalaciones creadas con otro esquema.
+                }
+            }
+
             Schema::table('facturas', function (Blueprint $table): void {
                 $table->dropColumn('venta_id');
             });
