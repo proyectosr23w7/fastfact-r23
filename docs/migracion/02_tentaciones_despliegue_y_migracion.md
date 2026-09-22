@@ -99,6 +99,8 @@ El usuario configurado en `.env` debe tener acceso temporal de lectura a esa bas
 
 ## 5. Ejecutar la migracion
 
+### Base nueva sin configuracion previa
+
 Elegir contrasenas temporales fuertes y transmitirlas por un canal seguro. No usar
 los valores predeterminados del comando.
 
@@ -117,6 +119,25 @@ php artisan fastfact:import-legacy-production \
 El comando usa una transaccion: si falla, no se debe continuar con el despliegue.
 Corregir la causa y restaurar una base destino limpia antes de reintentarlo. El
 comando no debe ejecutarse dos veces sobre una importacion ya completada.
+
+### Base de Tentaciones ya configurada
+
+Si empresa, sucursales, puntos de venta, usuarios y parametros SIAT ya fueron
+configurados manualmente, importar solo clientes, productos y facturas:
+
+```bash
+php artisan fastfact:import-legacy-production \
+  --database=tentaciones_legacy_import \
+  --business-data-only \
+  --admin-email=ADMIN_REAL \
+  --no-interaction
+```
+
+Este modo toma el ambiente y tipo de facturacion de la configuracion existente,
+relaciona las sucursales y puntos de venta por sus codigos y no modifica empresa,
+configuracion, usuarios, catalogos SIN, CUIS ni CUFD. Los clientes especiales
+`99001`, `99002` y `99003` se reutilizan si ya existen. El comando se cancela si
+detecta facturas con origen `legacy`, para impedir una doble importacion.
 
 ## 6. Conciliar los datos
 
@@ -186,4 +207,3 @@ Despues de la aceptacion y de conservar un respaldo cifrado:
 - retirar el dump del servidor web;
 - forzar cambio de contrasena a todos los usuarios migrados;
 - programar respaldos de base de datos y `storage` y probar su restauracion.
-
