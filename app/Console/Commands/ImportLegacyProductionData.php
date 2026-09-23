@@ -24,7 +24,8 @@ class ImportLegacyProductionData extends Command
         {--legacy-user-password=12345678 : Password temporal para usuarios legacy}
         {--include-techdev-user : Importa tambien el usuario legacy TechDevAdmin}
         {--import-legacy-siat-codes : Importa CUIS/CUFD legacy aun cuando el ambiente sea piloto}
-        {--business-data-only : Importa solo clientes, productos y facturas historicas sin alterar la configuracion actual}';
+        {--business-data-only : Importa solo clientes, productos y facturas historicas sin alterar la configuracion actual}
+        {--historical-invoices-only : Agrega clientes y facturas legacy faltantes sin volver a importar productos}';
 
     protected $description = 'Importa datos productivos del sistema anterior al esquema actual de FastFact.';
 
@@ -56,6 +57,10 @@ class ImportLegacyProductionData extends Command
             return $this->importBusinessDataOnly();
         }
 
+        if ((bool) $this->option('historical-invoices-only')) {
+            return $this->importHistoricalInvoicesOnly();
+        }
+
         DB::transaction(function (): void {
             $this->importSecurity();
             $this->importCompanyAndConfiguration();
@@ -73,36 +78,39 @@ class ImportLegacyProductionData extends Command
         return self::SUCCESS;
     }
 
-    private function importBusinessDataOnly(): int
+    private function importHistoricalInvoicesOnly(): int
     {
-        $configuracion = DB::table('configuraciones')->find(1);
+        if (! $this->prepareExistingBusinessContext()) {
+            return self::FAILURE;
+        }
 
-        if (! $configuracion) {
-            $this->error('No existe la configuracion basica del sistema nuevo.');
+        try {
+            DB::transaction(function (): void {
+                $this->mapExistingPointsOfSale();
+                $this->importClients();
+                $this->mapExistingProducts();
+                $this->importHistoricalInvoices();
+            });
+        } catch (\Throwable $exception) {
+            $this->error('La importacion incremental fue revertida: '.$exception->getMessage());
 
             return self::FAILURE;
         }
 
+        $this->info('Importacion incremental de facturas finalizada correctamente.');
+
+        return self::SUCCESS;
+    }
+
+    private function importBusinessDataOnly(): int
+    {
         if (DB::table('facturas')->where('origen', 'legacy')->exists()) {
             $this->error('Ya existen facturas legacy. Se cancela para evitar una importacion duplicada.');
 
             return self::FAILURE;
         }
 
-        $this->targetAmbiente = (string) $configuracion->ambiente_facturacion;
-        $this->targetTipoFacturacion = (int) $configuracion->tipo_facturacion;
-        $this->adminId = (int) DB::table('users')
-            ->where('email', (string) $this->option('admin-email'))
-            ->where('estado', true)
-            ->value('id');
-
-        if (! $this->adminId) {
-            $this->adminId = (int) DB::table('users')->where('estado', true)->orderBy('id')->value('id');
-        }
-
-        if (! $this->adminId) {
-            $this->error('No existe un usuario activo para asociar las facturas historicas.');
-
+        if (! $this->prepareExistingBusinessContext()) {
             return self::FAILURE;
         }
 
@@ -122,6 +130,36 @@ class ImportLegacyProductionData extends Command
         $this->info('Importacion comercial finalizada correctamente.');
 
         return self::SUCCESS;
+    }
+
+    private function prepareExistingBusinessContext(): bool
+    {
+        $configuracion = DB::table('configuraciones')->find(1);
+
+        if (! $configuracion) {
+            $this->error('No existe la configuracion basica del sistema nuevo.');
+
+            return false;
+        }
+
+        $this->targetAmbiente = (string) $configuracion->ambiente_facturacion;
+        $this->targetTipoFacturacion = (int) $configuracion->tipo_facturacion;
+        $this->adminId = (int) DB::table('users')
+            ->where('email', (string) $this->option('admin-email'))
+            ->where('estado', true)
+            ->value('id');
+
+        if (! $this->adminId) {
+            $this->adminId = (int) DB::table('users')->where('estado', true)->orderBy('id')->value('id');
+        }
+
+        if (! $this->adminId) {
+            $this->error('No existe un usuario activo para asociar las facturas historicas.');
+
+            return false;
+        }
+
+        return true;
     }
 
     private function mapExistingPointsOfSale(): void
@@ -146,6 +184,29 @@ class ImportLegacyProductionData extends Command
             }
 
             $this->puntoVentaMap[(int) $punto->id_puntoVenta] = (int) $puntoVentaId;
+        }
+    }
+
+    private function mapExistingProducts(): void
+    {
+        foreach (DB::connection('legacy_import')->table('productos')->orderBy('id_producto')->get() as $producto) {
+            $codigo = trim((string) $producto->codigo);
+            $articuloId = DB::table('articulos')
+                ->where('codigo_generico', $codigo.'-LEG-'.$producto->id_producto)
+                ->value('id');
+
+            if (! $articuloId) {
+                $articuloId = DB::table('articulos')->where('codigo_generico', $codigo)->value('id');
+            }
+
+            if (! $articuloId) {
+                throw new \RuntimeException(
+                    'No se encontro el producto legacy '.$producto->id_producto.' (codigo '.$codigo.') en el sistema nuevo.',
+                );
+            }
+
+            $this->productoMap[(int) $producto->id_producto] = (int) $articuloId;
+            $this->productoMap[$codigo] ??= (int) $articuloId;
         }
     }
 
@@ -569,6 +630,13 @@ class ImportLegacyProductionData extends Command
     private function importHistoricalInvoices(): void
     {
         foreach (DB::connection('legacy_import')->table('facturas')->orderBy('id_factura')->get() as $factura) {
+            if (DB::table('facturas')
+                ->where('origen', 'legacy')
+                ->where('referencia_externa', (string) $factura->id_factura)
+                ->exists()) {
+                continue;
+            }
+
             $clienteId = $this->clienteMap[(int) $factura->id_cliente] ?? null;
             $puntoVentaId = $this->puntoVentaMap[(int) $factura->puntoventa] ?? reset($this->puntoVentaMap);
             $sucursalId = (int) DB::table('puntos_venta')->where('id', $puntoVentaId)->value('sucursal_id');
