@@ -10,6 +10,7 @@ const props = defineProps<{
     placeholder?: string;
     inputClass?: string;
     iconClass?: string;
+    remoteSearch?: (term: string) => Promise<Record<string, unknown>[]>;
 }>();
 
 const emit = defineEmits<{
@@ -20,13 +21,29 @@ const emit = defineEmits<{
 const search = ref('');
 const isOpen = ref(false);
 const activeIndex = ref(-1);
+const remoteArticulos = ref<Record<string, unknown>[]>([]);
+const remoteLoading = ref(false);
 let blurTimeout: ReturnType<typeof setTimeout> | null = null;
+let remoteTimeout: ReturnType<typeof setTimeout> | null = null;
+let remoteRequest = 0;
 
 const listboxId = computed(
     () => `${props.inputId ?? 'venta-articulo'}-listbox`,
 );
+const mergedArticulos = computed(() => {
+    const map = new Map<string, Record<string, unknown>>();
+
+    [...props.articulos, ...remoteArticulos.value].forEach((articulo) => {
+        const id = String(articulo.id ?? '');
+        if (id) map.set(id, { ...(map.get(id) ?? {}), ...articulo });
+    });
+
+    return [...map.values()];
+});
 const findArticulo = (value: string) =>
-    props.articulos.find((articulo) => String(articulo.id) === String(value));
+    mergedArticulos.value.find(
+        (articulo) => String(articulo.id) === String(value),
+    );
 const articuloLabel = (articulo: Record<string, unknown>) => {
     const codigo = String(articulo.codigo_generico ?? '').trim();
     const barras = String(articulo.codigo_barras ?? '').trim();
@@ -120,9 +137,9 @@ const searchScore = (articulo: Record<string, unknown>, term: string) => {
 
 const filteredArticulos = computed(() => {
     const term = normalize(search.value);
-    if (!term) return props.articulos.slice(0, 25);
+    if (!term) return mergedArticulos.value.slice(0, 25);
 
-    return props.articulos
+    return mergedArticulos.value
         .map((articulo) => ({ articulo, score: searchScore(articulo, term) }))
         .filter((item) => item.score < 99)
         .sort((a, b) => {
@@ -189,7 +206,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 
     if (event.key !== 'Enter') return;
     const term = normalize(search.value);
-    const exact = props.articulos.find((articulo) =>
+    const exact = mergedArticulos.value.find((articulo) =>
         [articulo.codigo_barras, articulo.codigo_generico].some(
             (value) => normalize(value) === term,
         ),
@@ -207,8 +224,32 @@ const handleKeydown = (event: KeyboardEvent) => {
     }
 };
 
-watch(search, () => {
+watch(search, (value) => {
     activeIndex.value = -1;
+
+    if (remoteTimeout) clearTimeout(remoteTimeout);
+
+    const term = value.trim();
+    if (!props.remoteSearch || normalize(term).length < 2) {
+        remoteArticulos.value = [];
+        remoteLoading.value = false;
+        return;
+    }
+
+    const request = ++remoteRequest;
+    remoteLoading.value = true;
+    remoteTimeout = setTimeout(async () => {
+        try {
+            const results = await props.remoteSearch?.(term);
+            if (request === remoteRequest) {
+                remoteArticulos.value = results ?? [];
+            }
+        } finally {
+            if (request === remoteRequest) {
+                remoteLoading.value = false;
+            }
+        }
+    }, 220);
 });
 
 watch(
@@ -301,7 +342,13 @@ watch(
                 />
             </button>
             <div
-                v-if="filteredArticulos.length === 0"
+                v-if="remoteLoading"
+                class="px-3 py-3 text-center text-sm text-[#68766D]"
+            >
+                Buscando productos...
+            </div>
+            <div
+                v-else-if="filteredArticulos.length === 0"
                 class="px-3 py-4 text-center text-sm text-[#68766D]"
             >
                 No se encontraron productos o servicios.

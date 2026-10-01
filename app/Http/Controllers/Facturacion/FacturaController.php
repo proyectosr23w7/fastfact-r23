@@ -75,6 +75,17 @@ class FacturaController extends Controller
         ]);
     }
 
+    public function buscarArticulos(Request $request): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Productos facturables encontrados correctamente.',
+            'data' => $this->service
+                ->buscarArticulosFacturables($request->string('search')->toString())
+                ->values(),
+        ]);
+    }
+
     public function emitirDirecta(EmitirFacturaDirectaRequest $request): JsonResponse
     {
         $factura = $this->facturaDirectaService->emitir($request->validated(), $request->user());

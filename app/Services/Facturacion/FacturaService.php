@@ -351,44 +351,10 @@ class FacturaService
                     'direccion',
                     'estado',
                 ]) : [],
-            'articulos' => $includeBillingMeta ? Articulo::query()
-                ->with([
-                    'unidadMedida:id,nombre,abreviatura',
-                    'precios' => fn ($query) => $query->where('estado', true)->orderBy('cantidad_minima'),
-                ])
-                ->withCount('facturaDetalles as facturas_count')
-                ->where('estado', true)
-                ->orderByDesc('facturas_count')
-                ->orderBy('nombre')
+            'articulos' => $includeBillingMeta ? $this->articulosFacturablesQuery()
                 ->limit(500)
                 ->get()
-                ->map(fn (Articulo $articulo) => [
-                    'id' => $articulo->id,
-                    'codigo_generico' => $articulo->codigo_generico,
-                    'codigo_barras' => $articulo->codigo_barras,
-                    'nombre' => $articulo->nombre,
-                    'descripcion' => $articulo->descripcion,
-                    'codigo_actividad_economica' => $articulo->codigo_actividad_economica,
-                    'codigo_producto_sin' => $articulo->codigo_producto_sin,
-                    'codigo_unidad_medida_siat' => $articulo->codigo_unidad_medida_siat,
-                    'precio_base' => (float) $articulo->precio_base,
-                    'stock_actual' => (float) $articulo->stock_actual,
-                    'facturas_count' => (int) ($articulo->facturas_count ?? 0),
-                    'ventas_count' => (int) ($articulo->facturas_count ?? 0),
-                    'unidad_medida' => $articulo->unidadMedida ? [
-                        'id' => $articulo->unidadMedida->id,
-                        'nombre' => $articulo->unidadMedida->nombre,
-                        'abreviatura' => $articulo->unidadMedida->abreviatura,
-                    ] : null,
-                    'precios' => $articulo->precios->map(fn ($precio) => [
-                        'id' => $precio->id,
-                        'tipo_precio' => $precio->tipo_precio,
-                        'cantidad_minima' => (float) $precio->cantidad_minima,
-                        'precio' => (float) $precio->precio,
-                        'estado' => (bool) $precio->estado,
-                    ])->values(),
-                    'stocks' => [],
-                ])
+                ->map(fn (Articulo $articulo) => $this->mapArticuloFacturable($articulo))
                 ->values() : [],
             'sucursales' => OperationalContextScope::sucursalesQuery($user)->get(['id', 'codigo', 'nombre']),
             'puntos_venta' => OperationalContextScope::puntosVentaQuery($user)->get(['id', 'sucursal_id', 'codigo', 'nombre']),
@@ -431,6 +397,78 @@ class FacturaService
                     'cafc_codigo' => $evento->cafc?->codigo,
                 ])
                 ->values() : [],
+        ];
+    }
+
+    public function buscarArticulosFacturables(string $search): Collection
+    {
+        $search = trim($search);
+
+        if ($search === '') {
+            return collect();
+        }
+
+        return $this->articulosFacturablesQuery()
+            ->where(function ($query) use ($search): void {
+                $query
+                    ->where('codigo_generico', 'like', "%{$search}%")
+                    ->orWhere('codigo_barras', 'like', "%{$search}%")
+                    ->orWhere('nombre', 'like', "%{$search}%")
+                    ->orWhere('descripcion', 'like', "%{$search}%")
+                    ->orWhere('tags', 'like', "%{$search}%")
+                    ->orWhere('alias', 'like', "%{$search}%")
+                    ->orWhere('atributos', 'like', "%{$search}%");
+            })
+            ->limit(50)
+            ->get()
+            ->map(fn (Articulo $articulo) => $this->mapArticuloFacturable($articulo))
+            ->values();
+    }
+
+    private function articulosFacturablesQuery()
+    {
+        return Articulo::query()
+            ->with([
+                'unidadMedida:id,nombre,abreviatura',
+                'precios' => fn ($query) => $query->where('estado', true)->orderBy('cantidad_minima'),
+            ])
+            ->withCount('facturaDetalles as facturas_count')
+            ->where('estado', true)
+            ->orderByDesc('facturas_count')
+            ->orderBy('nombre');
+    }
+
+    private function mapArticuloFacturable(Articulo $articulo): array
+    {
+        return [
+            'id' => $articulo->id,
+            'codigo_generico' => $articulo->codigo_generico,
+            'codigo_barras' => $articulo->codigo_barras,
+            'nombre' => $articulo->nombre,
+            'descripcion' => $articulo->descripcion,
+            'tags' => $articulo->tags,
+            'alias' => $articulo->alias,
+            'atributos' => $articulo->atributos,
+            'codigo_actividad_economica' => $articulo->codigo_actividad_economica,
+            'codigo_producto_sin' => $articulo->codigo_producto_sin,
+            'codigo_unidad_medida_siat' => $articulo->codigo_unidad_medida_siat,
+            'precio_base' => (float) $articulo->precio_base,
+            'stock_actual' => (float) $articulo->stock_actual,
+            'facturas_count' => (int) ($articulo->facturas_count ?? 0),
+            'ventas_count' => (int) ($articulo->facturas_count ?? 0),
+            'unidad_medida' => $articulo->unidadMedida ? [
+                'id' => $articulo->unidadMedida->id,
+                'nombre' => $articulo->unidadMedida->nombre,
+                'abreviatura' => $articulo->unidadMedida->abreviatura,
+            ] : null,
+            'precios' => $articulo->precios->map(fn ($precio) => [
+                'id' => $precio->id,
+                'tipo_precio' => $precio->tipo_precio,
+                'cantidad_minima' => (float) $precio->cantidad_minima,
+                'precio' => (float) $precio->precio,
+                'estado' => (bool) $precio->estado,
+            ])->values(),
+            'stocks' => [],
         ];
     }
 

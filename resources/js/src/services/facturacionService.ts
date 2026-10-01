@@ -23,6 +23,10 @@ export const facturacionService = {
         apiClient.get<Record<string, unknown>>(
             `/api/facturacion/facturas/${id}`,
         ),
+    buscarArticulosFacturables: (search: string) =>
+        apiClient.get<Record<string, unknown>[]>(
+            `/api/facturacion/facturas/articulos/buscar${buildQuery({ search })}`,
+        ),
     emitirFactura: (payload: Record<string, unknown>) =>
         apiClient.post<Record<string, unknown>>(
             '/api/facturacion/facturas/emitir',

@@ -12,12 +12,14 @@ const props = defineProps<{
     readOnly?: boolean;
     mostrarDescuentoDetalle?: boolean;
     stockResolver?: (articuloId: string) => number;
+    remoteSearchArticulos?: (term: string) => Promise<Record<string, unknown>[]>;
 }>();
 
 const emit = defineEmits<{
     add: [];
     remove: [index: number];
     recalc: [index: number];
+    selectArticulo: [articulo: Record<string, unknown>];
 }>();
 
 const findArticulo = (item: Record<string, unknown>) =>
@@ -53,7 +55,9 @@ const stockBajo = (item: Record<string, unknown>) => {
 const handleArticuloSelect = async (
     item: Record<string, any>,
     index: number,
+    articulo?: Record<string, unknown>,
 ) => {
+    if (articulo) emit('selectArticulo', articulo);
     item.precio_unitario = 0;
     emit('recalc', index);
 
@@ -179,8 +183,9 @@ const mostrarDescuentoDetalle = () => props.mostrarDescuentoDetalle !== false;
                                     v-model="item.articulo_id"
                                     :articulos="articulos"
                                     :input-id="`venta-articulo-${index}`"
+                                    :remote-search="remoteSearchArticulos"
                                     @select="
-                                        handleArticuloSelect(item, index)
+                                        handleArticuloSelect(item, index, $event)
                                     "
                                 />
                                 <InputError

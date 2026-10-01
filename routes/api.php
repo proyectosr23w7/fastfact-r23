@@ -177,6 +177,7 @@ Route::middleware(['web', 'auth'])->prefix('facturacion')->group(function () {
     Route::patch('cafc/{cafc}/estado', [CafcController::class, 'updateEstado'])->middleware('permission:facturacion.siat.sync');
 
     Route::get('facturas', [FacturaController::class, 'index'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');
+    Route::get('facturas/articulos/buscar', [FacturaController::class, 'buscarArticulos'])->middleware('permission:facturacion.facturas.emitir');
     Route::get('facturas/{factura}', [FacturaController::class, 'show'])->middleware('permission:facturacion.facturas.view,facturacion.facturas.emitir');
     Route::post('facturas/emitir-directa', [FacturaController::class, 'emitirDirecta'])->middleware('permission:facturacion.facturas.emitir');
     Route::patch('facturas/{factura}/anular', [FacturaController::class, 'anular'])->middleware('permission:facturacion.facturas.anular');

@@ -174,6 +174,11 @@ const persistSelectedClientEmail = async () => {
         estado: Boolean(cliente.estado ?? true),
     });
 };
+const buscarArticulosFacturables = async (term: string) => {
+    const response = await facturacionService.buscarArticulosFacturables(term);
+
+    return response.data as Record<string, unknown>[];
+};
 const submit = async (mode: SubmitMode) => {
     store.state.saving = true;
     store.state.errors = {};
@@ -292,6 +297,7 @@ onMounted(async () => {
                     :saving="store.state.saving || store.state.processing"
                     :stock-resolver="() => 999999999"
                     :puntos-venta="store.puntosVentaDisponibles"
+                    :remote-search-articulos="buscarArticulosFacturables"
                     :action-labels="actionLabels"
                     :show-draft-action="false"
                     @submit="submit"

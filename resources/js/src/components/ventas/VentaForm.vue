@@ -76,6 +76,7 @@ const props = defineProps<{
     generalError?: string;
     generalSuccess?: string;
     flowNotice?: FlowNotice | null;
+    remoteSearchArticulos?: (term: string) => Promise<Record<string, unknown>[]>;
     actionLabels?: {
         draft?: string;
         confirm?: string;
@@ -216,6 +217,20 @@ const articleById = (id: unknown) =>
     articulos.value.find(
         (articulo) => String(articulo.id ?? '') === String(id ?? ''),
     );
+const registerArticulo = (articulo: Record<string, unknown>) => {
+    const id = String(articulo.id ?? '');
+    if (!id) return;
+
+    const list = (props.meta.articulos as Record<string, unknown>[] | undefined) ?? [];
+    const index = list.findIndex((item) => String(item.id ?? '') === id);
+
+    if (index >= 0) {
+        list[index] = { ...list[index], ...articulo };
+    } else {
+        list.unshift(articulo);
+        props.meta.articulos = list;
+    }
+};
 
 const stockWarnings = computed(
     () =>
@@ -395,6 +410,7 @@ const clearAssistantSearch = () => {
 };
 
 const addAssistantProduct = async (articulo: Record<string, unknown>) => {
+    registerArticulo(articulo);
     let index = (props.form.detalle ?? []).findIndex(
         (item: Record<string, unknown>) => !String(item.articulo_id ?? ''),
     );
@@ -420,6 +436,7 @@ const addAssistantProduct = async (articulo: Record<string, unknown>) => {
 };
 
 const addQuickProduct = async (articulo: Record<string, unknown>) => {
+    registerArticulo(articulo);
     await addAssistantProduct(articulo);
     quickArticuloId.value = '';
 };
@@ -763,6 +780,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                                 <VentaArticuloSearchSelect
                                     v-model="quickArticuloId"
                                     :articulos="articulos"
+                                    :remote-search="remoteSearchArticulos"
                                     input-id="venta-busqueda-rapida"
                                     class="min-w-0 flex-1"
                                     placeholder="Buscar producto o servicio"
@@ -828,9 +846,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                         :errors="errors"
                         :mostrar-descuento-detalle="mostrarDescuentoDetalle"
                         :stock-resolver="stockResolver"
+                        :remote-search-articulos="remoteSearchArticulos"
                         @add="addProductRow"
                         @remove="emit('removeRow', $event)"
                         @recalc="emit('recalcRow', $event)"
+                        @select-articulo="registerArticulo"
                     />
                 </section>
 
