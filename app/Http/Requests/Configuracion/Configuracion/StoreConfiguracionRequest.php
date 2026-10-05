@@ -53,6 +53,7 @@ class StoreConfiguracionRequest extends FormRequest
             'multiples_precios' => ['sometimes', 'boolean'],
             'precios_por_cantidad' => ['sometimes', 'boolean'],
             'mostrar_descuento_detalle_factura' => ['sometimes', 'boolean'],
+            'mostrar_telefono_cliente_listado_facturas' => ['sometimes', 'boolean'],
             'productos_categorias_habilitadas' => ['sometimes', 'boolean'],
             'productos_marcas_habilitadas' => ['sometimes', 'boolean'],
             'productos_busqueda_avanzada_habilitada' => ['sometimes', 'boolean'],

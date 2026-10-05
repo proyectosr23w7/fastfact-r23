@@ -129,6 +129,9 @@ const kpis = computed(() => metaRecord('kpis'));
 const metodosPago = computed(() => metaList('metodos_pago'));
 const clientes = computed(() => metaList('clientes'));
 const sucursales = computed(() => metaList('sucursales'));
+const mostrarTelefonoCliente = computed(
+    () => store.state.meta.mostrar_telefono_cliente_listado_facturas === true,
+);
 const puntosVenta = computed(() => metaList('puntos_venta'));
 const puntosVentaFiltro = computed(() =>
     puntosVenta.value.filter(
@@ -984,6 +987,16 @@ onMounted(store.load);
                                             {{
                                                 item.cliente?.nit_ci ||
                                                 'Sin documento'
+                                            }}
+                                        </p>
+                                        <p
+                                            v-if="mostrarTelefonoCliente"
+                                            class="text-xs text-[#6c786f]"
+                                        >
+                                            Tel:
+                                            {{
+                                                item.cliente?.telefono ||
+                                                'Sin teléfono'
                                             }}
                                         </p>
                                     </td>

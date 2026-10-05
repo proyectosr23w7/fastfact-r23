@@ -25,6 +25,7 @@ export interface ConfiguracionForm {
     multiples_precios: boolean;
     precios_por_cantidad: boolean;
     mostrar_descuento_detalle_factura: boolean;
+    mostrar_telefono_cliente_listado_facturas: boolean;
     productos_categorias_habilitadas: boolean;
     productos_marcas_habilitadas: boolean;
     productos_busqueda_avanzada_habilitada: boolean;
@@ -57,6 +58,7 @@ const initialForm = (): ConfiguracionForm => ({
     multiples_precios: false,
     precios_por_cantidad: false,
     mostrar_descuento_detalle_factura: true,
+    mostrar_telefono_cliente_listado_facturas: false,
     productos_categorias_habilitadas: true,
     productos_marcas_habilitadas: false,
     productos_busqueda_avanzada_habilitada: false,

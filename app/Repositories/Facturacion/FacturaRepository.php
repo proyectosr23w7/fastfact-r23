@@ -16,7 +16,7 @@ class FacturaRepository
     {
         $query = Factura::query()
             ->with([
-                'cliente:id,nombre,razon_social,nit_ci',
+                'cliente:id,nombre,razon_social,nit_ci,telefono',
                 'detalles',
                 'sucursal:id,codigo,nombre',
                 'puntoVenta:id,sucursal_id,codigo,nombre,tipo_impresion',

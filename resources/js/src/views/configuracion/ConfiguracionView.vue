@@ -127,6 +127,7 @@ const editableFields = [
     'multiples_precios',
     'precios_por_cantidad',
     'mostrar_descuento_detalle_factura',
+    'mostrar_telefono_cliente_listado_facturas',
     'productos_categorias_habilitadas',
     'productos_marcas_habilitadas',
     'productos_busqueda_avanzada_habilitada',
@@ -149,6 +150,8 @@ const fieldLabels: Record<(typeof editableFields)[number], string> = {
     multiples_precios: 'Múltiples precios',
     precios_por_cantidad: 'Precios por cantidad',
     mostrar_descuento_detalle_factura: 'Descuentos por producto en facturación',
+    mostrar_telefono_cliente_listado_facturas:
+        'Teléfono del cliente en listado',
     productos_categorias_habilitadas: 'Categorías de productos',
     productos_marcas_habilitadas: 'Marcas de productos',
     productos_busqueda_avanzada_habilitada: 'Búsqueda avanzada de productos',
@@ -161,6 +164,7 @@ const fieldSections: Record<string, SectionKey> = {
     multiples_precios: 'productos',
     precios_por_cantidad: 'productos',
     mostrar_descuento_detalle_factura: 'facturacion',
+    mostrar_telefono_cliente_listado_facturas: 'facturacion',
     productos_categorias_habilitadas: 'productos',
     productos_marcas_habilitadas: 'productos',
     productos_busqueda_avanzada_habilitada: 'productos',
@@ -194,7 +198,9 @@ const requiereFirmaDigital = computed(
 const codigoSistemaAutomatico = computed(
     () => codigosSistemaPorTipo[tipoFacturacion.value] ?? '',
 );
-const codigoSistemaBloqueado = computed(() => Boolean(codigoSistemaAutomatico.value));
+const codigoSistemaBloqueado = computed(() =>
+    Boolean(codigoSistemaAutomatico.value),
+);
 const ambienteProduccion = computed(
     () =>
         requiereParametrosFacturacion.value &&
@@ -726,11 +732,15 @@ onBeforeUnmount(() => {
                         class="rounded-xl border border-[#dce5df] bg-white shadow-sm"
                     >
                         <header class="border-b border-[#e4ebe6] px-5 py-4">
-                            <h2 id="productos-title" class="font-semibold text-[#101713]">
+                            <h2
+                                id="productos-title"
+                                class="font-semibold text-[#101713]"
+                            >
                                 Productos
                             </h2>
                             <p class="mt-1 text-sm text-[#68776d]">
-                                Define los campos visibles en el registro de productos.
+                                Define los campos visibles en el registro de
+                                productos.
                             </p>
                         </header>
                         <div class="grid gap-3 p-5 md:grid-cols-2">
@@ -739,32 +749,38 @@ onBeforeUnmount(() => {
                                     {
                                         key: 'multiples_precios',
                                         label: 'Múltiples precios',
-                                        description: 'Permite registrar más de un precio por producto.',
+                                        description:
+                                            'Permite registrar más de un precio por producto.',
                                     },
                                     {
                                         key: 'precios_por_cantidad',
                                         label: 'Precios por cantidad',
-                                        description: 'Activa escalas de precio por volumen.',
+                                        description:
+                                            'Activa escalas de precio por volumen.',
                                     },
                                     {
                                         key: 'productos_categorias_habilitadas',
                                         label: 'Categorías',
-                                        description: 'Muestra categoría en filtros y formulario de productos.',
+                                        description:
+                                            'Muestra categoría en filtros y formulario de productos.',
                                     },
                                     {
                                         key: 'productos_marcas_habilitadas',
                                         label: 'Marcas',
-                                        description: 'Muestra marca en filtros y formulario de productos.',
+                                        description:
+                                            'Muestra marca en filtros y formulario de productos.',
                                     },
                                     {
                                         key: 'productos_busqueda_avanzada_habilitada',
                                         label: 'Atributos y palabras clave',
-                                        description: 'Activa atributos dinámicos y palabras clave.',
+                                        description:
+                                            'Activa atributos dinámicos y palabras clave.',
                                     },
                                     {
                                         key: 'productos_codigo_barras_habilitado',
                                         label: 'Código de barras',
-                                        description: 'Muestra el campo código de barras en el registro de productos.',
+                                        description:
+                                            'Muestra el campo código de barras en el registro de productos.',
                                     },
                                 ]"
                                 :key="option.key"
@@ -777,7 +793,9 @@ onBeforeUnmount(() => {
                                 "
                                 @click="toggle(option.key)"
                             >
-                                <span class="text-sm font-semibold text-[#19221d]">
+                                <span
+                                    class="text-sm font-semibold text-[#19221d]"
+                                >
                                     {{ option.label }}
                                 </span>
                                 <span class="mt-1 block text-xs text-[#68776d]">
@@ -930,62 +948,91 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
 
-                        <div class="rounded-xl border border-[#dce5df] bg-white shadow-sm">
+                        <div
+                            class="rounded-xl border border-[#dce5df] bg-white shadow-sm"
+                        >
                             <header class="border-b border-[#e4ebe6] px-5 py-4">
                                 <div class="flex items-center gap-2">
-                                    <ReceiptText class="h-5 w-5 text-[#168447]" />
+                                    <ReceiptText
+                                        class="h-5 w-5 text-[#168447]"
+                                    />
                                     <h3 class="font-semibold text-[#101713]">
                                         Opciones de emisión
                                     </h3>
                                 </div>
                                 <p class="mt-1 text-sm text-[#68776d]">
-                                    Ajusta los campos visibles al emitir facturas desde la interfaz web.
+                                    Ajusta los campos visibles al emitir
+                                    facturas desde la interfaz web.
                                 </p>
                             </header>
                             <div class="p-5">
-                                <button
-                                    type="button"
-                                    class="flex w-full items-start justify-between gap-4 rounded-xl border p-4 text-left transition"
-                                    :class="
-                                        store.state.form
-                                            .mostrar_descuento_detalle_factura
-                                            ? 'border-[#9dd5ad] bg-[#eaf7ef]'
-                                            : 'border-[#dce5df] bg-white hover:bg-[#f5f8f6]'
-                                    "
-                                    @click="toggle('mostrar_descuento_detalle_factura')"
-                                >
-                                    <span>
-                                        <span class="block text-sm font-semibold text-[#19221d]">
-                                            Mostrar descuento por producto
-                                        </span>
-                                        <span class="mt-1 block text-xs leading-5 text-[#68776d]">
-                                            Cuando está desactivado, la pantalla de facturación oculta la casilla de descuento en cada producto y emite con descuento 0. La API de integración no se modifica.
-                                        </span>
-                                    </span>
-                                    <span
-                                        class="mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition"
+                                <div class="grid gap-3 md:grid-cols-2">
+                                    <button
+                                        v-for="option in [
+                                            {
+                                                key: 'mostrar_descuento_detalle_factura',
+                                                label: 'Mostrar descuento por producto',
+                                                description:
+                                                    'Cuando está desactivado, la pantalla de facturación oculta la casilla de descuento en cada producto y emite con descuento 0. La API de integración no se modifica.',
+                                            },
+                                            {
+                                                key: 'mostrar_telefono_cliente_listado_facturas',
+                                                label: 'Teléfono del cliente en listado',
+                                                description:
+                                                    'Muestra el teléfono registrado del cliente en la tabla de facturas. No modifica la factura ni el XML.',
+                                            },
+                                        ]"
+                                        :key="option.key"
+                                        type="button"
+                                        class="flex items-start justify-between gap-4 rounded-xl border p-4 text-left transition"
                                         :class="
-                                            store.state.form
-                                                .mostrar_descuento_detalle_factura
-                                                ? 'bg-[#168447]'
-                                                : 'bg-[#cbd7cf]'
+                                            store.state.form[option.key]
+                                                ? 'border-[#9dd5ad] bg-[#eaf7ef]'
+                                                : 'border-[#dce5df] bg-white hover:bg-[#f5f8f6]'
                                         "
+                                        @click="toggle(option.key)"
                                     >
+                                        <span>
+                                            <span
+                                                class="block text-sm font-semibold text-[#19221d]"
+                                            >
+                                                {{ option.label }}
+                                            </span>
+                                            <span
+                                                class="mt-1 block text-xs leading-5 text-[#68776d]"
+                                            >
+                                                {{ option.description }}
+                                            </span>
+                                        </span>
                                         <span
-                                            class="h-5 w-5 rounded-full bg-white shadow transition"
+                                            class="mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition"
                                             :class="
-                                                store.state.form
-                                                    .mostrar_descuento_detalle_factura
-                                                    ? 'translate-x-5'
-                                                    : 'translate-x-0.5'
+                                                store.state.form[option.key]
+                                                    ? 'bg-[#168447]'
+                                                    : 'bg-[#cbd7cf]'
                                             "
-                                        />
-                                    </span>
-                                </button>
+                                        >
+                                            <span
+                                                class="h-5 w-5 rounded-full bg-white shadow transition"
+                                                :class="
+                                                    store.state.form[option.key]
+                                                        ? 'translate-x-5'
+                                                        : 'translate-x-0.5'
+                                                "
+                                            />
+                                        </span>
+                                    </button>
+                                </div>
                                 <InputError
                                     :message="
                                         store.state.errors
                                             .mostrar_descuento_detalle_factura?.[0]
+                                    "
+                                />
+                                <InputError
+                                    :message="
+                                        store.state.errors
+                                            .mostrar_telefono_cliente_listado_facturas?.[0]
                                     "
                                 />
                             </div>
@@ -1061,12 +1108,14 @@ onBeforeUnmount(() => {
                                                         :class="
                                                             credentialStatus(
                                                                 credential.configured,
-                                                                credential.expiration ?? undefined,
+                                                                credential.expiration ??
+                                                                    undefined,
                                                             ).tone === 'success'
                                                                 ? 'bg-[#eaf7ef] text-[#168447]'
                                                                 : credentialStatus(
                                                                         credential.configured,
-                                                                        credential.expiration ?? undefined,
+                                                                        credential.expiration ??
+                                                                            undefined,
                                                                     ).tone ===
                                                                     'danger'
                                                                   ? 'bg-red-50 text-red-700'
@@ -1076,7 +1125,8 @@ onBeforeUnmount(() => {
                                                         {{
                                                             credentialStatus(
                                                                 credential.configured,
-                                                                credential.expiration ?? undefined,
+                                                                credential.expiration ??
+                                                                    undefined,
                                                             ).label
                                                         }}
                                                     </span>
@@ -1094,9 +1144,7 @@ onBeforeUnmount(() => {
                                                         ]
                                                     "
                                                     class="mt-1 font-mono text-sm tracking-[0.18em] text-[#34433a]"
-                                                >
-                                                       
-                                                </p>
+                                                ></p>
                                             </div>
                                         </div>
                                         <Button

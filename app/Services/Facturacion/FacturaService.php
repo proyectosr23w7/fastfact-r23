@@ -376,6 +376,7 @@ class FacturaService
             'facturacion_activa' => (bool) $configuracion?->facturacionSiatActiva(),
             'facturacion_obligatoria_ventas' => true,
             'mostrar_descuento_detalle_factura' => (bool) ($configuracion?->mostrar_descuento_detalle_factura ?? true),
+            'mostrar_telefono_cliente_listado_facturas' => (bool) ($configuracion?->mostrar_telefono_cliente_listado_facturas ?? false),
             'confirmacion_rapida_ventas' => false,
             'tipos_documento_venta' => [
                 ['label' => 'Factura', 'value' => 'factura'],
