@@ -90,8 +90,8 @@
       "_icons-C4P5wEUP.js"
     ]
   },
-  "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-CzQyGXU6.js": {
-    "file": "assets/SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-CzQyGXU6.js",
+  "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-Dab0y8Cv.js": {
+    "file": "assets/SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-Dab0y8Cv.js",
     "name": "SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang",
     "imports": [
       "_framework-D1tSEbrl.js",
@@ -208,7 +208,7 @@
     ]
   },
   "resources/js/app.ts": {
-    "file": "assets/app-33JBlbs6.js",
+    "file": "assets/app-bjhJauVn.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -455,7 +455,7 @@
     ]
   },
   "resources/js/pages/settings/Appearance.vue": {
-    "file": "assets/Appearance-BSH0CGWC.js",
+    "file": "assets/Appearance-D2TyycZp.js",
     "name": "Appearance",
     "src": "resources/js/pages/settings/Appearance.vue",
     "isDynamicEntry": true,
@@ -564,12 +564,12 @@
     ]
   },
   "resources/js/src/views/configuracion/PuntoVentaView.vue": {
-    "file": "assets/PuntoVentaView-DFdNjyvs.js",
+    "file": "assets/PuntoVentaView-BNQh-MrI.js",
     "name": "PuntoVentaView",
     "src": "resources/js/src/views/configuracion/PuntoVentaView.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-CzQyGXU6.js",
+      "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-Dab0y8Cv.js",
       "_framework-D1tSEbrl.js",
       "_InputError.vue_vue_type_script_setup_true_lang-BfblJPS4.js",
       "_ui-kit-gOdtQVvh.js",
@@ -583,12 +583,12 @@
     ]
   },
   "resources/js/src/views/configuracion/SucursalView.vue": {
-    "file": "assets/SucursalView-4CmQv7gU.js",
+    "file": "assets/SucursalView-2sH5Uvzy.js",
     "name": "SucursalView",
     "src": "resources/js/src/views/configuracion/SucursalView.vue",
     "isDynamicEntry": true,
     "imports": [
-      "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-CzQyGXU6.js",
+      "_SucursalesPuntosVentaWorkspace.vue_vue_type_script_setup_true_lang-Dab0y8Cv.js",
       "_framework-D1tSEbrl.js",
       "_InputError.vue_vue_type_script_setup_true_lang-BfblJPS4.js",
       "_ui-kit-gOdtQVvh.js",

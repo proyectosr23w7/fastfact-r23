@@ -51,7 +51,7 @@ type PuntoVenta = {
     codigo: number;
     nombre: string;
     descripcion: string | null;
-    tipo_impresion: 'carta' | 'media_carta' | 'ticket' | 'comprobante';
+    tipo_impresion: 'carta' | 'media_carta' | 'ticket' | 'rollo' | 'comprobante';
     estado: boolean;
     cuis_vigente?: {
         codigo: string;
@@ -132,7 +132,8 @@ const puntosBySucursal = (sucursalId: number) =>
 
 const formatImpresion = (tipo: PuntoVenta['tipo_impresion']) =>
     ({
-        ticket: 'Ticket (rollo 80 mm)',
+        ticket: 'Ticket resumido (85 × 85 mm)',
+        rollo: 'Rollo con detalle (80 mm)',
         comprobante: 'Comprobante compacto (80 mm)',
         media_carta: 'Media carta (216 × 140 mm)',
         carta: 'Carta (216 × 279 mm)',
@@ -725,7 +726,8 @@ onMounted(() => load());
                         class="company-select h-11"
                     >
                         <option value="todos">Todos</option>
-                        <option value="ticket">Ticket (rollo 80 mm)</option>
+                        <option value="ticket">Ticket resumido (85 × 85 mm)</option>
+                        <option value="rollo">Rollo con detalle (80 mm)</option>
                         <option value="comprobante">
                             Comprobante compacto (80 mm)
                         </option>
@@ -1784,7 +1786,10 @@ onMounted(() => load());
                                 required
                             >
                                 <option value="ticket">
-                                    Ticket (rollo 80 mm)
+                                    Ticket resumido (85 × 85 mm)
+                                </option>
+                                <option value="rollo">
+                                    Rollo con detalle (80 mm)
                                 </option>
                                 <option value="comprobante">
                                     Comprobante compacto (80 mm)

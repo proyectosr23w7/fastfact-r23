@@ -32,6 +32,7 @@ class GenerarPdfFacturaAction
         $pdf = match ($tipoImpresion) {
             'carta' => $this->buildHoja($factura, $empresa, 'carta'),
             'media_carta' => $this->buildHoja($factura, $empresa, 'media_carta'),
+            'rollo' => $this->buildRollo($factura, $empresa),
             'comprobante' => $this->buildComprobante($factura, $empresa),
             default => $this->buildTicket($factura, $empresa),
         };
@@ -79,6 +80,95 @@ class GenerarPdfFacturaAction
         $pdf->SetY($y + 32);
         $pdf->SetFont('Arial', '', 6.5);
         $pdf->MultiCell(0, 3, BoliviaPdfHelper::text('Escanee el QR para consultar la factura en la plataforma de Impuestos Nacionales.'), 0, 'C');
+
+        return $pdf;
+    }
+
+    private function buildRollo(Factura $factura, ?Empresa $empresa): \FPDF
+    {
+        $qrPath = BoliviaPdfHelper::createQrTempFile(BoliviaPdfHelper::emisorQrUrl($factura, (string) ($empresa?->nit ?: ''), 1));
+
+        try {
+            // Measure with the same renderer so wrapped descriptions and legends
+            // determine the paper length without clipping or extra blank pages.
+            $measurement = $this->renderRollo($factura, $empresa, $qrPath, 100000);
+
+            return $this->renderRollo($factura, $empresa, $qrPath, max(120, ceil($measurement->GetY() + 5)));
+        } finally {
+            @unlink($qrPath);
+        }
+    }
+
+    private function renderRollo(Factura $factura, ?Empresa $empresa, string $qrPath, float $height): \FPDF
+    {
+        $pdf = new \FPDF('P', 'mm', [80, $height]);
+        $pdf->SetMargins(5, 5, 5);
+        $pdf->SetAutoPageBreak(false);
+        $pdf->AddPage();
+        $pdf->SetFont('Arial', 'B', 10);
+        $pdf->MultiCell(0, 5, BoliviaPdfHelper::text($empresa?->razon_social ?: $empresa?->nombre_empresa ?: 'EMPRESA'), 0, 'C');
+        $pdf->SetFont('Arial', '', 8);
+        foreach ([
+            'NIT: '.($empresa?->nit ?: '-'),
+            $factura->sucursal?->nombre ?: 'CASA MATRIZ',
+            'Punto de venta: '.($factura->puntoVenta?->codigo ?? 0),
+            $factura->sucursal?->direccion ?: $empresa?->direccion ?: '-',
+            'Telefono: '.($factura->sucursal?->telefono ?: $empresa?->telefono ?: '-'),
+            $this->resolveMunicipio($factura),
+        ] as $line) {
+            $pdf->MultiCell(0, 4, BoliviaPdfHelper::text($line), 0, 'C');
+        }
+        $pdf->Ln(2);
+        $pdf->SetFont('Arial', 'B', 11);
+        $pdf->Cell(0, 5, 'FACTURA', 0, 1, 'C');
+        $pdf->SetFont('Arial', '', 8);
+        $pdf->MultiCell(0, 4, BoliviaPdfHelper::text('(Con Derecho a Credito Fiscal)'), 0, 'C');
+        if ($factura->ambiente_facturacion === 'piloto') {
+            $pdf->Cell(0, 5, 'SIN VALOR LEGAL', 0, 1, 'C');
+        }
+        foreach ([
+            'Factura No. '.($factura->numero_factura ?: '-'),
+            'CUF: '.($factura->cuf ?: '-'),
+            'Fecha: '.(optional($factura->fecha_emision)?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') ?: '-'),
+            'Nombre / Razon social: '.($factura->cliente?->razon_social ?: $factura->cliente?->nombre ?: '-'),
+            'NIT/CI/CEX: '.trim(($factura->cliente?->nit_ci ?: '-').' '.($factura->cliente?->complemento ?: '')),
+            'Codigo cliente: '.($factura->cliente?->codigo ?: $factura->cliente_id),
+        ] as $line) {
+            $pdf->MultiCell(0, 4, BoliviaPdfHelper::text($line));
+        }
+        $this->drawSeparator($pdf);
+        $items = $this->resolveItems($factura);
+        foreach ($items as $item) {
+            $pdf->SetFont('Arial', 'B', 8);
+            $pdf->MultiCell(0, 4, BoliviaPdfHelper::text($this->itemCode($item).' - '.$this->itemDescription($item)));
+            $pdf->SetFont('Arial', '', 8);
+            $pdf->MultiCell(0, 4, BoliviaPdfHelper::text('Unidad: '.$this->itemUnit($item)));
+            $pdf->MultiCell(0, 4, BoliviaPdfHelper::text('Cant. '.rtrim(rtrim(number_format($this->itemQuantity($item), 5, '.', ''), '0'), '.').' x Bs '.BoliviaPdfHelper::money($this->itemUnitPrice($item))));
+            $pdf->MultiCell(0, 4, 'Descuento Bs '.BoliviaPdfHelper::money($this->itemDiscount($item)));
+            $this->totalLine($pdf, 'Subtotal Bs', $this->itemSubtotal($item));
+            $pdf->Ln(2);
+        }
+        $this->drawSeparator($pdf);
+        $gift = (float) ($factura->monto_gift_card ?? 0);
+        $this->totalLine($pdf, 'SUBTOTAL Bs', $this->resolveSubtotal($items));
+        $this->totalLine($pdf, 'DESCUENTO Bs', (float) $factura->descuento_global);
+        $this->totalLine($pdf, 'TOTAL Bs', (float) $factura->monto_total);
+        $this->totalLine($pdf, 'MONTO GIFT CARD Bs', $gift);
+        $this->totalLine($pdf, 'MONTO A PAGAR Bs', max((float) $factura->monto_total - $gift, 0));
+        $this->totalLine($pdf, 'BASE CREDITO FISCAL Bs', (float) $factura->monto_sujeto_iva);
+        $pdf->MultiCell(0, 4, BoliviaPdfHelper::text('Son: '.BoliviaPdfHelper::amountToWords((float) $factura->monto_total)));
+        $pdf->Ln(3);
+        $pdf->SetFont('Arial', '', 7);
+        foreach ([
+            'ESTA FACTURA CONTRIBUYE AL DESARROLLO DEL PAIS, EL USO ILICITO SERA SANCIONADO PENALMENTE DE ACUERDO A LEY',
+            $this->resolveLeyendaConsumidor($factura),
+            $this->resolveLeyendaRepresentacionGrafica($factura),
+        ] as $line) {
+            $pdf->MultiCell(0, 3.5, BoliviaPdfHelper::text($line), 0, 'C');
+            $pdf->Ln(2);
+        }
+        $pdf->Image($qrPath, 25, $pdf->GetY(), 30, 30);
+        $pdf->SetY($pdf->GetY() + 32);
 
         return $pdf;
     }
