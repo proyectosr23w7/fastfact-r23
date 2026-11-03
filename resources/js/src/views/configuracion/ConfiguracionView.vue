@@ -128,6 +128,7 @@ const editableFields = [
     'precios_por_cantidad',
     'mostrar_descuento_detalle_factura',
     'mostrar_telefono_cliente_listado_facturas',
+    'textos_mayusculas_habilitados',
     'productos_categorias_habilitadas',
     'productos_marcas_habilitadas',
     'productos_busqueda_avanzada_habilitada',
@@ -157,10 +158,12 @@ const fieldLabels: Record<(typeof editableFields)[number], string> = {
     productos_busqueda_avanzada_habilitada: 'Búsqueda avanzada de productos',
     productos_codigo_barras_habilitado: 'Código de barras de productos',
     estado: 'Configuración activa',
+    textos_mayusculas_habilitados: 'Convertir textos a mayúsculas',
 };
 
 const fieldSections: Record<string, SectionKey> = {
     estado: 'general',
+    textos_mayusculas_habilitados: 'general',
     multiples_precios: 'productos',
     precios_por_cantidad: 'productos',
     mostrar_descuento_detalle_factura: 'facturacion',
@@ -709,6 +712,29 @@ onBeforeUnmount(() => {
                                     />
                                 </div>
                             </div>
+                            <div
+                                class="flex items-center justify-between gap-4 border-t border-[#dce5df] pt-5"
+                            >
+                                <Label for="textos-mayusculas"
+                                    >Convertir textos a mayúsculas</Label
+                                >
+                                <input
+                                    id="textos-mayusculas"
+                                    v-model="
+                                        store.state.form
+                                            .textos_mayusculas_habilitados
+                                    "
+                                    type="checkbox"
+                                    role="switch"
+                                    class="h-5 w-5 accent-[#168447]"
+                                />
+                            </div>
+                            <InputError
+                                :message="
+                                    store.state.errors
+                                        .textos_mayusculas_habilitados?.[0]
+                                "
+                            />
                             <div
                                 class="rounded-xl border border-[#cde1d3] bg-[#eaf7ef] p-4 text-sm text-[#28533a]"
                             >

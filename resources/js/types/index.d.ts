@@ -35,6 +35,7 @@ export interface SharedData extends PageProps {
     auth: Auth;
     sidebarOpen: boolean;
     appFlags?: {
+        textosMayusculasHabilitados?: boolean;
         empresaConfigurada: boolean;
         facturacionActiva?: boolean;
         facturacionElectronicaActiva?: boolean;
@@ -54,6 +55,7 @@ export type AppPageProps<
     auth: Auth;
     sidebarOpen: boolean;
     appFlags?: {
+        textosMayusculasHabilitados?: boolean;
         empresaConfigurada: boolean;
         facturacionActiva?: boolean;
         facturacionElectronicaActiva?: boolean;

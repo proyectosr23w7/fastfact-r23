@@ -1,0 +1,1 @@
+import{e,c as t}from"./framework-CKEgRTuc.js";function c(){const o=e(),a=t(()=>o.props.appFlags?.textosMayusculasHabilitados===!0);return{mayusculasHabilitadas:a,normalizarTexto:s=>a.value?s.toLocaleUpperCase("es"):s}}export{c as u};

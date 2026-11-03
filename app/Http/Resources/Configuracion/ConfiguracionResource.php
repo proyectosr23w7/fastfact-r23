@@ -28,6 +28,7 @@ class ConfiguracionResource extends JsonResource
             'precios_por_cantidad' => (bool) $this->precios_por_cantidad,
             'mostrar_descuento_detalle_factura' => (bool) ($this->mostrar_descuento_detalle_factura ?? true),
             'mostrar_telefono_cliente_listado_facturas' => (bool) ($this->mostrar_telefono_cliente_listado_facturas ?? false),
+            'textos_mayusculas_habilitados' => (bool) ($this->textos_mayusculas_habilitados ?? false),
             'productos_categorias_habilitadas' => (bool) ($this->productos_categorias_habilitadas ?? true),
             'productos_marcas_habilitadas' => (bool) ($this->productos_marcas_habilitadas ?? false),
             'productos_busqueda_avanzada_habilitada' => (bool) ($this->productos_busqueda_avanzada_habilitada ?? false),

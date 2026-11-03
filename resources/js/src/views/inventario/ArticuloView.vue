@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ModulePageLayout from '@/layouts/modules/ModulePageLayout.vue';
 import ImportExcelDialog from '@/src/components/importacion/ImportExcelDialog.vue';
+import { useMayusculasFormulario } from '@/src/composables/useMayusculasFormulario';
 import { useArticuloStore } from '@/src/stores/articuloStore';
 import { usePermissionStore } from '@/src/stores/permissionStore';
 import {
@@ -42,6 +43,7 @@ import {
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 
 type Item = Record<string, unknown>;
+const { mayusculasHabilitadas, normalizarTexto } = useMayusculasFormulario();
 
 const store = useArticuloStore();
 const permissionStore = usePermissionStore();
@@ -1086,6 +1088,15 @@ onMounted(load);
                                 ><Input
                                     id="nombre"
                                     v-model="store.state.form.nombre"
+                                    :class="{
+                                        uppercase: mayusculasHabilitadas,
+                                    }"
+                                    @blur="
+                                        store.state.form.nombre =
+                                            normalizarTexto(
+                                                store.state.form.nombre,
+                                            )
+                                    "
                                     class="company-input"
                                 /><InputError
                                     :message="store.state.errors.nombre?.[0]"
@@ -1097,6 +1108,15 @@ onMounted(load);
                                 ><textarea
                                     id="descripcion"
                                     v-model="store.state.form.descripcion"
+                                    :class="{
+                                        uppercase: mayusculasHabilitadas,
+                                    }"
+                                    @blur="
+                                        store.state.form.descripcion =
+                                            normalizarTexto(
+                                                store.state.form.descripcion,
+                                            )
+                                    "
                                     class="company-textarea min-h-16"
                                 /><InputError
                                     :message="

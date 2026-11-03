@@ -2,12 +2,20 @@
 
 namespace App\Http\Requests\Articulo;
 
+use App\Http\Requests\Concerns\ConvierteTextosAMayusculas;
 use App\Models\Configuracion\Configuracion;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateArticuloRequest extends FormRequest
 {
+    use ConvierteTextosAMayusculas;
+
+    protected function prepareForValidation(): void
+    {
+        $this->convertirTextosAMayusculas(['nombre', 'descripcion']);
+    }
+
     public function authorize(): bool
     {
         return true;

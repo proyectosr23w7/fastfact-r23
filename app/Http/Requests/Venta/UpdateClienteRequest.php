@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Venta;
 
+use App\Http\Requests\Concerns\ConvierteTextosAMayusculas;
 use App\Support\DocumentoIdentidad;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -9,6 +10,8 @@ use Illuminate\Validation\Validator;
 
 class UpdateClienteRequest extends FormRequest
 {
+    use ConvierteTextosAMayusculas;
+
     public function authorize(): bool
     {
         return true;
@@ -16,6 +19,8 @@ class UpdateClienteRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $this->convertirTextosAMayusculas(['razon_social']);
+
         if (filled($this->input('tipo_documento_identidad'))) {
             return;
         }

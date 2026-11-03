@@ -56,6 +56,7 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $user?->permission_slugs ?? [],
             ],
             'appFlags' => [
+                'textosMayusculasHabilitados' => (bool) ($configuracion?->textos_mayusculas_habilitados ?? false),
                 'empresaConfigurada' => Empresa::query()->exists(),
                 'facturacionActiva' => (bool) ($configuracion?->facturacionSiatActiva() ?? false),
                 'facturacionElectronicaActiva' => (bool) (($configuracion?->facturacionSiatActiva() ?? false) && (int) ($configuracion?->tipo_facturacion ?? 0) === TipoFacturacionEnum::ELECTRONICA->value),

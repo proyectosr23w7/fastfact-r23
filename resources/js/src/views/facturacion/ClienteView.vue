@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ModulePageLayout from '@/layouts/modules/ModulePageLayout.vue';
 import ImportExcelDialog from '@/src/components/importacion/ImportExcelDialog.vue';
+import { useMayusculasFormulario } from '@/src/composables/useMayusculasFormulario';
 import { ApiError } from '@/src/services/apiClient';
 import { clienteVentaService } from '@/src/services/clienteVentaService';
 import { useAuthStore } from '@/src/stores/authStore';
@@ -24,6 +25,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 type Item = Record<string, unknown>;
 
 const items = ref<Item[]>([]);
+const { mayusculasHabilitadas, normalizarTexto } = useMayusculasFormulario();
 const meta = ref<Record<string, unknown>>({});
 const authStore = useAuthStore();
 const loading = ref(false);
@@ -387,7 +389,10 @@ onMounted(load);
                 >
                     <div class="flex items-center gap-2">
                         <span>Filas</span>
-                        <select v-model.number="rowsPerPage" class="company-select h-9 w-20">
+                        <select
+                            v-model.number="rowsPerPage"
+                            class="company-select h-9 w-20"
+                        >
                             <option :value="10">10</option>
                             <option :value="25">25</option>
                             <option :value="50">50</option>
@@ -451,6 +456,12 @@ onMounted(load);
                         <Input
                             id="razon_social"
                             v-model="form.razon_social"
+                            :class="{ uppercase: mayusculasHabilitadas }"
+                            @blur="
+                                form.razon_social = normalizarTexto(
+                                    form.razon_social,
+                                )
+                            "
                             class="company-input"
                         />
                         <InputError :message="errors.razon_social?.[0]" />

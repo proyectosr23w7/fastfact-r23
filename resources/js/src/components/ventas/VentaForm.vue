@@ -21,6 +21,7 @@ import {
 import ClienteSearchSelect from '@/src/components/ventas/ClienteSearchSelect.vue';
 import VentaArticuloSearchSelect from '@/src/components/ventas/VentaArticuloSearchSelect.vue';
 import VentaDetalleTable from '@/src/components/ventas/VentaDetalleTable.vue';
+import { useMayusculasFormulario } from '@/src/composables/useMayusculasFormulario';
 import { usePage } from '@inertiajs/vue3';
 import {
     AlertTriangle,
@@ -94,6 +95,7 @@ const actionLabels = computed(() => ({
 }));
 const showDraftAction = computed(() => props.showDraftAction ?? true);
 const page = usePage();
+const { mayusculasHabilitadas, normalizarTexto } = useMayusculasFormulario();
 
 const emit = defineEmits<{
     submit: [mode: 'draft' | 'confirm' | 'confirm_print'];
@@ -1690,6 +1692,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleShortcut));
                         <Input
                             id="cliente_razon_social"
                             v-model="clientForm.razon_social"
+                            :class="{ uppercase: mayusculasHabilitadas }"
+                            @blur="
+                                clientForm.razon_social = normalizarTexto(
+                                    clientForm.razon_social,
+                                )
+                            "
                             class="company-input"
                             autofocus
                         />
